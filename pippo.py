@@ -39,7 +39,7 @@ end_date = '2019-06-06'
 # Call the function DataReader from the class data
 amp_data = data.DataReader('AMP.MI', 'yahoo', start_date, end_date)
 data = data.DataReader('GBPEUR=X', 'yahoo', start_date, end_date)
-#amp_div = data.DataReader('AMP.MI', 'yahoo-dividends', start_date, end_date) #necessario trovare DataReader per Dividendi
+# amp_div = data.DataReader('AMP.MI', 'yahoo-dividends', start_date, end_date) #necessario trovare DataReader per Dividendi
 
 import pandas as pd
 

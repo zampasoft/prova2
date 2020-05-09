@@ -4,14 +4,38 @@ from typing import List
 from pandas_datareader import data
 
 # Asset Classes that I focus on
-AssetClasses = ("equity", "ETC", "currency")
-equity = 0
-ETC = 1
-currency = 2
+class AssetClass:
+    def __init__(self, assetType: str, buyCommission: float, annualFee: float) -> object:
+        """
+
+        :type buyCommission: float
+        """
+        AssetClasses = ("equity", "ETC", "ETF", "currency")
+        if assetType in AssetClasses:
+            self.assetType = assetType
+            self.hadDividends =  assetType in ("equity", "ETF")
+        else:
+            raise ValueError
+        if 0 <= buyCommission < 1:
+            self.buyCommission = buyCommission
+        else:
+            raise ValueError
+        if 0 <= annualFee < 1:
+            self.annualFee = annualFee
+        else:
+            raise ValueError
+
+    def hasDividends(self):
+        return self.hadDividends
+
+#
+Equity = AssetClass("equity", 0.003, 0)
+ETC = AssetClass("ETC", 0.003, 0)
+Currency = AssetClass("currency", 0, 0)
 
 
 class Asset:
-    def __init__(self, assetType: int, name: str, symbol: str, market: str, currency: str, quantity: int = 0,
+    def __init__(self, assetType: AssetClass, name: str, symbol: str, market: str, currency: str, quantity: int = 0,
                  avg_buy_price: float = 0,
                  avg_buy_curr_chg: float = 0,
                  last_market_value: float = 0) -> object:
@@ -28,9 +52,9 @@ class Asset:
 
 Portfolio = []
 
-Portfolio.append(Asset(equity, "Amplifon", "AMP.MI", "MTA", "EUR"))
-Portfolio.append(Asset(equity, "Microfocus", "MCRO.L", "LSE", "GBP"))
-Portfolio.append(Asset(currency, "GBP", "GBPEUR", "FX", "GBP"))
+Portfolio.append(Asset(Equity, "Amplifon", "AMP.MI", "MTA", "EUR"))
+Portfolio.append(Asset(Equity, "Microfocus", "MCRO.L", "LSE", "GBP"))
+Portfolio.append(Asset(Currency, "GBP", "GBPEUR", "FX", "GBP"))
 
 # First day
 start_date = '2019-04-01'

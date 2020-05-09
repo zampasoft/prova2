@@ -61,14 +61,22 @@ start_date = '2019-04-01'
 # Last day
 end_date = '2019-06-06'
 # Call the function DataReader from the class data
-amp_data = data.DataReader('AMP.MI', 'yahoo', start_date, end_date)
-data = data.DataReader('GBPEUR=X', 'yahoo', start_date, end_date)
-# amp_div = data.DataReader('AMP.MI', 'yahoo-dividends', start_date, end_date) #necessario trovare DataReader per Dividendi
+## amp_data = data.DataReader('AMP.MI', 'yahoo', start_date, end_date)
+## data = data.DataReader('GBPEUR=X', 'yahoo', start_date, end_date)
+amp_quo = data.DataReader('AMP.MI', "yahoo", start_date, end_date) ['Adj Close']
+amp_act = data.DataReader('AMP.MI', "yahoo-actions", start_date, end_date)
+amp_div = data.DataReader('AMP.MI', "yahoo-dividends", start_date, end_date)
+#necessario trovare DataReader per Dividendi
 
 import pandas as pd
 
 # pd.set_printoptions(max_colwidth, 1000)
 pd.set_option('display.width', 1000)
 
-print(amp_data)
-print(data)
+print()
+print(amp_div)
+print()
+print(amp_act)
+print()
+print(amp_quo)
+print()

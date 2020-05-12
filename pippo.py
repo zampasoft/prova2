@@ -106,11 +106,21 @@ Portfolio["CRM"] = Asset(Equity, "SALESFORCE.COM", "CRM", "NYSE", "USD")
 Portfolio["IBM"] = Asset(Equity, "IBM", "IBM", "NYSE", "USD")
 Portfolio["NOW"] = Asset(Equity, "SERVICENOW", "NOW", "NYSE", "USD")
 Portfolio["TWLO"] = Asset(Equity, "TWILIO-A", "TWLO", "NYSE", "USD")
+Portfolio["PEGA"] = Asset(Equity, "Pegasystems Inc.", "PEGA", "NYSE", "USD")
+Portfolio["WDAY"] = Asset(Equity, "Workday, Inc.", "WDAY", "NYSE", "USD")
+Portfolio["XLNX"] = Asset(Equity, "Xilinx, Inc.", "XLNX", "NYSE", "USD")
+Portfolio["SQ"] = Asset(Equity, "Square, Inc.", "SQ", "NYSE", "USD")
+Portfolio["VAR"] = Asset(Equity, "Varian Medical Systems, Inc.", "VAR", "NYSE", "USD")
+Portfolio["VRTX"] = Asset(Equity, "Vertex Pharmaceuticals Incorporated", "VRTX", "NYSE", "USD")
+Portfolio["TEAM"] = Asset(Equity, "Atlassian Corporation Plc", "TEAM", "NYSE", "USD")
 
 # Titolo CH da me selezionati
 Portfolio["ALC.SW"] = Asset(Equity, "ALCON N", "ALC.SW", "VIRTX", "CHF")
 Portfolio["NOVN.SW"] = Asset(Equity, "NOVARTIS N", "NOVN.SW", "VIRTX", "CHF")
 Portfolio["SOON.SW"] = Asset(Equity, "SONOVA HLDG N", "SOON.SW", "VIRTX", "CHF")
+Portfolio["NESN.SW"] = Asset(Equity, "Nestle S.A.", "NESN.SW", "VIRTX", "CHF")
+Portfolio["SREN.SW"] = Asset(Equity, "Swiss Re AG", "SREN.SW", "VIRTX", "CHF")
+Portfolio["ROG.SW"] = Asset(Equity, "Roche Holding AG", "ROG.SW", "VIRTX", "CHF")
 
 # Titoli GBP da me selezionati
 Portfolio["BA.L"] = Asset(Equity, "BAE SYSTEMS", "BA.L", "LSE", "GBP")
@@ -126,20 +136,28 @@ Portfolio["MCRO.L"] = Asset(Equity, "MICRO FOCUS INTL", "MCRO.L", "LSE", "GBP")
 Portfolio["RSW.L"] = Asset(Equity, "RENISHAW", "RSW.L", "LSE", "GBP")
 Portfolio["RWI.L"] = Asset(Equity, "RENEWI", "RWI.L", "LSE", "GBP")
 Portfolio["ULVR.L"] = Asset(Equity, "UNILEVER", "ULVR.L", "LSE", "GBP")
+Portfolio["LGEN.L"] = Asset(Equity, "Legal & General Group Plc", "LGEN.L", "LSE", "GBP")
+Portfolio["LSE.L"] = Asset(Equity, "London Stock Exchange Group plc", "LSE.L", "LSE", "GBP")
 
 # Titoli EUR da me selezionati
 Portfolio["AMP.MI"] = Asset(Equity, "Amplifon", "AMP.MI", "MTA", "EUR")
 Portfolio["BRE.MI"] = Asset(Equity, "BREMBO", "BRE.MI", "MTA", "EUR")
+Portfolio["CPR.MI"] = Asset(Equity, "CAMPARI", "CPR.MI", "MTA", "EUR")
 Portfolio["CERV.MI"] = Asset(Equity, "CERVED GROUP", "CERV.MI", "MTA", "EUR")
+Portfolio["DSY.PA"] = Asset(Equity, "Dassault Systèmes SE", "DSY.PA", "EQUIDUCT", "EUR")
 Portfolio["DIA.MI"] = Asset(Equity, "DIASORIN", "DIA.MI", "MTA", "EUR")
 Portfolio["ENEL.MI"] = Asset(Equity, "ENEL", "ENEL.MI", "MTA", "EUR")
 Portfolio["ENI.MI"] = Asset(Equity, "ENI", "ENI.MI", "MTA", "EUR")
+Portfolio["FCA.MI"] = Asset(Equity, "FCA", "FCA.MI", "MTA", "EUR")
 Portfolio["GEO.MI"] = Asset(Equity, "GEO", "GEO.MI", "MTA", "EUR")
+Portfolio["KER.PA"] = Asset(Equity, "Kering SA", "KER.PA", "EQUIDUCT", "EUR")
 Portfolio["MONC.MI"] = Asset(Equity, "MONCLER", "MONC.MI", "MTA", "EUR")
 Portfolio["UCG.MI"] = Asset(Equity, "UNICREDIT", "UCG.MI", "MTA", "EUR")
-Portfolio["0OMK.IL"] = Asset(Equity, "ESSILOR INTERNAT", "0OMK.IL", "EQUIDUCT", "EUR")
+Portfolio["EL.PA"] = Asset(Equity, "EssilorLuxottica Societe anonyme", "EL.PA", "EQUIDUCT", "EUR")
 Portfolio["FME.DE"] = Asset(Equity, "FRESENIUS MEDICAL", "FME.DE", "EQUIDUCT", "EUR")
-#Portfolio["VNA.DE"] = Asset(Equity, "VONOVIA", "VNA.DE", "XETRA", "EUR")
+Portfolio["VNA.DE"] = Asset(Equity, "VONOVIA", "VNA.DE", "XETRA", "EUR")
+Portfolio["MC.PA"] = Asset(Equity, "LVMH Moët Hennessy Louis Vuitton S.E.", "MC.PA", "EQUIDUCT", "EUR")
+Portfolio["VVD.F"] = Asset(Equity, "Veolia Environnement S.A.", "VVD.F", "EQUIDUCT", "EUR")
 
 # First day
 start_date = '2017-05-10'
@@ -154,7 +172,10 @@ for key, value in sorted(Portfolio.items()):
         value.historic_quotations = data.DataReader(value.symbol, "yahoo", start_date, end_date, session=session)
     if value.assetType.hasDividends():
         logging.info("has dividends");
-        value.transactions = data.DataReader(value.symbol, "yahoo-actions", start_date, end_date, session=session)
+        try:
+            value.transactions = data.DataReader(value.symbol, "yahoo-actions", start_date, end_date, session=session)
+        except:
+            logging.error("Failed to get dividends for " + str(value.name) + "(" + str(key) + ")")
     if str(key) != str(value.symbol):
         logging.warning("warning: " + str(key) + " NOT equal to " + str(value.symbol))
     print(value.historic_quotations)

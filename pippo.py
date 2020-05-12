@@ -5,13 +5,13 @@ from pandas_datareader import data
 import requests_cache
 import datetime
 expire_after = datetime.timedelta(days=3)
-session = requests_cache.CachedSession(cache_name='cache', backend='sqlite', expire_after=expire_after)
+session = requests_cache.CachedSession(cache_name='./data/cache', backend='sqlite', expire_after=expire_after)
 
 # print DataFrame wide
 pd.set_option('display.width', 1000)
 # setting up Logging
 import logging
-logging.basicConfig(filename='backtrace.log', level=logging.DEBUG)
+logging.basicConfig(filename='./logs/backtrace.log', level=logging.DEBUG)
 
 
 
@@ -59,7 +59,7 @@ class Asset:
     def __init__(self, assetType: AssetClass, name: str, symbol: str, market: str, currency: str, quantity: int = 0,
                  avg_buy_price: float = 0,
                  avg_buy_curr_chg: float = 0,
-                 last_market_value: float = 0) -> object:
+                 historic_quotations: pd.DataFrame = pd.DataFrame(), transactions=None) -> object:
         self.assetType = assetType
         self.name = name
         self.symbol = symbol
@@ -68,7 +68,8 @@ class Asset:
         self.quantity = quantity
         self.avg_buy_price = avg_buy_price  # this is in the actual asset currency
         self.avg_buy_curr_chg = avg_buy_curr_chg  # this is the average exchange from asset curr. to a default one (EURO)
-        self.last_market_value = last_market_value
+        self.historic_quotations = historic_quotations
+        self.transactions = transactions
 
     def __str__(self):
         # return self.symbol + "\t" + self.name + "\t" + str(self.quantity) + "\t" + str(self.assetType)
@@ -138,31 +139,26 @@ Portfolio["MONC.MI"] = Asset(Equity, "MONCLER", "MONC.MI", "MTA", "EUR")
 Portfolio["UCG.MI"] = Asset(Equity, "UNICREDIT", "UCG.MI", "MTA", "EUR")
 Portfolio["0OMK.IL"] = Asset(Equity, "ESSILOR INTERNAT", "0OMK.IL", "EQUIDUCT", "EUR")
 Portfolio["FME.DE"] = Asset(Equity, "FRESENIUS MEDICAL", "FME.DE", "EQUIDUCT", "EUR")
-Portfolio["VNA.DE"] = Asset(Equity, "VONOVIA", "VNA.DE", "XETRA", "EUR")
+#Portfolio["VNA.DE"] = Asset(Equity, "VONOVIA", "VNA.DE", "XETRA", "EUR")
 
 # First day
-start_date = '2019-06-01'
+start_date = '2017-05-10'
 # Last day
-end_date = '2019-06-06'
+end_date = '2020-05-11'
 
 # get Quotations & Dividends
-quotations = pd.DataFrame()
-dividends = pd.DataFrame()
-exchange_rates = pd.DataFrame()
 for key, value in sorted(Portfolio.items()):
     assert isinstance(value, Asset)
     print("Now processing:\t" + str(key) + "\t" + str(value))
-    if value.assetType.assetType != "currency":
-        logging.info("is not currency");
-        quotations = quotations.append(data.DataReader(str(key), "yahoo", start_date, end_date, session=session), ignore_index=True)
-    elif str(str(key)) != "EUR":
-        logging.info("is not EUR");
-        exchange_rates = exchange_rates.append(data.DataReader(str(value.symbol), "yahoo", start_date, end_date, session=session), ignore_index=True)
+    if str(key) != "EUR":
+        value.historic_quotations = data.DataReader(value.symbol, "yahoo", start_date, end_date, session=session)
     if value.assetType.hasDividends():
         logging.info("has dividends");
-        dividends = dividends.append(data.DataReader(str(key), "yahoo-dividends", start_date, end_date, session=session), ignore_index=True)
+        value.transactions = data.DataReader(value.symbol, "yahoo-actions", start_date, end_date, session=session)
     if str(key) != str(value.symbol):
         logging.warning("warning: " + str(key) + " NOT equal to " + str(value.symbol))
+    print(value.historic_quotations)
+    print(value.transactions)
 
 # Call the function DataReader from the class data
 # # data = data.DataReader('GBPEUR=X', 'yahoo', start_date, end_date)
@@ -175,12 +171,4 @@ for key, value in sorted(Portfolio.items()):
 
 
 # pd.set_printoptions(max_colwidth, 1000)
-
-
-print("quotations:")
-print(quotations)
-print("dividends:")
-print(dividends)
-print("exchange_rates")
-print(exchange_rates)
 print()

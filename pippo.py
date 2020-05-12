@@ -1,12 +1,18 @@
 # loading the class data from the package pandas_datareader
-from pandas_datareader import data
-# setting up Logging
 import pandas as pd
+from pandas_datareader import data
 
+import requests_cache
+import datetime
+expire_after = datetime.timedelta(days=3)
+session = requests_cache.CachedSession(cache_name='cache', backend='sqlite', expire_after=expire_after)
+
+# print DataFrame wide
 pd.set_option('display.width', 1000)
+# setting up Logging
 import logging
-
 logging.basicConfig(filename='backtrace.log', level=logging.DEBUG)
+
 
 
 # Defining Basic Classes
@@ -148,13 +154,13 @@ for key, value in sorted(Portfolio.items()):
     print("Now processing:\t" + str(key) + "\t" + str(value))
     if value.assetType.assetType != "currency":
         logging.info("is not currency");
-        quotations = quotations.append(data.DataReader(str(key), "yahoo", start_date, end_date), ignore_index=True)
+        quotations = quotations.append(data.DataReader(str(key), "yahoo", start_date, end_date, session=session), ignore_index=True)
     elif str(str(key)) != "EUR":
         logging.info("is not EUR");
-        exchange_rates = exchange_rates.append(data.DataReader(str(value.symbol), "yahoo", start_date, end_date), ignore_index=True)
+        exchange_rates = exchange_rates.append(data.DataReader(str(value.symbol), "yahoo", start_date, end_date, session=session), ignore_index=True)
     if value.assetType.hasDividends():
         logging.info("has dividends");
-        dividends = dividends.append(data.DataReader(str(key), "yahoo-dividends", start_date, end_date), ignore_index=True)
+        dividends = dividends.append(data.DataReader(str(key), "yahoo-dividends", start_date, end_date, session=session), ignore_index=True)
     if str(key) != str(value.symbol):
         logging.warning("warning: " + str(key) + " NOT equal to " + str(value.symbol))
 

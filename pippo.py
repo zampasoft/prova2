@@ -1,7 +1,6 @@
 # loading the class data from the package pandas_datareader
 import pandas as pd
 from pandas_datareader import data
-
 import requests_cache
 import datetime
 expire_after = datetime.timedelta(days=3)
@@ -84,9 +83,11 @@ class Asset:
 # se il verbo è DIVIDEND, è il valore unitario del dividendo nella valuta dell'asset
 # Deve avere un commento
 class Transaction:
-    def __init__(self, verb, asset, when, quantity = 0, note="", value = 0.0, state="pending"):
+    def __init__(self, verb, asset, when, quantity = 0, value = 0.0, note="", state="pending"):
         assert isinstance(asset, Asset)
         assert isinstance(when, datetime.date)
+        self.when = when
+        self.asset = asset
         TxValidVerbs = ("BUY", "SELL", "DIVIDEND")
         if verb in TxValidVerbs:
             self.verb = verb
@@ -102,16 +103,17 @@ class Transaction:
         else:
             raise ValueError("Transaction quantity must be a positive number")
         if value >= 0.0:
-            self.quantity = quantity
+            self.value = value
         else:
             raise ValueError("Transaction value must be a positive number")
         self.note = note
+
         
     def __str__(self):
         if self.verb == "DIVIDEND":
-            return (str(self.when) + " : " + self.verb + " " + self.asset.symbol + " " + self.value)
+            return (str(self.when) + " : " + self.verb + " " + self.asset.symbol + " " + str(self.value)) + " " + str(self.quantity)
         else:
-            return (str(self.when) + " : " + self.verb + " " + self.quantity + " " + self.asset.symbol)
+            return (str(self.when) + " : " + self.verb + " " + str(self.quantity) + " " + self.asset.symbol)
 
 
 
@@ -222,18 +224,22 @@ class TradingSimulation:
 
 
 
-# First day
-start_date = '2017-05-10'
 # Last day
-end_date = '2020-05-11'
+end_date = datetime.date.today()
+# First day
+start_date = end_date - datetime.timedelta(days=365*2)
 
+#Create and Initialise myPortfolio
 myPortfolio = Portfolio()
 myPortfolio.load()
 
-# get Quotations & Dividends
+actionsErr = []
+
+# get Quotations & Dividends for all Assets in myPortfolio
 for key, value in sorted(myPortfolio.assets.items()):
     assert isinstance(value, Asset)
-    print("Now processing:\t" + str(key) + "\t" + str(value))
+    print("Now retrieving quotations for:\t" + str(key) + "\t" + str(value))
+    logging.info("Now retrieving quotations for:\t" + str(key) + "\t" + str(value))
     if str(key) != str(value.symbol):
         logging.warning("warning: " + str(key) + " NOT equal to " + str(value.symbol))
     # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento recupero le quotazioni storiche
@@ -245,25 +251,26 @@ for key, value in sorted(myPortfolio.assets.items()):
                 # i dividendi generano transazioni sulle valute
                 # devo iterare tra i dividendi e creare degli ordini speciali che devo processare alla fine.
                 # Portfolio[value.currency].historic_transactions
-                for index,row in data.DataReader(value.symbol, "yahoo-dividends", start_date, end_date, session=session).iterrows():
-                    #print (row)
-                    myPortfolio.pendingTransactions.append(Transaction(row[action], value, index, 0, row[value]))
-                    print("DIV: " + str(myPortfolio.pendingTransactions[0]))
-            except:
+                logging.info("Getting " + str(key) + " dividends");
+                temp = data.DataReader(value.symbol, "yahoo-actions", start_date, end_date, session=session)
+                for index,row in temp.iterrows():
+                    myPortfolio.pendingTransactions.append(Transaction(row["action"], value, index, 0, row["value"]))
+            except Exception as e:
+                actionsErr.append(str(key))
+                print("Failed to get dividends for " + str(value.name) + "(" + str(key) + ")")
                 logging.error("Failed to get dividends for " + str(value.name) + "(" + str(key) + ")")
-    # print(value.historic_quotations)
-    # print(value.historic_transactions)
-    print()
+                logging.exception("Unexpected error:" + str(e))
 
-# Call the function DataReader from the class data
-# # data = data.DataReader('GBPEUR=X', 'yahoo', start_date, end_date)
-# amp_quo = data.DataReader("AMP.MI", "yahoo", start_date, end_date)['Adj Close']
+print("\nThe following Stock might have had a corporate variation: " + str(actionsErr))
 
-##amp_act = data.DataReader("MCRO.L", "yahoo-actions", start_date, end_date)
-##amp_div = data.DataReader(all_symbols, "yahoo-dividends", start_date, end_date)
-# amp_div = data.DataReader(["ENEL.MI", "MSFT"], "yahoo-dividends", start_date, end_date)
-# necessario trovare DataReader per Dividendi
+# adesso dovrei aver recuperato tutti i dati
+# proviamo a visualizzare qualcosa
+# print Transactions
+print()
 
+exit(0)
 
-# pd.set_printoptions(max_colwidth, 1000)
+print("Pending Transactions: ")
+for i in myPortfolio.pendingTransactions:
+    print("DIV: " + str(i))
 print()

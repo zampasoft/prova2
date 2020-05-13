@@ -1,6 +1,7 @@
 # loading the class data from the package pandas_datareader
+# nota bene, ho usato l'ultima versione di pandas_datareader per fissare un errore su yahoo split
 import pandas as pd
-from pandas_datareader import data
+from pandas_datareader import data as pdr
 import requests_cache
 import datetime
 expire_after = datetime.timedelta(days=3)
@@ -48,12 +49,6 @@ class AssetClass:
         return self.assetType
 
 
-# I create the asset classes I want in my Portfolio for now
-Equity = AssetClass("equity", 0.005, 0)
-ETC = AssetClass("ETC", 0.005, 0)
-Currency = AssetClass("currency", 0.001, 0)
-
-
 # I define the concept of Asset
 class Asset:
     def __init__(self, assetType: AssetClass, name: str, symbol: str, market: str, currency: str, quantity: float = 0.0,
@@ -88,11 +83,11 @@ class Transaction:
         assert isinstance(when, datetime.date)
         self.when = when
         self.asset = asset
-        TxValidVerbs = ("BUY", "SELL", "DIVIDEND")
+        TxValidVerbs = ("BUY", "SELL", "DIVIDEND", "SPLIT")
         if verb in TxValidVerbs:
             self.verb = verb
         else:
-            raise ValueError("Transaction verb must be one of: " + TxValidVerbs)
+            raise ValueError(str(verb) + ": Invalid action. Transaction verb must be one of: " + str(TxValidVerbs))
         TxValidStates = ("pending", "executed", "failed")
         if state in TxValidStates:
             self.state = state
@@ -110,12 +105,15 @@ class Transaction:
 
         
     def __str__(self):
-        if self.verb == "DIVIDEND":
+        if self.verb == "DIVIDEND" or self.verb == "SPLIT":
             return (str(self.when) + " : " + self.verb + " " + self.asset.symbol + " " + str(self.value)) + " " + str(self.quantity)
         else:
             return (str(self.when) + " : " + self.verb + " " + str(self.quantity) + " " + self.asset.symbol)
 
-
+# I create the asset classes I want in my Portfolio for now
+Equity = AssetClass("equity", 0.005, 0)
+ETC = AssetClass("ETC", 0.005, 0)
+Currency = AssetClass("currency", 0.001, 0)
 
 # A Portfolio is a set of Assets that I want to access by Symbol
 # la dimensione storica è legata ai singoli asset.
@@ -221,19 +219,22 @@ class TradingSimulation:
         return 0
 
 
-
-
+### cominciamo a lavorare ###
+logging.info("******************************************************")
+logging.info("*                 NEW START                          *")
+logging.info("******************************************************")
 
 # Last day
 end_date = datetime.date.today()
 # First day
-start_date = end_date - datetime.timedelta(days=365*2)
+start_date = end_date - datetime.timedelta(days=365*5)
+
 
 #Create and Initialise myPortfolio
 myPortfolio = Portfolio()
 myPortfolio.load()
 
-actionsErr = []
+splits = []
 
 # get Quotations & Dividends for all Assets in myPortfolio
 for key, value in sorted(myPortfolio.assets.items()):
@@ -244,7 +245,7 @@ for key, value in sorted(myPortfolio.assets.items()):
         logging.warning("warning: " + str(key) + " NOT equal to " + str(value.symbol))
     # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento recupero le quotazioni storiche
     if str(key) != myPortfolio.defCurrency:
-        value.historic_quotations = data.DataReader(value.symbol, "yahoo", start_date, end_date, session=session)
+        value.historic_quotations = pdr.DataReader(value.symbol, "yahoo", start_date, end_date, session=session)
         if value.assetType.hasDividends():
             logging.info(str(key) + " has dividends");
             try:
@@ -252,25 +253,26 @@ for key, value in sorted(myPortfolio.assets.items()):
                 # devo iterare tra i dividendi e creare degli ordini speciali che devo processare alla fine.
                 # Portfolio[value.currency].historic_transactions
                 logging.info("Getting " + str(key) + " dividends");
-                temp = data.DataReader(value.symbol, "yahoo-actions", start_date, end_date, session=session)
+                temp = pdr.DataReader(value.symbol, "yahoo-actions", start_date, end_date, session=session)
                 for index,row in temp.iterrows():
                     myPortfolio.pendingTransactions.append(Transaction(row["action"], value, index, 0, row["value"]))
+                    if row["action"] == "SPLIT":
+                        splits.append(str(value.symbol))
             except Exception as e:
-                actionsErr.append(str(key))
                 print("Failed to get dividends for " + str(value.name) + "(" + str(key) + ")")
                 logging.error("Failed to get dividends for " + str(value.name) + "(" + str(key) + ")")
                 logging.exception("Unexpected error:" + str(e))
 
-print("\nThe following Stock might have had a corporate variation: " + str(actionsErr))
+print("\nThe following Stock might have had a corporate variation: " + str(splits))
 
 # adesso dovrei aver recuperato tutti i dati
 # proviamo a visualizzare qualcosa
 # print Transactions
 print()
 
-exit(0)
-
-print("Pending Transactions: ")
+print("SPLITS: ")
 for i in myPortfolio.pendingTransactions:
-    print("DIV: " + str(i))
+    assert isinstance(i, Transaction)
+    if i.verb == "SPLIT":
+        print("SPLIT: " + str(i))
 print()

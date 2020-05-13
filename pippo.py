@@ -4,6 +4,7 @@ import pandas as pd
 from pandas_datareader import data as pdr
 import requests_cache
 import datetime
+
 expire_after = datetime.timedelta(days=3)
 session = requests_cache.CachedSession(cache_name='./data/cache', backend='sqlite', expire_after=expire_after)
 
@@ -11,8 +12,8 @@ session = requests_cache.CachedSession(cache_name='./data/cache', backend='sqlit
 pd.set_option('display.width', 1000)
 # setting up Logging
 import logging
-logging.basicConfig(filename='./logs/backtrace.log', level=logging.DEBUG)
 
+logging.basicConfig(filename='./logs/backtrace.log', level=logging.DEBUG)
 
 
 # Defining Basic Classes
@@ -69,6 +70,7 @@ class Asset:
         # return self.symbol + "\t" + self.name + "\t" + str(self.quantity) + "\t" + str(self.assetType)
         return self.name + "\t" + str(self.quantity) + "\t" + str(self.assetType)
 
+
 # Una transazione può avere degli stati: pending, executed, failed
 # Deve avere un verbo: BUY, SELL, DIVIDEND
 # Deve avere una quantità
@@ -78,21 +80,21 @@ class Asset:
 # se il verbo è DIVIDEND, è il valore unitario del dividendo nella valuta dell'asset
 # Deve avere un commento
 class Transaction:
-    def __init__(self, verb, asset, when, quantity = 0, value = 0.0, note="", state="pending"):
+    def __init__(self, verb, asset, when, quantity=0, value=0.0, note="", state="pending"):
         assert isinstance(asset, Asset)
         assert isinstance(when, datetime.date)
         self.when = when
         self.asset = asset
-        TxValidVerbs = ("BUY", "SELL", "DIVIDEND", "SPLIT")
-        if verb in TxValidVerbs:
+        txValidVerbs = ("BUY", "SELL", "DIVIDEND", "SPLIT")
+        if verb in txValidVerbs:
             self.verb = verb
         else:
-            raise ValueError(str(verb) + ": Invalid action. Transaction verb must be one of: " + str(TxValidVerbs))
-        TxValidStates = ("pending", "executed", "failed")
-        if state in TxValidStates:
+            raise ValueError(str(verb) + ": Invalid action. Transaction verb must be one of: " + str(txValidVerbs))
+        tx_valid_states = ("pending", "executed", "failed")
+        if state in tx_valid_states:
             self.state = state
         else:
-            raise ValueError("Transaction state must be one of: " + TxValidStates)
+            raise ValueError("Transaction state must be one of: " + str(tx_valid_states))
         if quantity >= 0:
             self.quantity = quantity
         else:
@@ -103,17 +105,19 @@ class Transaction:
             raise ValueError("Transaction value must be a positive number")
         self.note = note
 
-        
     def __str__(self):
         if self.verb == "DIVIDEND" or self.verb == "SPLIT":
-            return (str(self.when) + " : " + self.verb + " " + self.asset.symbol + " " + str(self.value)) + " " + str(self.quantity)
+            return (str(self.when) + " : " + self.verb + " " + self.asset.symbol + " " + str(self.value)) + " " + str(
+                self.quantity)
         else:
-            return (str(self.when) + " : " + self.verb + " " + str(self.quantity) + " " + self.asset.symbol)
+            return str(self.when) + " : " + self.verb + " " + str(self.quantity) + " " + self.asset.symbol
+
 
 # I create the asset classes I want in my Portfolio for now
 Equity = AssetClass("equity", 0.005, 0)
 ETC = AssetClass("ETC", 0.005, 0)
 Currency = AssetClass("currency", 0.001, 0)
+
 
 # A Portfolio is a set of Assets that I want to access by Symbol
 # la dimensione storica è legata ai singoli asset.
@@ -123,10 +127,12 @@ Currency = AssetClass("currency", 0.001, 0)
 # totalValue() per calcolare il valore totale del Portafoglio in EUR
 class Portfolio:
     def __init__(self):
-        self.assets = dict() #elenco di asset acceduti via simbolo. un giorno capirò se abbia senso una struttura dati diversa
-        self.defCurrency = "EUR" 
+        self.assets = dict()  
+        # elenco di asset acceduti via simbolo. un giorno capirò se abbia senso una struttura dati diversa
+        self.defCurrency = "EUR"
         self.pendingTransactions = []
         self.executedTransactions = []
+
     def load(self):
         # Considero titoli in 4 valute ma normalizzo tutto su EUR
         # in future evoluzioni valuerò se rendere la valuta interna parametrica
@@ -201,25 +207,27 @@ class Portfolio:
         self.assets["VVD.F"] = Asset(Equity, "Veolia Environnement S.A.", "VVD.F", "EQUIDUCT", "EUR")
 
 
-#Creo la Classe TradingStrategy
+# Creo la Classe TradingStrategy
 class TradingStrategy:
-    #per adesso è un contenitore vuoto
+    # per adesso è un contenitore vuoto
     def __init__(self):
         self.boh = "mah"
 
-#Creo la classe TradingSimulation
+
+# Creo la classe TradingSimulation
 class TradingSimulation:
-    def __init__(self, port, strat):
-        self.port=port
-        self.strategy=strategy
+    def __init__(self, port, strategy):
+        self.port = port
+        self.strategy = strategy
         # voglio ricevere un portafoglio iniziale che contenga tutti gli input per eseguire la simulazione
         # voglio ricevere una TradingStrategy che contenga le regole da applicare
         # restiruisco un nuovo Portafoglio elaborato con le regole
+
     def run(self):
         return 0
 
 
-### cominciamo a lavorare ###
+# cominciamo a lavorare
 logging.info("******************************************************")
 logging.info("*                 NEW START                          *")
 logging.info("******************************************************")
@@ -227,13 +235,13 @@ logging.info("******************************************************")
 # Last day
 end_date = datetime.date.today()
 # First day
-start_date = end_date - datetime.timedelta(days=365*5)
+start_date = end_date - datetime.timedelta(days=365 * 5)
 
-
-#Create and Initialise myPortfolio
+# Create and Initialise myPortfolio
 myPortfolio = Portfolio()
 myPortfolio.load()
 
+# Non so bene cosa me ne faccio, ma mi annoto che alcune azioni hanno subito dei raggruppamenti
 splits = []
 
 # get Quotations & Dividends for all Assets in myPortfolio
@@ -247,14 +255,14 @@ for key, value in sorted(myPortfolio.assets.items()):
     if str(key) != myPortfolio.defCurrency:
         value.historic_quotations = pdr.DataReader(value.symbol, "yahoo", start_date, end_date, session=session)
         if value.assetType.hasDividends():
-            logging.info(str(key) + " has dividends");
+            logging.info(str(key) + " has dividends")
             try:
                 # i dividendi generano transazioni sulle valute
                 # devo iterare tra i dividendi e creare degli ordini speciali che devo processare alla fine.
                 # Portfolio[value.currency].historic_transactions
-                logging.info("Getting " + str(key) + " dividends");
+                logging.info("Getting " + str(key) + " dividends")
                 temp = pdr.DataReader(value.symbol, "yahoo-actions", start_date, end_date, session=session)
-                for index,row in temp.iterrows():
+                for index, row in temp.iterrows():
                     myPortfolio.pendingTransactions.append(Transaction(row["action"], value, index, 0, row["value"]))
                     if row["action"] == "SPLIT":
                         splits.append(str(value.symbol))
@@ -263,9 +271,10 @@ for key, value in sorted(myPortfolio.assets.items()):
                 logging.error("Failed to get dividends for " + str(value.name) + "(" + str(key) + ")")
                 logging.exception("Unexpected error:" + str(e))
 
-print("\nThe following Stock might have had a corporate variation: " + str(splits))
+print("\nThe following Stocks might had a SPLIT: " + str(splits))
 
-# adesso dovrei aver recuperato tutti i dati
+# adesso dovrei aver recuperato tutti i dati...
+# devo definire una strategia, generare ed eseguire una Strategia di Trading...
 # proviamo a visualizzare qualcosa
 # print Transactions
 print()

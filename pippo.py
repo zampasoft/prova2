@@ -5,6 +5,7 @@ from pandas_datareader import data as pdr
 import requests_cache
 import datetime
 import logging
+import sys
 import copy as cp
 import arrow as ar
 
@@ -231,7 +232,6 @@ class Portfolio:
         # get Quotations & Dividends for all Assets in myPortfolio
         for key, value in sorted(self.assets.items()):
             assert isinstance(value, Asset)
-            print("Now retrieving quotations for:\t" + str(key) + "\t" + str(value))
             logging.info("Now retrieving quotations for:\t" + str(key) + "\t" + str(value))
             if str(key) != str(value.symbol):
                 logging.warning("warning: " + str(key) + " NOT equal to " + str(value.symbol))
@@ -240,18 +240,17 @@ class Portfolio:
             if str(key) != self.defCurrency:
                 value.historic_quotations = pdr.DataReader(value.symbol, "yahoo", self.start_date, self.end_date, session=session)
                 if value.assetType.hasDividends():
-                    logging.info(str(key) + " has dividends")
+                    logging.debug("\t" + str(key) + " has dividends")
                     try:
                         # i dividendi generano transazioni sulle valute
                         # devo iterare tra i dividendi e creare degli ordini speciali che devo processare alla fine.
                         # Portfolio[value.currency].historic_transactions
-                        logging.info("Getting " + str(key) + " dividends")
+                        logging.info("\tGetting " + str(key) + " dividends")
                         temp = pdr.DataReader(value.symbol, "yahoo-actions", self.start_date, self.end_date, session=session)
                         for index, row in temp.iterrows():
                             self.pendingTransactions.append(
                                 Transaction(row["action"], value, index, 0, row["value"]))
                     except Exception as e:
-                        print("Failed to get dividends for " + str(value.name) + "(" + str(key) + ")")
                         logging.error("Failed to get dividends for " + str(value.name) + "(" + str(key) + ")")
                         logging.exception("Unexpected error:" + str(e))
 
@@ -264,42 +263,42 @@ class Portfolio:
 # come strategia di Trading Baseline, implemento BUY&HOLD
 class TradingStrategy:
     # per adesso è un contenitore vuoto
-    def __init__(self, in_port: Portfolio):
-        self.in_port = in_port
+    def __init__(self):
         self.description = "BUY and HOLD"
 
-    def suggested_transactions(self):
+    def suggested_transactions(self, in_port : Portfolio):
+        # clono il Portafoglio in Input
+        outcome = cp.deepcopy(in_port)  # clono l'oggetto
         # funzione dummy di prova per BUY & HOLD
-        for key, asset in sorted(self.in_port.assets.items()):
+        for key, asset in sorted(outcome.assets.items()):
             assert isinstance(asset, Asset)
             # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o
             # SELL. Nella strategia BUY & HOLD, se il valore di un asset è 0 allora genero un BUY
-            if asset.avg_buy_price == 0 and  str(key) != self.in_port.defCurrency:
-                logging.info("BUY: " + str(key))
-                self.in_port.pendingTransactions.append(Transaction("BUY", asset, self.in_port.start_date + datetime.timedelta(days=1), 0, 0.0, self.description))
+            if asset.avg_buy_price == 0 and  str(key) != outcome.defCurrency:
+                logging.info("\tRequesting BUY for " + str(key) + " on " + str(outcome.start_date + datetime.timedelta(days=1)))
+                outcome.pendingTransactions.append(Transaction("BUY", asset, outcome.start_date + datetime.timedelta(days=1), 0, 0.0, self.description))
+        return outcome
 
 
 # Creo la classe TradingSimulation che deve iterare dentro un range di date, eseguire gli ordini e aggiornare i valori
 class TradingSimulation:
-    def __init__(self, in_port: Portfolio, strategy):
+    def __init__(self, in_port: Portfolio):
         self.in_port = in_port
-        self.strategy = strategy
         # setto un valore standard per i BUY oders, in modo che sia possibile investire su tutti gli asset
         self.BUY_ORDER_VALUE = in_port.initial_capital / len(in_port.assets.keys())
-        logging.info("BUY order value: " + str(self.BUY_ORDER_VALUE))
+        logging.debug("Setting BUY order value to: " + str(self.BUY_ORDER_VALUE))
         # voglio ricevere un portafoglio iniziale che contenga tutti gli input per eseguire la simulazione
         # voglio ricevere una TradingStrategy che contenga le regole da applicare
         # restiruisco un nuovo Portafoglio elaborato con le regole
 
     def run(self):
-        logging.debug("Portfolio \'{0}\' start_date = {1} end_date = {2}".format(self.in_port.description,
+        logging.debug("Processing portfolio \'{0}\' start_date = {1} end_date = {2}".format(self.in_port.description,
                                                                              str(self.in_port.start_date),
                                                                              str(self.in_port.end_date)))
         #sorting Pending Transactions:
         self.in_port.pendingTransactions.sort(reverse=False, key=Transaction.to_datetime)
         for r in  ar.Arrow.range('day', datetime.datetime.combine(self.in_port.start_date, datetime.time.min), datetime.datetime.combine(self.in_port.end_date, datetime.time.min)):
-            logging.debug("Processing Trading Day " + str(r.date()))
-            print("Executing: " + str(r.date()))
+            logging.debug("\tProcessing Trading Day " + str(r.date()))
             #dovrei iterare sui giorni ed eseguire le transazioni
             #
         return
@@ -309,6 +308,7 @@ if __name__ == "__main__":
     # cominciamo a lavorare
     # setting up Logging
     logging.basicConfig(filename='./logs/backtrace.log', level=logging.DEBUG)
+    logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
     logging.info("******************************************************")
     logging.info("*      NEW START : " + str(datetime.datetime.now()) + "        *")
     logging.info("******************************************************")
@@ -328,18 +328,27 @@ if __name__ == "__main__":
     # Create and Initialise myPortfolio
     myPortfolio = Portfolio(start_date, end_date, initial_capital)
     myPortfolio.loadAssetList()
+    timestamp = datetime.datetime.now()
+    logging.info("\nRetrieving assets history from: " + str(start_date) + " to: " + str(end_date))
     myPortfolio.loadQuotations()
+    logging.info("Retrieve completed in " + str(datetime.datetime.now() - timestamp))
     # adesso dovrei aver recuperato tutti i dati...
     # possiamo cominciare a pensare a cosa fare...
 
-    #dovrei scegliere una trading strategy
-    outcome_strategy1 = cp.deepcopy(myPortfolio)  # clono l'oggetto
-    my_trading_strategy = TradingStrategy(outcome_strategy1)
-    my_trading_strategy.suggested_transactions()
-    TradingSimulation(outcome_strategy1, my_trading_strategy).run()
-    # devo definire una strategia, generare ed eseguire una Strategia di Trading...
-    # proviamo a visualizzare qualcosa
-    # print Transactions
+    # devo definire una strategia di Trading, calculare i segnali di BUY e SELL
+    timestamp = datetime.datetime.now()
+    logging.info("\nCalculating BUY/SELL Signals")
+    my_trading_strategy = TradingStrategy()
+    outcome_my_strategy = my_trading_strategy.suggested_transactions(myPortfolio)
+    logging.info("Signals calculated in " + str(datetime.datetime.now() - timestamp))
+
+    # processo tutte le transazioni pending e vedo cosa succede
+    timestamp = datetime.datetime.now()
+    logging.info("\nExecuting trades")
+    TradingSimulation(outcome_my_strategy).run()
+    logging.info("Trades completed in " + str(datetime.datetime.now() - timestamp))
+
+    # elaborazione finita proviamo a visualizzare qualcosa
     print()
     exit(0)
     #test sort

@@ -10,7 +10,6 @@ import copy as cp
 import arrow as ar
 
 
-
 # Defining Basic Classes
 
 # I need a container to track all the characteristics of a specific asset class, e.g. different commissions, dividends.
@@ -62,10 +61,10 @@ class Asset:
         self.symbol = symbol
         self.market = market
         self.currency = currency
-        self.quantity = quantity # per asset discreti (e.g. azioni)
-        self.amount = amount # per le valute
+        self.quantity = quantity  # per asset discreti (e.g. azioni)
+        self.amount = amount  # per le valute
         self.avg_buy_price = avg_buy_price  # this is in the actual asset currency
-        self.avg_buy_curr_chg = avg_buy_curr_chg  # this is the average exchange from asset curr. to a default one (EURO)
+        self.avg_buy_curr_chg = avg_buy_curr_chg  # this is the average exchange from asset curr. to default one (EURO)
         self.historic_quotations = historic_quotations
 
     def __str__(self):
@@ -116,24 +115,23 @@ class Transaction:
 
     # credo un metodo statico che userò per ordinare gli array di trabsazioni
     @staticmethod
-    def to_datetime(t):
-        assert isinstance(t, Transaction)
+    def to_datetime(txt):
+        assert isinstance(txt, Transaction)
         # trasformo la data in un numero e ci aggiungo 1 h per ordinare la sequenza con cui eseguire gli ordini
         # la sequenza deve essere
         # prima SPLIT, poi DIVIDEND, poi SELL e infine BUY
         verbSort = None
-        if t.verb == "SPLIT":
+        if txt.verb == "SPLIT":
             verbSort = 0
-        elif t.verb == "DIVIDEND":
+        elif txt.verb == "DIVIDEND":
             verbSort = 1
-        elif t.verb == "SELL":
+        elif txt.verb == "SELL":
             verbSort = 2
-        elif t.verb == "BUY":
+        elif txt.verb == "BUY":
             verbSort = 3
         else:
             raise
-        return datetime.datetime.combine(t.when, datetime.time.min) + datetime.timedelta(minutes=verbSort)
-
+        return datetime.datetime.combine(txt.when, datetime.time.min) + datetime.timedelta(minutes=verbSort)
 
 
 # A Portfolio is a set of Assets that I want to access by Symbol
@@ -144,7 +142,7 @@ class Transaction:
 # totalValue() per calcolare il valore totale del Portafoglio in EUR
 # da qualche parte ha senso mettere il valore del Portafoglio nel tempo, da capire se inserirlo come _SELF_ asset
 class Portfolio:
-    def __init__(self, start_date, end_date, initial_capital, description="Default Portfolio"):
+    def __init__(self, start_date, end_date, initial_capital, description="Default Portfolio", total_commissions=0.0):
         self.assets = dict()
         # elenco di asset acceduti via simbolo. un giorno capirò se abbia senso una struttura dati diversa
         self.defCurrency = "EUR"
@@ -154,6 +152,7 @@ class Portfolio:
         self.end_date = end_date
         self.initial_capital = initial_capital
         self.description = description
+        self.total_commissions = total_commissions
 
     def loadAssetList(self):
         # Considero titoli in 4 valute ma normalizzo tutto su EUR
@@ -238,7 +237,8 @@ class Portfolio:
             # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento recupero
             # le quotazioni storiche
             if str(key) != self.defCurrency:
-                value.historic_quotations = pdr.DataReader(value.symbol, "yahoo", self.start_date, self.end_date, session=session)
+                value.historic_quotations = pdr.DataReader(value.symbol, "yahoo", self.start_date, self.end_date,
+                                                           session=session)
                 if value.assetType.hasDividends():
                     logging.debug("\t" + str(key) + " has dividends")
                     try:
@@ -246,7 +246,8 @@ class Portfolio:
                         # devo iterare tra i dividendi e creare degli ordini speciali che devo processare alla fine.
                         # Portfolio[value.currency].historic_transactions
                         logging.info("\tGetting " + str(key) + " dividends")
-                        temp = pdr.DataReader(value.symbol, "yahoo-actions", self.start_date, self.end_date, session=session)
+                        temp = pdr.DataReader(value.symbol, "yahoo-actions", self.start_date, self.end_date,
+                                              session=session)
                         for index, row in temp.iterrows():
                             self.pendingTransactions.append(
                                 Transaction(row["action"], value, index, 0, row["value"]))
@@ -266,7 +267,7 @@ class TradingStrategy:
     def __init__(self):
         self.description = "BUY and HOLD"
 
-    def suggested_transactions(self, in_port : Portfolio):
+    def suggested_transactions(self, in_port: Portfolio):
         # clono il Portafoglio in Input
         outcome = cp.deepcopy(in_port)  # clono l'oggetto
         # funzione dummy di prova per BUY & HOLD
@@ -274,9 +275,11 @@ class TradingStrategy:
             assert isinstance(asset, Asset)
             # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o
             # SELL. Nella strategia BUY & HOLD, se il valore di un asset è 0 allora genero un BUY
-            if asset.avg_buy_price == 0 and  str(key) != outcome.defCurrency:
-                logging.info("\tRequesting BUY for " + str(key) + " on " + str(outcome.start_date + datetime.timedelta(days=1)))
-                outcome.pendingTransactions.append(Transaction("BUY", asset, outcome.start_date + datetime.timedelta(days=1), 0, 0.0, self.description))
+            if asset.avg_buy_price == 0 and str(key) != outcome.defCurrency:
+                logging.info("\tRequesting BUY for " + str(key) + " on " + str(outcome.start_date +
+                                                                               datetime.timedelta(days=1)))
+                outcome.pendingTransactions.append(Transaction("BUY", asset, outcome.start_date +
+                                                               datetime.timedelta(days=1), 0, 0.0, self.description))
         return outcome
 
 
@@ -293,13 +296,14 @@ class TradingSimulation:
 
     def run(self):
         logging.debug("Processing portfolio \'{0}\' start_date = {1} end_date = {2}".format(self.in_port.description,
-                                                                             str(self.in_port.start_date),
-                                                                             str(self.in_port.end_date)))
-        #sorting Pending Transactions:
+                                                                                            str(self.in_port.start_date),
+                                                                                            str(self.in_port.end_date)))
+        # sorting Pending Transactions:
         self.in_port.pendingTransactions.sort(reverse=False, key=Transaction.to_datetime)
-        for r in  ar.Arrow.range('day', datetime.datetime.combine(self.in_port.start_date, datetime.time.min), datetime.datetime.combine(self.in_port.end_date, datetime.time.min)):
+        for r in ar.Arrow.range('day', datetime.datetime.combine(self.in_port.start_date, datetime.time.min),
+                                datetime.datetime.combine(self.in_port.end_date, datetime.time.min)):
             logging.debug("\tProcessing Trading Day " + str(r.date()))
-            #dovrei iterare sui giorni ed eseguire le transazioni
+            # dovrei iterare sui giorni ed eseguire le transazioni
             #
         return
 
@@ -351,10 +355,26 @@ if __name__ == "__main__":
     # elaborazione finita proviamo a visualizzare qualcosa
     print()
     exit(0)
-    #test sort
-    outcome_strategy1.pendingTransactions.append(Transaction("SPLIT", outcome_strategy1.assets["AMP.MI"], datetime.date(2019, 5, 16)))
-    outcome_strategy1.pendingTransactions.append(Transaction("SELL", outcome_strategy1.assets["AMP.MI"], datetime.date(2019, 5, 16)))
-    outcome_strategy1.pendingTransactions.sort(key=Transaction.to_datetime)
-    for t in outcome_strategy1.pendingTransactions:
+    # test sort
+    outcome_my_strategy.pendingTransactions.append(Transaction("SPLIT", outcome_my_strategy.assets["AMP.MI"],
+                                                               datetime.date(2019, 5, 16)))
+    outcome_my_strategy.pendingTransactions.append(Transaction("SELL", outcome_my_strategy.assets["AMP.MI"],
+                                                               datetime.date(2019, 5, 16)))
+    outcome_my_strategy.pendingTransactions.sort(key=Transaction.to_datetime)
+    for t in outcome_my_strategy.pendingTransactions:
         print(t)
     print("fin qui tutto OK :)")
+
+##########################
+# TODOs
+# devo scrivere i metodi per processare le transazioni:
+# SPLIT -> lo ignoro
+# DIVIDEND -> eseguo la transazione sul conto valuta corrispondente calcolando l'importo da accreditare
+# SELL -> accredito su conto valuta; in teoria il segnale è già sul giorno successivo, (potrebbe non esistere quotazione
+# per quel giorno)
+# BUY -> converto tutti i conti valuta in EURO e provo (il max order è in euro)
+# devo scrivere un metodo per calcolare il valore del portafoglio mano a mano che passa il tempo.... Da capire
+# la quantità/amount di un asset varia nel tempo, per cui sarebbe opportuno aggiungere una colonna al DataFrame delle
+# quotazioni inoltre sarebbe opportuno riempire i gap di data nell'indice trascinando i valori del giorno precedente,
+# ma è da farsi dopo aver calcolato i segnali.
+# Finally... Non mi resta che implementare la varie strategie e graficare con matplotlib

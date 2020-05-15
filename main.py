@@ -155,6 +155,8 @@ class Portfolio:
         self.initial_capital = initial_capital
         self.description = description
         self.total_commissions = total_commissions
+        # estendere init creando subito l'asset: _SELF_ e EUR con i valori iniziali, così diamo una
+        # struttura ai dataframe
 
     def loadAssetList(self):
         # Considero titoli in 4 valute ma normalizzo tutto su EUR
@@ -234,16 +236,16 @@ class Portfolio:
         for key, asset in sorted(self.assets.items()):
             # create a set containing all dates in Range
             logging.debug("Processing :" + asset.symbol)
+            last_row = None
             if asset.symbol == self.defCurrency:
                 asset.history = pd.DataFrame() # devo definire la struttura
             for dd in ar.Arrow.range('day', datetime.datetime.combine(self.start_date, datetime.time.min),
                                      datetime.datetime.combine(self.end_date, datetime.time.min)):
-                print("Asset: "+ asset.symbol + "\tdate: " + str(dd.date()))
                 try:
-                    last_row = asset.history.loc[str(dd.date()), : ]
+                    last_row = asset.history.loc[dd.date(), : ]
                 except KeyError as e:
                     # non esiste l'indice
-                    logging.debug("Missing Index: " + str(dd.date()) + " in Asset " + str(asset.symbol))
+                    logging.debug("\tMissing Index: " + str(dd.date()) + " in Asset " + str(asset.symbol))
                     t = datetime.datetime.combine(dd.date(), datetime.time.min)
                     asset.history.loc[t] = last_row
                     #devo sistemare, last_row, potrebbe non esistere se manca la prima data.
@@ -298,7 +300,7 @@ class BuyAndHoldTradingStrategy:
         self.outcome = cp.deepcopy(in_port)
         # setto un valore standard per i BUY oders, in modo che sia possibile investire su tutti gli asset
         self.BUY_ORDER_VALUE = self.outcome.initial_capital / len(self.outcome.assets.keys())
-        logging.debug("Setting BUY order value to: " + str(self.BUY_ORDER_VALUE))
+        logging.debug("\nSetting BUY order value to: " + str(self.BUY_ORDER_VALUE))
         # voglio ricevere un portafoglio iniziale che contenga tutti gli input per eseguire la simulazione
         # voglio ricevere una TradingStrategy che contenga le regole da applicare
         # restiruisco un nuovo Portafoglio elaborato con le regole
@@ -309,8 +311,7 @@ class BuyAndHoldTradingStrategy:
             assert isinstance(asset, Asset)
             # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o
             # SELL. Nella strategia BUY & HOLD, se il valore di un asset è 0 allora genero un BUY
-            print(asset.history)
-            if asset.history.loc[str(self.outcome.start_date), 'OwnedAmount'] == 0 and str(key) != self.outcome.defCurrency:
+            if asset.history.loc[self.outcome.start_date, 'OwnedAmount'] == 0.0 and str(key) != self.outcome.defCurrency:
                 logging.info("\tRequesting BUY for " + str(key) + " on " + str(self.outcome.start_date +
                                                                                datetime.timedelta(days=1)))
                 self.outcome.pendingTransactions.append(Transaction("BUY", asset, self.outcome.start_date +
@@ -334,9 +335,10 @@ class BuyAndHoldTradingStrategy:
 
 if __name__ == "__main__":
     # cominciamo a lavorare
+    print("\nStarting...")
     # setting up Logging
     logging.basicConfig(filename='./logs/backtrace.log', level=logging.DEBUG)
-    logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+    #logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
     logging.info("******************************************************")
     logging.info("*      NEW START : " + str(datetime.datetime.now()) + "        *")
     logging.info("******************************************************")
@@ -355,17 +357,21 @@ if __name__ == "__main__":
 
     # Create and Initialise myPortfolio
     myPortfolio = Portfolio(start_date, end_date, initial_capital)
+    print("\tInit Portfolio")
     myPortfolio.loadAssetList()
     timestamp = datetime.datetime.now()
     logging.info("\nRetrieving assets history from: " + str(start_date) + " to: " + str(end_date))
+    print("\tLoading quotations")
     myPortfolio.loadQuotations()
     logging.info("Retrieve completed in " + str(datetime.datetime.now() - timestamp))
     # adesso dovrei aver recuperato tutti i dati...
     # Devo sistemare i gap nelle date. Non posso farlo prima perché la natura multiThread delle librerie crea dei casini
+    print("\tFixing Data")
     myPortfolio.fill_history_gaps()
     # possiamo cominciare a pensare a cosa fare...
 
     # devo definire una strategia di Trading
+    print("\tCalculating Signals")
     my_trading_strategy = BuyAndHoldTradingStrategy(myPortfolio)
     # calcolo i segnali BUY e SELL
     timestamp = datetime.datetime.now()
@@ -376,11 +382,12 @@ if __name__ == "__main__":
     # processo tutte le transazioni pending e vedo cosa succede
     timestamp = datetime.datetime.now()
     logging.info("\nExecuting trades")
+    print("\tSimulating trading")
     my_trading_strategy.runTradingSimulation()
     logging.info("Trades completed in " + str(datetime.datetime.now() - timestamp))
 
     # elaborazione finita proviamo a visualizzare qualcosa
-    print()
+    print("\nEnded, please check log file.\n")
     exit(0)
     # test sort
     my_strategy_outcome.pendingTransactions.append(Transaction("SPLIT", my_strategy_outcome.assets["AMP.MI"],

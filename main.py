@@ -55,21 +55,23 @@ class Asset:
     def __init__(self, assetType: AssetClass, name: str, symbol: str, market: str, currency: str, quantity: float = 0.0,
                  avg_buy_price: float = 0,
                  avg_buy_curr_chg: float = 0,
-                 historic_quotations: pd.DataFrame = pd.DataFrame(), amount=0.0):
+                 history: pd.DataFrame = pd.DataFrame(), amount=0.0):
         self.assetType = assetType
         self.name = name
         self.symbol = symbol
         self.market = market
         self.currency = currency
-        self.quantity = quantity  # per asset discreti (e.g. azioni)
-        self.amount = amount  # per le valute
-        self.avg_buy_price = avg_buy_price  # this is in the actual asset currency
-        self.avg_buy_curr_chg = avg_buy_curr_chg  # this is the average exchange from asset curr. to default one (EURO)
-        self.historic_quotations = historic_quotations
+        # quantity, amount, average_buy_price, avg_buy_curr_chg variano nel tempo, aggiungo delle colonne ai DataFrame
+        # delle quotazioni
+        #self.quantity = quantity  # per asset discreti (e.g. azioni)
+        #self.amount = amount  # per le valute
+        #self.avg_buy_price = avg_buy_price  # this is in the actual asset currency
+        #self.avg_buy_curr_chg = avg_buy_curr_chg  # this is the average exchange from asset curr. to default one (EURO)
+        self.history = history
 
     def __str__(self):
         # return self.symbol + "\t" + self.name + "\t" + str(self.quantity) + "\t" + str(self.assetType)
-        return self.name + "\t" + str(self.quantity) + "\t" + str(self.assetType)
+        return self.name + "\t" + str(self.assetType)
 
 
 # Una transazione può avere degli stati: pending, executed, failed
@@ -157,7 +159,7 @@ class Portfolio:
     def loadAssetList(self):
         # Considero titoli in 4 valute ma normalizzo tutto su EUR
         # in future evoluzioni valuerò se rendere la valuta interna parametrica
-        self.assets["EUR"] = Asset(CURRENCY, "EUR", "EUREUR=X", "FX", "EUR")
+        #self.assets["EUR"] = Asset(CURRENCY, "EUR", "EUREUR=X", "FX", "EUR")
         self.assets["USD"] = Asset(CURRENCY, "USD", "USDEUR=X", "FX", "USD")
         self.assets["GBP"] = Asset(CURRENCY, "GBP", "GBPEUR=X", "FX", "GBP")
         self.assets["CHF"] = Asset(CURRENCY, "CHF", "CHFEUR=X", "FX", "CHF")
@@ -227,6 +229,32 @@ class Portfolio:
         self.assets["MC.PA"] = Asset(EQUITY, "LVMH Moët Hennessy Louis Vuitton S.E.", "MC.PA", "EQUIDUCT", "EUR")
         self.assets["VVD.F"] = Asset(EQUITY, "Veolia Environnement S.A.", "VVD.F", "EQUIDUCT", "EUR")
 
+    def fill_history_gaps(self):
+        logging.debug("Entering fill_history_gaps")
+        for key, asset in sorted(self.assets.items()):
+            # create a set containing all dates in Range
+            logging.debug("Processing :" + asset.symbol)
+            if asset.symbol == self.defCurrency:
+                asset.history = pd.DataFrame() # devo definire la struttura
+            for dd in ar.Arrow.range('day', datetime.datetime.combine(self.start_date, datetime.time.min),
+                                     datetime.datetime.combine(self.end_date, datetime.time.min)):
+                print("Asset: "+ asset.symbol + "\tdate: " + str(dd.date()))
+                try:
+                    last_row = asset.history.loc[str(dd.date()), : ]
+                except KeyError as e:
+                    # non esiste l'indice
+                    logging.debug("Missing Index: " + str(dd.date()) + " in Asset " + str(asset.symbol))
+                    t = datetime.datetime.combine(dd.date(), datetime.time.min)
+                    asset.history.loc[t] = last_row
+                    #devo sistemare, last_row, potrebbe non esistere se manca la prima data.
+                except Exception as e:
+                    logging.exception("Unexpected error:" + str(e))
+                    exit(-1)
+            # asset.history = asset.history.sort_index()
+            # estendo il DataFrame aggiungendo la colonna OwnedAmount
+            asset.history['OwnedAmount'] = 0.0
+
+
     def loadQuotations(self):
         # get Quotations & Dividends for all Assets in myPortfolio
         for key, value in sorted(self.assets.items()):
@@ -237,7 +265,7 @@ class Portfolio:
             # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento recupero
             # le quotazioni storiche
             if str(key) != self.defCurrency:
-                value.historic_quotations = pdr.DataReader(value.symbol, "yahoo", self.start_date, self.end_date,
+                value.history = pdr.DataReader(value.symbol, "yahoo", self.start_date, self.end_date,
                                                            session=session)
                 if value.assetType.hasDividends():
                     logging.debug("\t" + str(key) + " has dividends")
@@ -262,50 +290,46 @@ class Portfolio:
 # ad esempio ETC oro deve essere tra 5% e 10% del valore totale del Portafoglio
 # Devo avere valuta per investire, etc...
 # come strategia di Trading Baseline, implemento BUY&HOLD
-class TradingStrategy:
-    # per adesso è un contenitore vuoto
-    def __init__(self):
-        self.description = "BUY and HOLD"
-
-    def suggested_transactions(self, in_port: Portfolio):
-        # clono il Portafoglio in Input
-        outcome = cp.deepcopy(in_port)  # clono l'oggetto
-        # funzione dummy di prova per BUY & HOLD
-        for key, asset in sorted(outcome.assets.items()):
-            assert isinstance(asset, Asset)
-            # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o
-            # SELL. Nella strategia BUY & HOLD, se il valore di un asset è 0 allora genero un BUY
-            if asset.avg_buy_price == 0 and str(key) != outcome.defCurrency:
-                logging.info("\tRequesting BUY for " + str(key) + " on " + str(outcome.start_date +
-                                                                               datetime.timedelta(days=1)))
-                outcome.pendingTransactions.append(Transaction("BUY", asset, outcome.start_date +
-                                                               datetime.timedelta(days=1), 0, 0.0, self.description))
-        return outcome
-
-
-# Creo la classe TradingSimulation che deve iterare dentro un range di date, eseguire gli ordini e aggiornare i valori
-class TradingSimulation:
+# se voglio fare strategie più sofisticate eredito e faccio override del metodo 'suggested_transactions'
+class BuyAndHoldTradingStrategy:
     def __init__(self, in_port: Portfolio):
-        self.in_port = in_port
+        self.description = "BUY and HOLD"
+        # clono il Portafoglio in Input così lo posso modificare
+        self.outcome = cp.deepcopy(in_port)
         # setto un valore standard per i BUY oders, in modo che sia possibile investire su tutti gli asset
-        self.BUY_ORDER_VALUE = in_port.initial_capital / len(in_port.assets.keys())
+        self.BUY_ORDER_VALUE = self.outcome.initial_capital / len(self.outcome.assets.keys())
         logging.debug("Setting BUY order value to: " + str(self.BUY_ORDER_VALUE))
         # voglio ricevere un portafoglio iniziale che contenga tutti gli input per eseguire la simulazione
         # voglio ricevere una TradingStrategy che contenga le regole da applicare
         # restiruisco un nuovo Portafoglio elaborato con le regole
 
-    def run(self):
-        logging.debug("Processing portfolio \'{0}\' start_date = {1} end_date = {2}".format(self.in_port.description,
-                                                                                            str(self.in_port.start_date),
-                                                                                            str(self.in_port.end_date)))
+    def calc_suggested_transactions(self):
+        # Strategia base "BUY & HOLD"
+        for key, asset in sorted(self.outcome.assets.items()):
+            assert isinstance(asset, Asset)
+            # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o
+            # SELL. Nella strategia BUY & HOLD, se il valore di un asset è 0 allora genero un BUY
+            print(asset.history)
+            if asset.history.loc[str(self.outcome.start_date), 'OwnedAmount'] == 0 and str(key) != self.outcome.defCurrency:
+                logging.info("\tRequesting BUY for " + str(key) + " on " + str(self.outcome.start_date +
+                                                                               datetime.timedelta(days=1)))
+                self.outcome.pendingTransactions.append(Transaction("BUY", asset, self.outcome.start_date +
+                                                               datetime.timedelta(days=1), 0, 0.0, self.description))
+        return self.outcome
+
+    # Creo il metodo TradingSimulation che deve iterare dentro un range di date, eseguire gli ordini e aggiornare i valori
+    def runTradingSimulation(self):
+        logging.debug("Processing portfolio \'{0}\' start_date = {1} end_date = {2}".format(self.outcome.description,
+                                                                                            str(self.outcome.start_date),
+                                                                                            str(self.outcome.end_date)))
         # sorting Pending Transactions:
-        self.in_port.pendingTransactions.sort(reverse=False, key=Transaction.to_datetime)
-        for r in ar.Arrow.range('day', datetime.datetime.combine(self.in_port.start_date, datetime.time.min),
-                                datetime.datetime.combine(self.in_port.end_date, datetime.time.min)):
+        self.outcome.pendingTransactions.sort(reverse=False, key=Transaction.to_datetime)
+        for r in ar.Arrow.range('day', datetime.datetime.combine(self.outcome.start_date, datetime.time.min),
+                                datetime.datetime.combine(self.outcome.end_date, datetime.time.min)):
             logging.debug("\tProcessing Trading Day " + str(r.date()))
             # dovrei iterare sui giorni ed eseguire le transazioni
             #
-        return
+        return self.outcome
 
 
 if __name__ == "__main__":
@@ -337,31 +361,34 @@ if __name__ == "__main__":
     myPortfolio.loadQuotations()
     logging.info("Retrieve completed in " + str(datetime.datetime.now() - timestamp))
     # adesso dovrei aver recuperato tutti i dati...
+    # Devo sistemare i gap nelle date. Non posso farlo prima perché la natura multiThread delle librerie crea dei casini
+    myPortfolio.fill_history_gaps()
     # possiamo cominciare a pensare a cosa fare...
 
-    # devo definire una strategia di Trading, calculare i segnali di BUY e SELL
+    # devo definire una strategia di Trading
+    my_trading_strategy = BuyAndHoldTradingStrategy(myPortfolio)
+    # calcolo i segnali BUY e SELL
     timestamp = datetime.datetime.now()
     logging.info("\nCalculating BUY/SELL Signals")
-    my_trading_strategy = TradingStrategy()
-    outcome_my_strategy = my_trading_strategy.suggested_transactions(myPortfolio)
+    my_strategy_outcome = my_trading_strategy.calc_suggested_transactions()
     logging.info("Signals calculated in " + str(datetime.datetime.now() - timestamp))
 
     # processo tutte le transazioni pending e vedo cosa succede
     timestamp = datetime.datetime.now()
     logging.info("\nExecuting trades")
-    TradingSimulation(outcome_my_strategy).run()
+    my_trading_strategy.runTradingSimulation()
     logging.info("Trades completed in " + str(datetime.datetime.now() - timestamp))
 
     # elaborazione finita proviamo a visualizzare qualcosa
     print()
     exit(0)
     # test sort
-    outcome_my_strategy.pendingTransactions.append(Transaction("SPLIT", outcome_my_strategy.assets["AMP.MI"],
+    my_strategy_outcome.pendingTransactions.append(Transaction("SPLIT", my_strategy_outcome.assets["AMP.MI"],
                                                                datetime.date(2019, 5, 16)))
-    outcome_my_strategy.pendingTransactions.append(Transaction("SELL", outcome_my_strategy.assets["AMP.MI"],
+    my_strategy_outcome.pendingTransactions.append(Transaction("SELL", my_strategy_outcome.assets["AMP.MI"],
                                                                datetime.date(2019, 5, 16)))
-    outcome_my_strategy.pendingTransactions.sort(key=Transaction.to_datetime)
-    for t in outcome_my_strategy.pendingTransactions:
+    my_strategy_outcome.pendingTransactions.sort(key=Transaction.to_datetime)
+    for t in my_strategy_outcome.pendingTransactions:
         print(t)
     print("fin qui tutto OK :)")
 

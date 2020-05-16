@@ -236,7 +236,7 @@ class Portfolio:
         for key, asset in sorted(self.assets.items()):
             # create a set containing all dates in Range
             logging.debug("Processing :" + asset.symbol)
-            last_row = None
+            last_row = [ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
             if asset.symbol == self.defCurrency:
                 asset.history = pd.DataFrame() # devo definire la struttura
             for dd in ar.Arrow.range('day', datetime.datetime.combine(self.start_date, datetime.time.min),

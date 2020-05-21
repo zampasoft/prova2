@@ -14,7 +14,7 @@ import arrow as ar
 
 # I need a container to track all the characteristics of a specific asset class, e.g. different commissions, dividends.
 class AssetClass:
-    def __init__(self, asset_type: str, buy_commission: float, annual_fee: float):
+    def __init__(self, asset_type: str, buy_commission: float, annual_fee: float, tax_rate: float = 0.26):
         """
         :type asset_type: str
         :type annual_fee: float
@@ -34,6 +34,10 @@ class AssetClass:
             raise ValueError
         if 0 <= annual_fee < 1:
             self.annualFee = annual_fee
+        else:
+            raise ValueError
+        if 0.0 <= tax_rate < 1.0:
+            self.tax_rate = tax_rate
         else:
             raise ValueError
 
@@ -61,10 +65,6 @@ class Asset:
         self.symbol = symbol
         self.market = market
         self.currency = currency
-        # quantity, amount, average_buy_price, avg_buy_curr_chg variano nel tempo, aggiungo delle colonne ai DataFrame
-        # delle quotazioni
-        #self.quantity = quantity  # per asset discreti (e.g. azioni)
-        #self.amount = amount  # per le valute
         #self.avg_buy_price = avg_buy_price  # this is in the actual asset currency
         #self.avg_buy_curr_chg = avg_buy_curr_chg  # this is the average exchange from asset curr. to default one (EURO)
         self.history = history
@@ -144,27 +144,38 @@ class Transaction:
 # totalValue() per calcolare il valore totale del Portafoglio in EUR
 # da qualche parte ha senso mettere il valore del Portafoglio nel tempo, da capire se inserirlo come _SELF_ asset
 class Portfolio:
-    def __init__(self, start_date, end_date, initial_capital, description="Default Portfolio", total_commissions=0.0):
+    def __init__(self, start_date : datetime.date, end_date : datetime.date, initial_capital : float, description="Default Portfolio", total_commissions=0.0):
         self.assets = dict()
         # elenco di asset acceduti via simbolo. un giorno capirò se abbia senso una struttura dati diversa
         self.defCurrency = "EUR"
+        # I need to keep somewhere a history of portfolio available liquidity and total value in Def Curr
+        # no data analysis needed only plotting, but I keep using DataFrame...
+        # key = datetime, data = liquidity and portfolio value in def curr (netting selling commissions)
+        assert(isinstance(start_date, datetime.date))
+        data = {'Date': [start_date], 'Liquidity': [initial_capital], 'NetValue': [initial_capital], 'TaxCredit': [0.0],
+                'TotalCommissions': [0.0], 'TotalTaxes': [0.0]}
+        temp = pd.DataFrame(data, columns=['Date', 'Liquidity', 'NetValue', 'TaxCredit', 'TotalCommissions',
+                                           'TotalTaxes'])
+        temp['Date'] = pd.to_datetime(temp['Date'])
+        self.por_history = temp.set_index('Date')
         self.pendingTransactions = []
         self.executedTransactions = []
         self.start_date = start_date
         self.end_date = end_date
         self.initial_capital = initial_capital
         self.description = description
-        self.total_commissions = total_commissions
-        # estendere init creando subito l'asset: _SELF_ e EUR con i valori iniziali, così diamo una
-        # struttura ai dataframe
+        #self.total_commissions = total_commissions
+
 
     def loadAssetList(self):
         # Considero titoli in 4 valute ma normalizzo tutto su EUR
         # in future evoluzioni valuerò se rendere la valuta interna parametrica
-        #self.assets["EUR"] = Asset(CURRENCY, "EUR", "EUREUR=X", "FX", "EUR")
-        self.assets["USD"] = Asset(CURRENCY, "USD", "USDEUR=X", "FX", "USD")
-        self.assets["GBP"] = Asset(CURRENCY, "GBP", "GBPEUR=X", "FX", "GBP")
-        self.assets["CHF"] = Asset(CURRENCY, "CHF", "CHFEUR=X", "FX", "CHF")
+        if self.defCurrency == "EUR":
+            self.assets["USD"] = Asset(CURRENCY, "USD", "USDEUR=X", "FX", "USD")
+            self.assets["GBP"] = Asset(CURRENCY, "GBP", "GBPEUR=X", "FX", "GBP")
+            self.assets["CHF"] = Asset(CURRENCY, "CHF", "CHFEUR=X", "FX", "CHF")
+        else:
+            raise ValueError('Default Currencies other than EUR not yet implemented')
         # Aggiungo un ETC su Oro come elemento di diversificazione
         self.assets["PHAU.MI"] = Asset(ETC, "GOLD/WISDOMTREE", "PHAU.MI", "MTA", "EUR")
         # Titoli US da me selezionati
@@ -255,6 +266,34 @@ class Portfolio:
             # asset.history = asset.history.sort_index()
             # estendo il DataFrame aggiungendo la colonna OwnedAmount
             asset.history['OwnedAmount'] = 0.0
+            asset.history['AverageBuyPrice'] = 0.0 # in DEF CURR
+
+    def port_net_value(self, date: datetime.datetime):
+        tot_value = 0.0
+        GBPEUR = self.assets['GBP'].history.loc[date]['Close']
+        CHFEUR = self.assets['CHF'].history.loc[date]['Close']
+        USDEUR = self.assets['USD'].history.loc[date]['Close']
+        for key, asset in self.assets.items():
+            line = asset.history.loc[date]
+            if line['OwnedAmount'] > 0.0:
+                curr_conv = 1.0
+                if asset.currency != "EUR":
+                    if asset.currency == "USD":
+                        curr_conv = USDEUR
+                    elif asset.currency == "GBP":
+                        curr_conv = GBPEUR
+                    elif asset.currency == "CHF":
+                        curr_conv = CHFEUR
+                print("Tot_Value1 ", str(tot_value))
+                tot_value = tot_value + line['OwnedAmount'] * \
+                            (line['CLOSE']*curr_conv - line['AverageBuyPrice']) * \
+                            (1.0 - asset.assetType.tax_rate)
+                # manca la SELL commission, ma incide poco sul senso del numero
+                print("Tot_Value2 ", str(tot_value))
+                exit(0)
+        print("calcolato tot_value per giorno: " + str(date))
+        print(self.por_history)
+        self.por_history.loc[date]['NetValue'] = self.por_history.loc[date]['Liquidity'] + tot_value # da finire
 
 
     def loadQuotations(self):
@@ -293,6 +332,7 @@ class Portfolio:
 # Devo avere valuta per investire, etc...
 # come strategia di Trading Baseline, implemento BUY&HOLD
 # se voglio fare strategie più sofisticate eredito e faccio override del metodo 'suggested_transactions'
+# ricordarsi di aggiungere StopLossTreshold (10%?)
 class BuyAndHoldTradingStrategy:
     def __init__(self, in_port: Portfolio):
         self.description = "BUY and HOLD"
@@ -329,8 +369,18 @@ class BuyAndHoldTradingStrategy:
                                 datetime.datetime.combine(self.outcome.end_date, datetime.time.min)):
             logging.debug("\tProcessing Trading Day " + str(r.date()))
             # dovrei iterare sui giorni ed eseguire le transazioni
-            #
+            # prima di tutto, passo tutti gli asset e se amount è > 0 calcolo il CLOSE_PRICE in EUR
+            # mi serve un metodo per calcolare il valore del Port in un dato giorno.
+            # ... devo riempire tutti i giorni per ...
+            # ...
+            # calcolo il valore netto di Portafoglio alla fine della giornata di Trading.
+            self.outcome.port_net_value(r.date())
         return self.outcome
+
+
+    def exec_trade(self):
+        return
+
 
 
 if __name__ == "__main__":
@@ -353,7 +403,7 @@ if __name__ == "__main__":
     end_date = datetime.date.today()
     # First day
     start_date = end_date - datetime.timedelta(days=365 * 1)
-    initial_capital = 100000  # EUR
+    initial_capital = 100000.0  # EUR
 
     # Create and Initialise myPortfolio
     myPortfolio = Portfolio(start_date, end_date, initial_capital)

@@ -170,6 +170,22 @@ class Portfolio:
         self.initial_capital = initial_capital
         self.description = description
         # self.total_commissions = total_commissions
+        logging.debug("fill_history_gaps for Portfolio[_SELF_] e Transactions")
+        last_row = self.por_history.loc[self.start_date]
+        for dd in ar.Arrow.range('day', datetime.datetime.combine(self.start_date, datetime.time.min),
+                                 datetime.datetime.combine(self.end_date, datetime.time.min)):
+            if dd.date != self.pendingTransactions.keys():
+                self.pendingTransactions[dd.date()] = []
+            try:
+                last_row = self.por_history.loc[dd.date()]
+            except KeyError as e:
+                # non esiste l'indice
+                logging.debug("\tMissing Index: " + str(dd.date()) + " in port_history ")
+                t = datetime.datetime.combine(dd.date(), datetime.time.min)
+                self.por_history.loc[t] = last_row
+            except Exception as e:
+                logging.exception("Unexpected error:" + str(e))
+                exit(-1)
 
 
     def loadAssetList(self):
@@ -272,22 +288,7 @@ class Portfolio:
             # estendo il DataFrame aggiungendo la colonna OwnedAmount
             asset.history['OwnedAmount'] = 0.0
             asset.history['AverageBuyPrice'] = 0.0 # in DEF CURR
-        logging.debug("fill_history_gaps for Portfolio[_SELF_] e Transactions")
-        last_row = self.por_history.loc[self.start_date]
-        for dd in ar.Arrow.range('day', datetime.datetime.combine(self.start_date, datetime.time.min),
-                                 datetime.datetime.combine(self.end_date, datetime.time.min)):
-            if dd.date != self.pendingTransactions.keys():
-                self.pendingTransactions[dd.date()] = []
-            try:
-                last_row = self.por_history.loc[dd.date()]
-            except KeyError as e:
-                # non esiste l'indice
-                logging.debug("\tMissing Index: " + str(dd.date()) + " in port_history ")
-                t = datetime.datetime.combine(dd.date(), datetime.time.min)
-                self.por_history.loc[t] = last_row
-            except Exception as e:
-                logging.exception("Unexpected error:" + str(e))
-                exit(-1)
+
 
 
     def port_net_value(self, date: datetime.datetime):
@@ -338,12 +339,14 @@ class Portfolio:
                         logging.info("\tGetting " + str(key) + " dividends")
                         temp = pdr.DataReader(value.symbol, "yahoo-actions", self.start_date, self.end_date,
                                               session=session)
+
                         for index, row in temp.iterrows():
-                            self.pendingTransactions[index].append(
-                                Transaction(row["action"], value, index, 0, row["value"]))
+                            self.pendingTransactions[index.date()].append(
+                                Transaction(row["action"], value, index.date(), 0, row["value"]))
                     except Exception as e:
                         logging.error("Failed to get dividends for " + str(value.name) + "(" + str(key) + ")")
                         logging.exception("Unexpected error:" + str(e))
+                        exit(-1)
 
 
 # Creo la Classe TradingStrategy
@@ -373,9 +376,10 @@ class BuyAndHoldTradingStrategy:
             # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o
             # SELL. Nella strategia BUY & HOLD, se il valore di un asset è 0 allora genero un BUY
 
-            if asset.history.loc[self.outcome.start_date, 'OwnedAmount'] == 0.0:
+            if asset.history.loc[self.outcome.start_date, 'OwnedAmount'] == 0.0 and asset.assetType.assetType != "currency":
                 logging.info("\tRequesting BUY for " + str(key) + " on " + str(self.outcome.start_date +
                                                                                datetime.timedelta(days=1)))
+                logging.info("assetType: " + str(asset.assetType))
                 dailyPendTx = self.outcome.pendingTransactions[self.outcome.start_date + datetime.timedelta(days=1)]
                 dailyPendTx.append(Transaction("BUY", asset, self.outcome.start_date +
                                                                datetime.timedelta(days=1), 0, 0.0, self.description))
@@ -418,12 +422,31 @@ class BuyAndHoldTradingStrategy:
 
 
     def exec_trade(self, t : Transaction):
+        #recupero l'asset su cui devo operare
+        logging.debug("Executing transaction: " + str(t))
+        asset = self.outcome.assets[t.asset.symbol]
+
+        #recupero il fattore di conversione per la valuta
+        GBPEUR = self.outcome.assets['GBP'].history.loc[t.when]['Close']
+        CHFEUR = self.outcome.assets['CHF'].history.loc[t.when]['Close']
+        USDEUR = self.outcome.assets['USD'].history.loc[t.when]['Close']
+
+        curr_conv = 1.0
+        if asset.currency != "EUR":
+            if asset.currency == "USD":
+                curr_conv = USDEUR
+            elif asset.currency == "GBP":
+                curr_conv = GBPEUR
+            elif asset.currency == "CHF":
+                curr_conv = CHFEUR
+
         if t.verb == "BUY":
             logging.debug("Buying " + str(t))
         elif t.verb == "SELL":
             logging.debug("Selling " + str(t))
         elif t.verb == "DIVIDEND":
             logging.debug("DVND " + str(t))
+            self.outcome.por_history.loc[t.when]['Liquidity'] += asset.history.loc[t.when]['OwnedAmount'] * t.value * curr_conv * (1 - asset.assetType.tax_rate)
         else:
             logging.debug("Ignoring Tx: " + str(t))
 

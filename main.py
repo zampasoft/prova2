@@ -1,4 +1,6 @@
 # ver 1.0
+from typing import Dict, Any
+
 import pandas as pd
 # nota bene, ho patchato l'ultima versione di pandas_datareader per fissare un errore su yahoo split
 from pandas_datareader import data as pdr
@@ -8,6 +10,7 @@ import logging
 import sys
 import copy as cp
 import arrow as ar
+import os
 
 
 # Defining Basic Classes
@@ -144,7 +147,9 @@ class Transaction:
 # totalValue() per calcolare il valore totale del Portafoglio in EUR
 # da qualche parte ha senso mettere il valore del Portafoglio nel tempo, da capire se inserirlo come _SELF_ asset
 class Portfolio:
-    def __init__(self, start_date : datetime.date, end_date : datetime.date, initial_capital : float, description="Default Portfolio", total_commissions=0.0):
+    #pendingTransactions: Dict[datetime.date, list()]
+
+    def __init__(self, start_date : datetime.date, end_date : datetime.date, initial_capital : float, description="Default Portfolio"):
         self.assets = dict()
         # elenco di asset acceduti via simbolo. un giorno capirò se abbia senso una struttura dati diversa
         self.defCurrency = "EUR"
@@ -158,13 +163,13 @@ class Portfolio:
                                            'TotalTaxes'])
         temp['Date'] = pd.to_datetime(temp['Date'])
         self.por_history = temp.set_index('Date')
-        self.pendingTransactions = []
+        self.pendingTransactions = dict()
         self.executedTransactions = []
         self.start_date = start_date
         self.end_date = end_date
         self.initial_capital = initial_capital
         self.description = description
-        #self.total_commissions = total_commissions
+        # self.total_commissions = total_commissions
 
 
     def loadAssetList(self):
@@ -267,6 +272,23 @@ class Portfolio:
             # estendo il DataFrame aggiungendo la colonna OwnedAmount
             asset.history['OwnedAmount'] = 0.0
             asset.history['AverageBuyPrice'] = 0.0 # in DEF CURR
+        logging.debug("fill_history_gaps for Portfolio[_SELF_] e Transactions")
+        last_row = self.por_history.loc[self.start_date]
+        for dd in ar.Arrow.range('day', datetime.datetime.combine(self.start_date, datetime.time.min),
+                                 datetime.datetime.combine(self.end_date, datetime.time.min)):
+            if dd.date != self.pendingTransactions.keys():
+                self.pendingTransactions[dd.date()] = []
+            try:
+                last_row = self.por_history.loc[dd.date()]
+            except KeyError as e:
+                # non esiste l'indice
+                logging.debug("\tMissing Index: " + str(dd.date()) + " in port_history ")
+                t = datetime.datetime.combine(dd.date(), datetime.time.min)
+                self.por_history.loc[t] = last_row
+            except Exception as e:
+                logging.exception("Unexpected error:" + str(e))
+                exit(-1)
+
 
     def port_net_value(self, date: datetime.datetime):
         tot_value = 0.0
@@ -291,8 +313,7 @@ class Portfolio:
                 # manca la SELL commission, ma incide poco sul senso del numero
                 print("Tot_Value2 ", str(tot_value))
                 exit(0)
-        print("calcolato tot_value per giorno: " + str(date))
-        print(self.por_history)
+        logging.debug("calcolato tot_value per giorno: " + str(date))
         self.por_history.loc[date]['NetValue'] = self.por_history.loc[date]['Liquidity'] + tot_value # da finire
 
 
@@ -318,7 +339,7 @@ class Portfolio:
                         temp = pdr.DataReader(value.symbol, "yahoo-actions", self.start_date, self.end_date,
                                               session=session)
                         for index, row in temp.iterrows():
-                            self.pendingTransactions.append(
+                            self.pendingTransactions[index].append(
                                 Transaction(row["action"], value, index, 0, row["value"]))
                     except Exception as e:
                         logging.error("Failed to get dividends for " + str(value.name) + "(" + str(key) + ")")
@@ -351,20 +372,26 @@ class BuyAndHoldTradingStrategy:
             assert isinstance(asset, Asset)
             # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o
             # SELL. Nella strategia BUY & HOLD, se il valore di un asset è 0 allora genero un BUY
-            if asset.history.loc[self.outcome.start_date, 'OwnedAmount'] == 0.0 and str(key) != self.outcome.defCurrency:
+
+            if asset.history.loc[self.outcome.start_date, 'OwnedAmount'] == 0.0:
                 logging.info("\tRequesting BUY for " + str(key) + " on " + str(self.outcome.start_date +
                                                                                datetime.timedelta(days=1)))
-                self.outcome.pendingTransactions.append(Transaction("BUY", asset, self.outcome.start_date +
+                dailyPendTx = self.outcome.pendingTransactions[self.outcome.start_date + datetime.timedelta(days=1)]
+                dailyPendTx.append(Transaction("BUY", asset, self.outcome.start_date +
                                                                datetime.timedelta(days=1), 0, 0.0, self.description))
-        return self.outcome
+        return self.outcome.pendingTransactions
 
     # Creo il metodo TradingSimulation che deve iterare dentro un range di date, eseguire gli ordini e aggiornare i valori
     def runTradingSimulation(self):
         logging.debug("Processing portfolio \'{0}\' start_date = {1} end_date = {2}".format(self.outcome.description,
                                                                                             str(self.outcome.start_date),
                                                                                             str(self.outcome.end_date)))
-        # sorting Pending Transactions:
-        self.outcome.pendingTransactions.sort(reverse=False, key=Transaction.to_datetime)
+        # prima di tutto comincio a stampare la lista della transazioni pending
+        #for key, value in self.outcome.pendingTransactions.items():
+        #    print ("Key: " + str(key))
+        #    for tx in value:
+        #        print(" Tx: " + str(tx))
+        # self.outcome.pendingTransactions.sort(reverse=False, key=Transaction.to_datetime)
         for r in ar.Arrow.range('day', datetime.datetime.combine(self.outcome.start_date, datetime.time.min),
                                 datetime.datetime.combine(self.outcome.end_date, datetime.time.min)):
             logging.debug("\tProcessing Trading Day " + str(r.date()))
@@ -373,13 +400,32 @@ class BuyAndHoldTradingStrategy:
             # mi serve un metodo per calcolare il valore del Port in un dato giorno.
             # ... devo riempire tutti i giorni per ...
             # ...
+            # assumo
+            today_tx = []
+            try:
+                #today_tx = self.outcome.pendingTransactions[datetime.datetime.combine(r.date(), datetime.time.min)]
+                today_tx = self.outcome.pendingTransactions[r.date()]
+                today_tx.sort(reverse=False, key=Transaction.to_datetime)
+            except KeyError as ke:
+                logging.exception(ke)
+                logging.debug("No pending TX for day: " + str(r.date))
+            if len(today_tx) > 0:
+                for t in today_tx:
+                    self.exec_trade(t)
             # calcolo il valore netto di Portafoglio alla fine della giornata di Trading.
             self.outcome.port_net_value(r.date())
-        return self.outcome
+        print("Bella zio!")
 
 
-    def exec_trade(self):
-        return
+    def exec_trade(self, t : Transaction):
+        if t.verb == "BUY":
+            logging.debug("Buying " + str(t))
+        elif t.verb == "SELL":
+            logging.debug("Selling " + str(t))
+        elif t.verb == "DIVIDEND":
+            logging.debug("DVND " + str(t))
+        else:
+            logging.debug("Ignoring Tx: " + str(t))
 
 
 
@@ -387,6 +433,7 @@ if __name__ == "__main__":
     # cominciamo a lavorare
     print("\nStarting...")
     # setting up Logging
+    os.remove("./logs/backtrace.log")
     logging.basicConfig(filename='./logs/backtrace.log', level=logging.DEBUG)
     #logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
     logging.info("******************************************************")
@@ -461,4 +508,7 @@ if __name__ == "__main__":
 # la quantità/amount di un asset varia nel tempo, per cui sarebbe opportuno aggiungere una colonna al DataFrame delle
 # quotazioni inoltre sarebbe opportuno riempire i gap di data nell'indice trascinando i valori del giorno precedente,
 # ma è da farsi dopo aver calcolato i segnali.
+#
+# per qualche motivo non riesco ad aggiungere le transazioni di DIVIDEND
+#
 # Finally... Non mi resta che implementare la varie strategie e graficare con matplotlib

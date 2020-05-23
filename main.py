@@ -1,16 +1,16 @@
 # ver 1.0
-from typing import Dict, Any
-
-import pandas as pd
-# nota bene, ho patchato l'ultima versione di pandas_datareader per fissare un errore su yahoo split
-from pandas_datareader import data as pdr
-import requests_cache
+import copy as cp
 import datetime
 import logging
-import sys
-import copy as cp
-import arrow as ar
 import os
+import typing
+from typing import Dict
+
+import arrow as ar
+import pandas as pd
+import requests_cache
+# nota bene, ho patchato l'ultima versione di pandas_datareader per fissare un errore su yahoo split
+from pandas_datareader import data as pdr
 
 
 # Defining Basic Classes
@@ -147,7 +147,7 @@ class Transaction:
 # totalValue() per calcolare il valore totale del Portafoglio in EUR
 # da qualche parte ha senso mettere il valore del Portafoglio nel tempo, da capire se inserirlo come _SELF_ asset
 class Portfolio:
-    #pendingTransactions: Dict[datetime.date, list()]
+    pendingTransactions: Dict[datetime.date, typing.List[Transaction]]
 
     def __init__(self, start_date : datetime.date, end_date : datetime.date, initial_capital : float, description="Default Portfolio"):
         self.assets = dict()
@@ -163,6 +163,7 @@ class Portfolio:
                                            'TotalTaxes'])
         temp['Date'] = pd.to_datetime(temp['Date'])
         self.por_history = temp.set_index('Date')
+        # TODO: valutare se spostare pendingTransactions dento self.por_history
         self.pendingTransactions = dict()
         self.executedTransactions = []
         self.start_date = start_date
@@ -266,6 +267,7 @@ class Portfolio:
     def fill_history_gaps(self):
         logging.debug("Entering fill_history_gaps")
         for key, asset in sorted(self.assets.items()):
+            print(".", end="", flush=True)
             # create a set containing all dates in Range
             logging.debug("Processing :" + asset.symbol)
             last_row = [ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
@@ -288,6 +290,7 @@ class Portfolio:
             # estendo il DataFrame aggiungendo la colonna OwnedAmount
             asset.history['OwnedAmount'] = 0.0
             asset.history['AverageBuyPrice'] = 0.0 # in DEF CURR
+        print(" ")
 
 
 
@@ -321,6 +324,7 @@ class Portfolio:
     def loadQuotations(self):
         # get Quotations & Dividends for all Assets in myPortfolio
         for key, value in sorted(self.assets.items()):
+            print(".", end="", flush=True)
             assert isinstance(value, Asset)
             logging.info("Now retrieving quotations for:\t" + str(key) + "\t" + str(value))
             if str(key) != str(value.symbol):
@@ -347,6 +351,12 @@ class Portfolio:
                         logging.error("Failed to get dividends for " + str(value.name) + "(" + str(key) + ")")
                         logging.exception("Unexpected error:" + str(e))
                         exit(-1)
+        print(" ")
+
+    def printReport(self):
+        print("Portafoglio: " + str(self.description))
+        # print("Initial Value:\n" + str(self.por_history.loc[self.start_date]))
+        print("Final Value:\n" + str(self.por_history.loc[self.end_date]))
 
 
 # Creo la Classe TradingStrategy
@@ -362,6 +372,7 @@ class BuyAndHoldTradingStrategy:
         self.description = "BUY and HOLD"
         # clono il Portafoglio in Input così lo posso modificare
         self.outcome = cp.deepcopy(in_port)
+        self.outcome.description = self.description
         # setto un valore standard per i BUY oders, in modo che sia possibile investire su tutti gli asset
         self.BUY_ORDER_VALUE = self.outcome.initial_capital / len(self.outcome.assets.keys())
         logging.debug("\nSetting BUY order value to: " + str(self.BUY_ORDER_VALUE))
@@ -419,10 +430,12 @@ class BuyAndHoldTradingStrategy:
             # calcolo il valore netto di Portafoglio alla fine della giornata di Trading.
             self.outcome.port_net_value(r.date())
         print("Bella zio!")
+        return self.outcome
 
 
     def exec_trade(self, t : Transaction):
         #recupero l'asset su cui devo operare
+        # TODO: verificare che lo stato della Transazione sia Pending
         logging.debug("Executing transaction: " + str(t))
         asset = self.outcome.assets[t.asset.symbol]
 
@@ -442,13 +455,20 @@ class BuyAndHoldTradingStrategy:
 
         if t.verb == "BUY":
             logging.debug("Buying " + str(t))
+            # TODO: implement BUY
         elif t.verb == "SELL":
             logging.debug("Selling " + str(t))
+            # TODO: implement SELL
         elif t.verb == "DIVIDEND":
             logging.debug("DVND " + str(t))
             self.outcome.por_history.loc[t.when]['Liquidity'] += asset.history.loc[t.when]['OwnedAmount'] * t.value * curr_conv * (1 - asset.assetType.tax_rate)
+            t.state = "executed"
         else:
             logging.debug("Ignoring Tx: " + str(t))
+            t.state = "failed"
+            t.note += " - no instructions for VERB: " + t.verb
+        # TODO: spostare la transazione da Pending a executed
+        self.outcome.executedTransactions.append(t)
 
 
 
@@ -503,21 +523,16 @@ if __name__ == "__main__":
     timestamp = datetime.datetime.now()
     logging.info("\nExecuting trades")
     print("\tSimulating trading")
-    my_trading_strategy.runTradingSimulation()
+    final_port = my_trading_strategy.runTradingSimulation()
     logging.info("Trades completed in " + str(datetime.datetime.now() - timestamp))
 
     # elaborazione finita proviamo a visualizzare qualcosa
     print("\nEnded, please check log file.\n")
-    exit(0)
-    # test sort
-    my_strategy_outcome.pendingTransactions.append(Transaction("SPLIT", my_strategy_outcome.assets["AMP.MI"],
-                                                               datetime.date(2019, 5, 16)))
-    my_strategy_outcome.pendingTransactions.append(Transaction("SELL", my_strategy_outcome.assets["AMP.MI"],
-                                                               datetime.date(2019, 5, 16)))
-    my_strategy_outcome.pendingTransactions.sort(key=Transaction.to_datetime)
-    for t in my_strategy_outcome.pendingTransactions:
-        print(t)
-    print("fin qui tutto OK :)")
+    print("Simulation Outcome:")
+    print("\nInitial Portfolio")
+    myPortfolio.printReport()
+    print("\nFinal Portfolio:")
+    final_port.printReport()
 
 ##########################
 # TODOs

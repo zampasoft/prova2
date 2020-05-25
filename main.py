@@ -164,9 +164,10 @@ class Portfolio:
                                            'TotalTaxes'])
         temp['Date'] = pd.to_datetime(temp['Date'])
         self.por_history = temp.set_index('Date')
-        # TODO: valutare se spostare pendingTransactions dento self.por_history
+        # TODO: valutare se spostare pendingTransactions dentro self.por_history
         self.pendingTransactions = dict()
         self.executedTransactions = []
+        self.failedTransactions = []
         self.start_date = start_date
         self.end_date = end_date
         self.initial_capital = initial_capital
@@ -284,7 +285,9 @@ class Portfolio:
                     logging.debug("\tMissing Index: " + str(dd.date()) + " in Asset " + str(asset.symbol))
                     t = datetime.datetime.combine(dd.date(), datetime.time.min)
                     asset.history.loc[t] = last_row
-                    #devo sistemare, last_row, potrebbe non esistere se manca la prima data.
+                    # ho due situazioni limite: alcune azioni non esistono prima di una certa data
+                    # e altre volte semplicemente pesco un festivo come primo giorno
+                    # da capire
                 except Exception as e:
                     logging.exception("Unexpected error:" + str(e))
                     exit(-1)
@@ -390,14 +393,18 @@ class BuyAndHoldTradingStrategy:
             assert isinstance(asset, Asset)
             # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o
             # SELL. Nella strategia BUY & HOLD, se il valore di un asset è 0 allora genero un BUY
+            for dd in ar.Arrow.range('day', datetime.datetime.combine(self.outcome.start_date, datetime.time.min),
+                                         datetime.datetime.combine(self.outcome.end_date - datetime.timedelta(days=1), datetime.time.min)):
 
-            if asset.history.loc[self.outcome.start_date, 'OwnedAmount'] == 0.0 and asset.assetType.assetType != "currency":
-                logging.info("\tRequesting BUY for " + str(key) + " on " + str(self.outcome.start_date +
+                if asset.history.loc[dd.date(), 'OwnedAmount'] == 0.0 and asset.history.loc[dd.date(), 'Close'] > 0.0 and asset.assetType.assetType != "currency":
+                    logging.info("\tRequesting BUY for " + str(key) + " on " + str(dd.date() +
                                                                                datetime.timedelta(days=1)))
-                logging.info("assetType: " + str(asset.assetType))
-                dailyPendTx = self.outcome.pendingTransactions[self.outcome.start_date + datetime.timedelta(days=1)]
-                dailyPendTx.append(Transaction("BUY", asset, self.outcome.start_date +
+                    logging.info("assetType: " + str(asset.assetType))
+                    dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
+                    dailyPendTx.append(Transaction("BUY", asset, dd.date() +
                                                                datetime.timedelta(days=1), 0, 0.0, self.description))
+            print(".", end="", flush=True)
+        print(" ")
         return self.outcome.pendingTransactions
 
     # Creo il metodo TradingSimulation che deve iterare dentro un range di date, eseguire gli ordini e aggiornare i valori
@@ -412,28 +419,38 @@ class BuyAndHoldTradingStrategy:
         #        print(" Tx: " + str(tx))
         # self.outcome.pendingTransactions.sort(reverse=False, key=Transaction.to_datetime)
         # FIXME: il trading dovrebbe partire da start_date + 1 gg, prima non posso avere ordini... inoltre devo copiare per portafoglio e asset, tutto dal giorno prima, prima di cominciare a fare trading...
-        for r in ar.Arrow.range('day', datetime.datetime.combine(self.outcome.start_date, datetime.time.min),
+        first_trading_day = self.outcome.start_date + datetime.timedelta(days=1)
+        for dd in ar.Arrow.range('day', datetime.datetime.combine(first_trading_day, datetime.time.min),
                                 datetime.datetime.combine(self.outcome.end_date, datetime.time.min)):
-            logging.debug("\tProcessing Trading Day " + str(r.date()))
+            logging.debug("\tProcessing Trading Day " + str(dd.date()))
             # dovrei iterare sui giorni ed eseguire le transazioni
+            # prima di tutto copio i valori por_history e asset history da ieri
             # prima di tutto, passo tutti gli asset e se amount è > 0 calcolo il CLOSE_PRICE in EUR
             # mi serve un metodo per calcolare il valore del Port in un dato giorno.
             # ... devo riempire tutti i giorni per ...
             # ...
             # assumo
+            prev_day = dd.date() - datetime.timedelta(days=1)
+            # copio port history
+            self.outcome.por_history.loc[dd.date()] = self.outcome.por_history.loc[prev_day]
+            # processo gli asset
+            for sym, asset in self.outcome.assets.items():
+                # propago i cambiamenti del giorno precedente
+                asset.history.loc[dd.date()]['OwnedAmount'] = asset.history.loc[prev_day]['OwnedAmount']
+                asset.history.loc[dd.date()]['AverageBuyPrice'] = asset.history.loc[prev_day]['AverageBuyPrice']
             today_tx = []
             try:
                 #today_tx = self.outcome.pendingTransactions[datetime.datetime.combine(r.date(), datetime.time.min)]
-                today_tx = self.outcome.pendingTransactions[r.date()]
+                today_tx = self.outcome.pendingTransactions[dd.date()]
                 today_tx.sort(reverse=False, key=Transaction.to_datetime)
             except KeyError as ke:
                 logging.exception(ke)
-                logging.debug("No pending TX for day: " + str(r.date))
+                logging.debug("No pending TX for day: " + str(dd.date))
             if len(today_tx) > 0:
                 for t in today_tx:
                     self.exec_trade(t)
             # calcolo il valore netto di Portafoglio alla fine della giornata di Trading.
-            self.outcome.port_net_value(r.date())
+            self.outcome.port_net_value(dd.date())
         print("Bella zio!")
         return self.outcome
 
@@ -479,11 +496,15 @@ class BuyAndHoldTradingStrategy:
                 asset.history.loc[t.when]['OwnedAmount'] += quantity
                 # FIXME: devo capire come trascinare i valori degli asset modificati.
                 t.state = "executed"
+                t.quantity = quantity
+                logging.info("Tx " + str(t) + "\tvalue: " + str(asset_price))
+                self.outcome.executedTransactions.append(t)
             else:
                 # tx fallita per mancanza di liquidità
                 t.state = "failed"
                 t.note += "Not enough liquidity. Transaction" + str(t) + " failed."
-
+                logging.debug("Tx failed, Not enough liquidity")
+                self.outcome.failedTransactions.append(t)
         elif t.verb == "SELL":
             logging.debug("Selling " + str(t))
             # TODO: implement SELL
@@ -491,12 +512,14 @@ class BuyAndHoldTradingStrategy:
             logging.debug("DVND " + str(t))
             self.outcome.por_history.loc[t.when]['Liquidity'] += asset.history.loc[t.when]['OwnedAmount'] * t.value * curr_conv * (1 - asset.assetType.tax_rate)
             t.state = "executed"
+            t.quantity = asset.history.loc[t.when]['OwnedAmount']
+            self.outcome.executedTransactions.append(t)
         else:
             logging.debug("Ignoring Tx: " + str(t))
             t.state = "failed"
             t.note += " - no instructions for VERB: " + t.verb
-        self.outcome.executedTransactions.append(t)
-        # TODO: rimuovere transazione da Pending
+            self.outcome.failedTransactions.append(t)
+        # TODO: rimuovere transazione da pendingTransactions
 
 
 if __name__ == "__main__":
@@ -504,7 +527,7 @@ if __name__ == "__main__":
     print("\nStarting...")
     # setting up Logging
     os.remove("./logs/backtrace.log")
-    logging.basicConfig(filename='./logs/backtrace.log', level=logging.DEBUG)
+    logging.basicConfig(filename='./logs/backtrace.log', level=logging.INFO)
     #logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
     logging.info("******************************************************")
     logging.info("*      NEW START : " + str(datetime.datetime.now()) + "        *")
@@ -519,7 +542,7 @@ if __name__ == "__main__":
     # Last day
     end_date = datetime.date.today()
     # First day
-    start_date = end_date - datetime.timedelta(days=(365 * 1 + 2))
+    start_date = end_date - datetime.timedelta(days=(365 * 2))
     initial_capital = 100000.0  # EUR
 
     # Create and Initialise myPortfolio
@@ -560,6 +583,10 @@ if __name__ == "__main__":
     myPortfolio.printReport()
     print("\nFinal Portfolio:")
     final_port.printReport()
+    print("\nExecuted Tx: ")
+    for t in final_port.executedTransactions:
+        print(" Tx: " + str(t))
+
 
 ##########################
 # TODOs

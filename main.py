@@ -11,6 +11,7 @@ import pandas as pd
 import requests_cache
 # nota bene, ho patchato l'ultima versione di pandas_datareader per fissare un errore su yahoo split
 from pandas_datareader import data as pdr
+import math
 
 
 # Defining Basic Classes
@@ -114,9 +115,9 @@ class Transaction:
     def __str__(self):
         if self.verb == "DIVIDEND" or self.verb == "SPLIT":
             return (str(self.when) + " : " + self.verb + " " + self.asset.symbol + " " + str(self.value)) + " " + str(
-                self.quantity)
+                self.quantity) + " " + self.state
         else:
-            return str(self.when) + " : " + self.verb + " " + str(self.quantity) + " " + self.asset.symbol
+            return str(self.when) + " : " + self.verb + " " + str(self.quantity) + " " + self.asset.symbol + " " + self.state
 
     # credo un metodo statico che userò per ordinare gli array di trabsazioni
     @staticmethod
@@ -190,8 +191,9 @@ class Portfolio:
 
 
     def loadAssetList(self):
-        # Considero titoli in 4 valute ma normalizzo tutto su EUR
-        # in future evoluzioni valuerò se rendere la valuta interna parametrica
+        # TODO: questa funzione sarebbe da parametrizzare su un CSV File o simile. La parte delle valute dovrebbe
+        #  essere parametrica rispetto alla valuta di default. Per adesso considero titoli in 4 valute ma normalizzo
+        #  tutto su EUR in future evoluzioni valuerò se rendere la valuta interna parametrica
         if self.defCurrency == "EUR":
             self.assets["USD"] = Asset(CURRENCY, "USD", "USDEUR=X", "FX", "USD")
             self.assets["GBP"] = Asset(CURRENCY, "GBP", "GBPEUR=X", "FX", "GBP")
@@ -201,68 +203,68 @@ class Portfolio:
         # Aggiungo un ETC su Oro come elemento di diversificazione
         self.assets["PHAU.MI"] = Asset(ETC, "GOLD/WISDOMTREE", "PHAU.MI", "MTA", "EUR")
         # Titoli US da me selezionati
-        self.assets["DOCU"] = Asset(EQUITY, "DOCUSIGN", "DOCU", "NASDAQ", "USD")
-        self.assets["EQIX"] = Asset(EQUITY, "EQUINIX REIT", "EQIX", "NASDAQ", "USD")
-        self.assets["GOOG"] = Asset(EQUITY, "ALPHAB RG-C-NV", "GOOG", "NASDAQ", "USD")
-        self.assets["GOOGL"] = Asset(EQUITY, "ALPHABET-A", "GOOGL", "NASDAQ", "USD")
+        #self.assets["DOCU"] = Asset(EQUITY, "DOCUSIGN", "DOCU", "NASDAQ", "USD")
+        #self.assets["EQIX"] = Asset(EQUITY, "EQUINIX REIT", "EQIX", "NASDAQ", "USD")
+        #self.assets["GOOG"] = Asset(EQUITY, "ALPHAB RG-C-NV", "GOOG", "NASDAQ", "USD")
+        #self.assets["GOOGL"] = Asset(EQUITY, "ALPHABET-A", "GOOGL", "NASDAQ", "USD")
         self.assets["MSFT"] = Asset(EQUITY, "MICROSOFT", "MSFT", "NASDAQ", "USD")
-        self.assets["NVDA"] = Asset(EQUITY, "NVIDIA", "NVDA", "NASDAQ", "USD")
-        self.assets["CRM"] = Asset(EQUITY, "SALESFORCE.COM", "CRM", "NYSE", "USD")
-        self.assets["IBM"] = Asset(EQUITY, "IBM", "IBM", "NYSE", "USD")
-        self.assets["NOW"] = Asset(EQUITY, "SERVICENOW", "NOW", "NYSE", "USD")
-        self.assets["TWLO"] = Asset(EQUITY, "TWILIO-A", "TWLO", "NYSE", "USD")
-        self.assets["PEGA"] = Asset(EQUITY, "Pegasystems Inc.", "PEGA", "NYSE", "USD")
-        self.assets["WDAY"] = Asset(EQUITY, "Workday, Inc.", "WDAY", "NYSE", "USD")
-        self.assets["XLNX"] = Asset(EQUITY, "Xilinx, Inc.", "XLNX", "NYSE", "USD")
-        self.assets["SQ"] = Asset(EQUITY, "Square, Inc.", "SQ", "NYSE", "USD")
-        self.assets["VAR"] = Asset(EQUITY, "Varian Medical Systems, Inc.", "VAR", "NYSE", "USD")
+        #self.assets["NVDA"] = Asset(EQUITY, "NVIDIA", "NVDA", "NASDAQ", "USD")
+        #self.assets["CRM"] = Asset(EQUITY, "SALESFORCE.COM", "CRM", "NYSE", "USD")
+        #self.assets["IBM"] = Asset(EQUITY, "IBM", "IBM", "NYSE", "USD")
+        #self.assets["NOW"] = Asset(EQUITY, "SERVICENOW", "NOW", "NYSE", "USD")
+        #self.assets["TWLO"] = Asset(EQUITY, "TWILIO-A", "TWLO", "NYSE", "USD")
+        #self.assets["PEGA"] = Asset(EQUITY, "Pegasystems Inc.", "PEGA", "NYSE", "USD")
+        #self.assets["WDAY"] = Asset(EQUITY, "Workday, Inc.", "WDAY", "NYSE", "USD")
+        #self.assets["XLNX"] = Asset(EQUITY, "Xilinx, Inc.", "XLNX", "NYSE", "USD")
+        #self.assets["SQ"] = Asset(EQUITY, "Square, Inc.", "SQ", "NYSE", "USD")
+        #self.assets["VAR"] = Asset(EQUITY, "Varian Medical Systems, Inc.", "VAR", "NYSE", "USD")
         self.assets["VRTX"] = Asset(EQUITY, "Vertex Pharmaceuticals Incorporated", "VRTX", "NYSE", "USD")
-        self.assets["TEAM"] = Asset(EQUITY, "Atlassian Corporation Plc", "TEAM", "NYSE", "USD")
+        #self.assets["TEAM"] = Asset(EQUITY, "Atlassian Corporation Plc", "TEAM", "NYSE", "USD")
 
         # Titolo CH da me selezionati
         self.assets["ALC.SW"] = Asset(EQUITY, "ALCON N", "ALC.SW", "VIRTX", "CHF")
-        self.assets["NOVN.SW"] = Asset(EQUITY, "NOVARTIS N", "NOVN.SW", "VIRTX", "CHF")
-        self.assets["SOON.SW"] = Asset(EQUITY, "SONOVA HLDG N", "SOON.SW", "VIRTX", "CHF")
-        self.assets["NESN.SW"] = Asset(EQUITY, "Nestle S.A.", "NESN.SW", "VIRTX", "CHF")
-        self.assets["SREN.SW"] = Asset(EQUITY, "Swiss Re AG", "SREN.SW", "VIRTX", "CHF")
-        self.assets["ROG.SW"] = Asset(EQUITY, "Roche Holding AG", "ROG.SW", "VIRTX", "CHF")
+        #self.assets["NOVN.SW"] = Asset(EQUITY, "NOVARTIS N", "NOVN.SW", "VIRTX", "CHF")
+        #self.assets["SOON.SW"] = Asset(EQUITY, "SONOVA HLDG N", "SOON.SW", "VIRTX", "CHF")
+        #self.assets["NESN.SW"] = Asset(EQUITY, "Nestle S.A.", "NESN.SW", "VIRTX", "CHF")
+        #self.assets["SREN.SW"] = Asset(EQUITY, "Swiss Re AG", "SREN.SW", "VIRTX", "CHF")
+        #self.assets["ROG.SW"] = Asset(EQUITY, "Roche Holding AG", "ROG.SW", "VIRTX", "CHF")
 
         # Titoli GBP da me selezionati
-        self.assets["BA.L"] = Asset(EQUITY, "BAE SYSTEMS", "BA.L", "LSE", "GBP")
-        self.assets["BP.L"] = Asset(EQUITY, "BP", "BP.L", "LSE", "GBP")
-        self.assets["BT-A.L"] = Asset(EQUITY, "BT GROUP", "BT-A.L", "LSE", "GBP")
-        self.assets["ESNT.L"] = Asset(EQUITY, "ESSENTRA", "ESNT.L", "LSE", "GBP")
+        #self.assets["BA.L"] = Asset(EQUITY, "BAE SYSTEMS", "BA.L", "LSE", "GBP")
+        #self.assets["BP.L"] = Asset(EQUITY, "BP", "BP.L", "LSE", "GBP")
+        #self.assets["BT-A.L"] = Asset(EQUITY, "BT GROUP", "BT-A.L", "LSE", "GBP")
+        #self.assets["ESNT.L"] = Asset(EQUITY, "ESSENTRA", "ESNT.L", "LSE", "GBP")
         self.assets["GLEN.L"] = Asset(EQUITY, "GLENCORE", "GLEN.L", "LSE", "GBP")
-        self.assets["GSK.L"] = Asset(EQUITY, "GLAXOSMITHKLINE", "GSK.L", "LSE", "GBP")
-        self.assets["HSBA.L"] = Asset(EQUITY, "HSBC HLDG", "HSBA.L", "LSE", "GBP")
-        self.assets["KAZ.L"] = Asset(EQUITY, "KAZ MINERALS", "KAZ.L", "LSE", "GBP")
-        self.assets["LLOY.L"] = Asset(EQUITY, "LLOYDS BANKING G", "LLOY.L", "LSE", "GBP")
+        #self.assets["GSK.L"] = Asset(EQUITY, "GLAXOSMITHKLINE", "GSK.L", "LSE", "GBP")
+        #self.assets["HSBA.L"] = Asset(EQUITY, "HSBC HLDG", "HSBA.L", "LSE", "GBP")
+        #self.assets["KAZ.L"] = Asset(EQUITY, "KAZ MINERALS", "KAZ.L", "LSE", "GBP")
+        #self.assets["LLOY.L"] = Asset(EQUITY, "LLOYDS BANKING G", "LLOY.L", "LSE", "GBP")
         self.assets["MCRO.L"] = Asset(EQUITY, "MICRO FOCUS INTL", "MCRO.L", "LSE", "GBP")
-        self.assets["RSW.L"] = Asset(EQUITY, "RENISHAW", "RSW.L", "LSE", "GBP")
-        self.assets["RWI.L"] = Asset(EQUITY, "RENEWI", "RWI.L", "LSE", "GBP")
-        self.assets["ULVR.L"] = Asset(EQUITY, "UNILEVER", "ULVR.L", "LSE", "GBP")
-        self.assets["LGEN.L"] = Asset(EQUITY, "Legal & General Group Plc", "LGEN.L", "LSE", "GBP")
-        self.assets["LSE.L"] = Asset(EQUITY, "London Stock Exchange Group plc", "LSE.L", "LSE", "GBP")
+        #self.assets["RSW.L"] = Asset(EQUITY, "RENISHAW", "RSW.L", "LSE", "GBP")
+        #self.assets["RWI.L"] = Asset(EQUITY, "RENEWI", "RWI.L", "LSE", "GBP")
+        #self.assets["ULVR.L"] = Asset(EQUITY, "UNILEVER", "ULVR.L", "LSE", "GBP")
+        #self.assets["LGEN.L"] = Asset(EQUITY, "Legal & General Group Plc", "LGEN.L", "LSE", "GBP")
+        #self.assets["LSE.L"] = Asset(EQUITY, "London Stock Exchange Group plc", "LSE.L", "LSE", "GBP")
 
         # Titoli EUR da me selezionati
-        self.assets["AMP.MI"] = Asset(EQUITY, "Amplifon", "AMP.MI", "MTA", "EUR")
+        #self.assets["AMP.MI"] = Asset(EQUITY, "Amplifon", "AMP.MI", "MTA", "EUR")
         self.assets["BRE.MI"] = Asset(EQUITY, "BREMBO", "BRE.MI", "MTA", "EUR")
-        self.assets["CPR.MI"] = Asset(EQUITY, "CAMPARI", "CPR.MI", "MTA", "EUR")
-        self.assets["CERV.MI"] = Asset(EQUITY, "CERVED GROUP", "CERV.MI", "MTA", "EUR")
-        self.assets["DSY.PA"] = Asset(EQUITY, "Dassault Systèmes SE", "DSY.PA", "EQUIDUCT", "EUR")
+        #self.assets["CPR.MI"] = Asset(EQUITY, "CAMPARI", "CPR.MI", "MTA", "EUR")
+        #self.assets["CERV.MI"] = Asset(EQUITY, "CERVED GROUP", "CERV.MI", "MTA", "EUR")
+        #self.assets["DSY.PA"] = Asset(EQUITY, "Dassault Systèmes SE", "DSY.PA", "EQUIDUCT", "EUR")
         self.assets["DIA.MI"] = Asset(EQUITY, "DIASORIN", "DIA.MI", "MTA", "EUR")
-        self.assets["ENEL.MI"] = Asset(EQUITY, "ENEL", "ENEL.MI", "MTA", "EUR")
-        self.assets["ENI.MI"] = Asset(EQUITY, "ENI", "ENI.MI", "MTA", "EUR")
-        self.assets["FCA.MI"] = Asset(EQUITY, "FCA", "FCA.MI", "MTA", "EUR")
-        self.assets["GEO.MI"] = Asset(EQUITY, "GEO", "GEO.MI", "MTA", "EUR")
-        self.assets["KER.PA"] = Asset(EQUITY, "Kering SA", "KER.PA", "EQUIDUCT", "EUR")
-        self.assets["MONC.MI"] = Asset(EQUITY, "MONCLER", "MONC.MI", "MTA", "EUR")
-        self.assets["UCG.MI"] = Asset(EQUITY, "UNICREDIT", "UCG.MI", "MTA", "EUR")
-        self.assets["EL.PA"] = Asset(EQUITY, "EssilorLuxottica Societe anonyme", "EL.PA", "EQUIDUCT", "EUR")
-        self.assets["FME.DE"] = Asset(EQUITY, "FRESENIUS MEDICAL", "FME.DE", "EQUIDUCT", "EUR")
-        self.assets["VNA.DE"] = Asset(EQUITY, "VONOVIA", "VNA.DE", "XETRA", "EUR")
-        self.assets["MC.PA"] = Asset(EQUITY, "LVMH Moët Hennessy Louis Vuitton S.E.", "MC.PA", "EQUIDUCT", "EUR")
-        self.assets["VVD.F"] = Asset(EQUITY, "Veolia Environnement S.A.", "VVD.F", "EQUIDUCT", "EUR")
+        #self.assets["ENEL.MI"] = Asset(EQUITY, "ENEL", "ENEL.MI", "MTA", "EUR")
+        #self.assets["ENI.MI"] = Asset(EQUITY, "ENI", "ENI.MI", "MTA", "EUR")
+        #self.assets["FCA.MI"] = Asset(EQUITY, "FCA", "FCA.MI", "MTA", "EUR")
+        #self.assets["GEO.MI"] = Asset(EQUITY, "GEO", "GEO.MI", "MTA", "EUR")
+        #self.assets["KER.PA"] = Asset(EQUITY, "Kering SA", "KER.PA", "EQUIDUCT", "EUR")
+        #self.assets["MONC.MI"] = Asset(EQUITY, "MONCLER", "MONC.MI", "MTA", "EUR")
+        #self.assets["UCG.MI"] = Asset(EQUITY, "UNICREDIT", "UCG.MI", "MTA", "EUR")
+        #self.assets["EL.PA"] = Asset(EQUITY, "EssilorLuxottica Societe anonyme", "EL.PA", "EQUIDUCT", "EUR")
+        #self.assets["FME.DE"] = Asset(EQUITY, "FRESENIUS MEDICAL", "FME.DE", "EQUIDUCT", "EUR")
+        #self.assets["VNA.DE"] = Asset(EQUITY, "VONOVIA", "VNA.DE", "XETRA", "EUR")
+        #self.assets["MC.PA"] = Asset(EQUITY, "LVMH Moët Hennessy Louis Vuitton S.E.", "MC.PA", "EQUIDUCT", "EUR")
+        #self.assets["VVD.F"] = Asset(EQUITY, "Veolia Environnement S.A.", "VVD.F", "EQUIDUCT", "EUR")
 
     def fill_history_gaps(self):
         logging.debug("Entering fill_history_gaps")
@@ -310,13 +312,15 @@ class Portfolio:
                         curr_conv = GBPEUR
                     elif asset.currency == "CHF":
                         curr_conv = CHFEUR
-                print("Tot_Value1 ", str(tot_value))
-                tot_value = tot_value + line['OwnedAmount'] * \
-                            (line['CLOSE']*curr_conv - line['AverageBuyPrice']) * \
-                            (1.0 - asset.assetType.tax_rate)
+                logging.debug("Currency Conversion: " + str(curr_conv))
+                logging.debug("Calculating Port Net Value")
+                logging.debug("Asset: " + asset.symbol)
+                logging.debug("Owned Amount: " + str(line['OwnedAmount']))
+                logging.debug("Average Buy_Price: " + str(line['AverageBuyPrice']))
+                logging.debug("current quotation: " + str(line['Close']))
+                tot_value = tot_value + line['OwnedAmount'] * (line['Close']*curr_conv + asset.assetType.tax_rate*(line['AverageBuyPrice'] - line['Close']*curr_conv ))
+                # FIXME: con questa formula, in caso di perdita, lo zainetto fiscale mi fa aumentare leggermente il valore
                 # manca la SELL commission, ma incide poco sul senso del numero
-                print("Tot_Value2 ", str(tot_value))
-                exit(0)
         logging.debug("calcolato tot_value per giorno: " + str(date))
         self.por_history.loc[date]['NetValue'] = self.por_history.loc[date]['Liquidity'] + tot_value # da finire
 
@@ -407,6 +411,7 @@ class BuyAndHoldTradingStrategy:
         #    for tx in value:
         #        print(" Tx: " + str(tx))
         # self.outcome.pendingTransactions.sort(reverse=False, key=Transaction.to_datetime)
+        # FIXME: il trading dovrebbe partire da start_date + 1 gg, prima non posso avere ordini... inoltre devo copiare per portafoglio e asset, tutto dal giorno prima, prima di cominciare a fare trading...
         for r in ar.Arrow.range('day', datetime.datetime.combine(self.outcome.start_date, datetime.time.min),
                                 datetime.datetime.combine(self.outcome.end_date, datetime.time.min)):
             logging.debug("\tProcessing Trading Day " + str(r.date()))
@@ -434,8 +439,8 @@ class BuyAndHoldTradingStrategy:
 
 
     def exec_trade(self, t : Transaction):
-        #recupero l'asset su cui devo operare
         # TODO: verificare che lo stato della Transazione sia Pending
+        # recupero l'asset su cui devo operare
         logging.debug("Executing transaction: " + str(t))
         asset = self.outcome.assets[t.asset.symbol]
 
@@ -455,7 +460,30 @@ class BuyAndHoldTradingStrategy:
 
         if t.verb == "BUY":
             logging.debug("Buying " + str(t))
-            # TODO: implement BUY
+            # TODO: improve Buying Quantity calculation...
+
+            #  assumo di eseguire gli ordini di BUY e SELL come prima
+            #  azione della giornata, avendoli calcolati la sera del giorno prima
+            quantity = math.floor(self.BUY_ORDER_VALUE / asset.history.loc[t.when]['Open'])
+            asset_price = quantity * asset.history.loc[t.when]['Open'] * curr_conv
+            commission = asset_price * asset.assetType.buyCommission
+            if self.outcome.por_history.loc[t.when]['Liquidity'] >= (asset_price + commission):
+                # eseguo tx
+                # diminuisco liquidità
+                self.outcome.por_history.loc[t.when]['Liquidity'] -= (asset_price + commission)
+                # aumento il monte commissioni
+                self.outcome.por_history.loc[t.when]['TotalCommissions'] += commission
+                # modifico average buy price
+                asset.history.loc[t.when]['AverageBuyPrice'] = (asset.history.loc[t.when]['OwnedAmount']*asset.history.loc[t.when]['AverageBuyPrice'] + asset_price)/(asset.history.loc[t.when]['OwnedAmount'] + quantity)
+                # aumento quantità posseduta
+                asset.history.loc[t.when]['OwnedAmount'] += quantity
+                # FIXME: devo capire come trascinare i valori degli asset modificati.
+                t.state = "executed"
+            else:
+                # tx fallita per mancanza di liquidità
+                t.state = "failed"
+                t.note += "Not enough liquidity. Transaction" + str(t) + " failed."
+
         elif t.verb == "SELL":
             logging.debug("Selling " + str(t))
             # TODO: implement SELL
@@ -467,9 +495,8 @@ class BuyAndHoldTradingStrategy:
             logging.debug("Ignoring Tx: " + str(t))
             t.state = "failed"
             t.note += " - no instructions for VERB: " + t.verb
-        # TODO: spostare la transazione da Pending a executed
         self.outcome.executedTransactions.append(t)
-
+        # TODO: rimuovere transazione da Pending
 
 
 if __name__ == "__main__":
@@ -492,7 +519,7 @@ if __name__ == "__main__":
     # Last day
     end_date = datetime.date.today()
     # First day
-    start_date = end_date - datetime.timedelta(days=365 * 1)
+    start_date = end_date - datetime.timedelta(days=(365 * 1 + 2))
     initial_capital = 100000.0  # EUR
 
     # Create and Initialise myPortfolio

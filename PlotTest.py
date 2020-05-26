@@ -1,18 +1,16 @@
 # Import the necessary packages and modules
-import matplotlib
-import numpy as np
+#import matplotlib
+#import numpy as np
 import matplotlib.pyplot as plt
+import datetime
+import pandas as pd
 
-# Prepare the data
-x = np.linspace(0, 10, 100)
+data = {'Date': [datetime.date(2020,5,24), datetime.date(2020,5,25)], 'Liquidity': [100000.0, 90000.0], 'NetValue': [100000.0, 90000.0],
+        'TotalCommissions': [0.0, 5000.0], 'TotalDividens': [0.0, 0.0], 'TotalTaxes': [0.0, 5000.0]}
+temp = pd.DataFrame(data, columns=['Date', 'Liquidity', 'NetValue', 'TotalCommissions', 'TotalDividens',
+                                   'TotalTaxes'])
+temp['Date'] = pd.to_datetime(temp['Date'])
+por_history = temp.set_index('Date')
 
-#matplotlib.use('TkAgg')
-
-# Plot the data
-plt.plot(x, x, label='linear')
-
-# Add a legend
-plt.legend()
-
-# Show the plot
+por_history['NetValue'].plot(kind='line')
 plt.show()

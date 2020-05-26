@@ -331,11 +331,11 @@ class Portfolio:
         self.por_history.loc[date]['NetValue'] = self.por_history.loc[date]['Liquidity'] + tot_value # da finire
 
 
-    def loadQuotations(self):
+    def loadQuotations(self, cache_file = 'cache'):
         # setto una cache per i pandas_datareader
         # TODO: dovrei rendere la location e la durata della cache parametriche
         expire_after = datetime.timedelta(days=3)
-        session = requests_cache.CachedSession(cache_name='./data/cache', backend='sqlite', expire_after=expire_after)
+        session = requests_cache.CachedSession(cache_name=cache_file, backend='sqlite', expire_after=expire_after)
         # get Quotations & Dividends for all Assets in myPortfolio
         for key, value in sorted(self.assets.items()):
             print(".", end="", flush=True)

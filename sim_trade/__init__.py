@@ -60,10 +60,8 @@ CURRENCY = AssetClass("currency", 0.001, 0)
 
 # I define the concept of Asset
 class Asset:
-    def __init__(self, assetType: AssetClass, name: str, symbol: str, market: str, currency: str, quantity: float = 0.0,
-                 avg_buy_price: float = 0,
-                 avg_buy_curr_chg: float = 0,
-                 history: pd.DataFrame = pd.DataFrame(), amount=0.0):
+    def __init__(self, assetType: AssetClass, name: str, symbol: str, market: str, currency: str,
+                 history: pd.DataFrame = pd.DataFrame()):
         self.assetType = assetType
         self.name = name
         self.symbol = symbol

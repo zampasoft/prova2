@@ -10,7 +10,7 @@ import arrow as ar
 print("\n\n*********************************\n")
 
 expire_after = datetime.timedelta(days=3)
-session = requests_cache.CachedSession(cache_name='./data/cache2', backend='sqlite', expire_after=expire_after)
+session = requests_cache.CachedSession(cache_name='../data/cache2', backend='sqlite', expire_after=expire_after)
 
 
 start_date = datetime.date(2020, 5, 7)

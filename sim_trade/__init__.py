@@ -111,11 +111,8 @@ class Transaction:
         self.note = note
 
     def __str__(self):
-        if self.verb == "DIVIDEND" or self.verb == "SPLIT":
             return (str(self.when) + " : " + self.verb + " " + self.asset.symbol + " " + str(self.value)) + " " + str(
                 self.quantity) + " " + self.state
-        else:
-            return str(self.when) + " : " + self.verb + " " + str(self.quantity) + " " + self.asset.symbol + " " + self.state
 
     # credo un metodo statico che userò per ordinare gli array di trabsazioni
     @staticmethod
@@ -267,8 +264,6 @@ class Portfolio:
 
     # TODO: questo metodo dovrebbe essere multi-thread.
     def fill_history_gaps(self):
-        # FIXME: se la quotazione è in GBP, il prezzo è in pence e non in sterline, devo dividere per 100,
-        #  oppure correggo il conversion rate
         logging.debug("Entering fill_history_gaps")
         for key, asset in sorted(self.assets.items()):
             print(".", end="", flush=True)
@@ -296,6 +291,7 @@ class Portfolio:
             # estendo il DataFrame aggiungendo la colonna OwnedAmount
             asset.history['OwnedAmount'] = 0.0
             asset.history['AverageBuyPrice'] = 0.0 # in DEF CURR
+            asset.history['NetWorth'] = 0.0 # in DEF CURR
         print(" ")
 
 
@@ -322,7 +318,9 @@ class Portfolio:
                 logging.debug("Average Buy_Price: " + str(line['AverageBuyPrice']))
                 logging.debug("Currency Conversion: " + str(curr_conv))
                 logging.debug("current quotation: " + str(line['Close']))
-                tot_value = tot_value + line['OwnedAmount'] * (line['Close']*curr_conv + asset.assetType.tax_rate*(line['AverageBuyPrice'] - line['Close']*curr_conv ))
+                # TODO: aggiungere NerWorth anche su singolo asset, per permettere regole di bilanciamento del portafoglio
+                line['NetWorth'] = line['OwnedAmount'] * (line['Close']*curr_conv + asset.assetType.tax_rate*(line['AverageBuyPrice'] - line['Close']*curr_conv ))
+                tot_value = tot_value + line['NetWorth']
                 # FIXME: con questa formula, in caso di perdita, lo zainetto fiscale mi fa aumentare leggermente il valore
                 # manca la SELL commission, ma incide poco sul senso del numero
         logging.debug("calcolato tot_value per giorno: " + str(date))
@@ -387,7 +385,7 @@ class BuyAndHoldTradingStrategy:
         self.outcome.description = self.description
         # setto un valore standard per i BUY oders, in modo che sia possibile investire su tutti gli asset
         #self.BUY_ORDER_VALUE = self.outcome.initial_capital / len(self.outcome.assets.keys())
-        self.BUY_ORDER_VALUE = 5000.0
+        self.BUY_ORDER_VALUE = 10000.0
         logging.info("\nSetting BUY order value to: " + str(self.BUY_ORDER_VALUE))
         # voglio ricevere un portafoglio iniziale che contenga tutti gli input per eseguire la simulazione
         # voglio ricevere una TradingStrategy che contenga le regole da applicare
@@ -430,10 +428,12 @@ class BuyAndHoldTradingStrategy:
         #    for tx in value:
         #        print(" Tx: " + str(tx))
         # self.outcome.pendingTransactions.sort(reverse=False, key=Transaction.to_datetime)
-        # FIXME: il trading dovrebbe partire da start_date + 1 gg, prima non posso avere ordini... inoltre devo copiare per portafoglio e asset, tutto dal giorno prima, prima di cominciare a fare trading...
+        # il trading parte da start_date + 1 gg, prima non posso avere ordini basati su nessun dato
         first_trading_day = self.outcome.start_date + datetime.timedelta(days=1)
+        # inizializzo un paio di variabili che utilizzo per stampre un'idea di progress bar
         count = 0
         mod = len(self.outcome.por_history) -1
+        # inizio a fare il vero trading
         for dd in ar.Arrow.range('day', datetime.datetime.combine(first_trading_day, datetime.time.min),
                                 datetime.datetime.combine(self.outcome.end_date, datetime.time.min)):
             logging.debug("\tProcessing Trading Day " + str(dd.date()))
@@ -514,6 +514,7 @@ class BuyAndHoldTradingStrategy:
                 # FIXME: devo capire come trascinare i valori degli asset modificati.
                 t.state = "executed"
                 t.quantity = quantity
+                t.value = asset_price
                 logging.info("Tx " + str(t) + "\tvalue: " + str(asset_price))
                 self.outcome.executedTransactions.append(t)
             else:
@@ -542,6 +543,7 @@ class BuyAndHoldTradingStrategy:
                 # FIXME: devo capire come trascinare i valori degli asset modificati.
                 t.state = "executed"
                 t.quantity = quantity
+                t.value = asset_price
                 logging.info("Tx " + str(t) + "\tvalue: " + str(asset_price))
                 self.outcome.executedTransactions.append(t)
             else:
@@ -570,72 +572,6 @@ class BuyAndHoldTradingStrategy:
             self.outcome.failedTransactions.append(t)
         # TODO: rimuovere transazione da pendingTransactions
 
-
-if __name__ == "__main__":
-    # cominciamo a lavorare
-    print("\nStarting...")
-    # setting up Logging
-    os.remove("./logs/backtrace.log")
-    logging.basicConfig(filename='./logs/backtrace.log', level=logging.INFO)
-    #logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
-    logging.info("******************************************************")
-    logging.info("*      NEW START : " + str(datetime.datetime.now()) + "        *")
-    logging.info("******************************************************")
-
-    # print DataFrame wide
-    pd.set_option('display.width', 1000)
-
-    # Last day
-    #end_date = datetime.date.today()
-    end_date = datetime.date(2020, 5, 25)
-    # First day
-    start_date = end_date - datetime.timedelta(days=365*5)
-    initial_capital = 300000.0  # EUR
-
-    # Create and Initialise myPortfolio
-    myPortfolio = Portfolio(start_date, end_date, initial_capital)
-    print("\tInit Portfolio")
-    myPortfolio.loadAssetList()
-    timestamp = datetime.datetime.now()
-    logging.info("\nRetrieving assets history from: " + str(start_date) + " to: " + str(end_date))
-    print("\tLoading quotations")
-    myPortfolio.loadQuotations()
-    logging.info("Retrieve completed in " + str(datetime.datetime.now() - timestamp))
-    # adesso dovrei aver recuperato tutti i dati...
-    # Devo sistemare i gap nelle date. Non posso farlo prima perché la natura multiThread delle librerie crea dei casini
-    print("\tFixing Data")
-    myPortfolio.fill_history_gaps()
-    # possiamo cominciare a pensare a cosa fare...
-
-    # devo definire una strategia di Trading
-    print("\tCalculating Signals")
-    my_trading_strategy = BuyAndHoldTradingStrategy(myPortfolio)
-    # calcolo i segnali BUY e SELL
-    timestamp = datetime.datetime.now()
-    logging.info("\nCalculating BUY/SELL Signals")
-    my_strategy_outcome = my_trading_strategy.calc_suggested_transactions()
-    logging.info("Signals calculated in " + str(datetime.datetime.now() - timestamp))
-
-    # processo tutte le transazioni pending e vedo cosa succede
-    timestamp = datetime.datetime.now()
-    logging.info("\nExecuting trades")
-    print("\tSimulating trading")
-    final_port = my_trading_strategy.runTradingSimulation()
-    logging.info("Trades completed in " + str(datetime.datetime.now() - timestamp))
-
-    # elaborazione finita proviamo a visualizzare qualcosa
-    print("\nEnded, please check log file.\n")
-    print("Simulation Outcome:")
-    print("\nInitial Portfolio")
-    myPortfolio.printReport()
-    print("\nFinal Portfolio:")
-    final_port.printReport()
-    print("\nNota bene, se il NetValue finale è inferiore a initial_capital + Dividendi, di fatto c'è stata una perdita sul capitale")
-    print("Se nell'ultimo giorno, il totale delle tasse si abbassa, di fatto si sta scontando un Tax Credit Futuro\n")
-    print(final_port.por_history.loc[end_date - datetime.timedelta(days=1)])
-    print("\nExecuted Tx: ")
-    for t in final_port.executedTransactions:
-        print(" Tx: " + str(t))
 
 
 ##########################

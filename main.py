@@ -10,30 +10,6 @@ import pickle
 import math
 
 
-class RollingStatistic(object):
-    # https://jonisalonen.com/2014/efficient-and-accurate-rolling-standard-deviation/
-
-    def __init__(self, window_size, average, variance):
-        self.N = window_size
-        self.average = average
-        self.variance = variance
-        self.stddev = math.sqrt(variance)
-
-    def update(self, new, old):
-        oldavg = self.average
-        newavg = oldavg + (new - old)/self.N
-        self.average = newavg
-        # FIXME: secondo me è sbagliato il calcolo della varianza
-        self.variance += (new-old)*(new-newavg+old-oldavg)/(self.N-1)
-        if self.variance < 0:
-            self.variance = -1*self.variance
-        try:
-            self.stddev = math.sqrt(self.variance)
-        except Exception as e:
-            logging.exception(e)
-            logging.debug("self.variance = " + str(self.variance))
-            exit(-1)
-
 # Per definire una strategia più complessa estendo la classe BuyAndHoldTradingStrategy e faccio overload del metodo
 # che calcola le suggested transactions
 # la parte difficile è capire quando portare
@@ -49,24 +25,19 @@ class CustomStrategy(sim_trade.BuyAndHoldTradingStrategy):
             # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o
             # SELL. Nella strategia BUY & HOLD, se il valore di un asset è 0 allora genero un BUY
             stop_loss = 0.0
-            sma_short = 0.0
+            stop_loss_pct = 0.9
+            days_short = 15
+            days_long = 30
             sma_long = 0.0
-            std_long = 0.0
-            std_short= 0.0
-            days_short = 30
-            days_long = 60
-            RollingStatShort = RollingStatistic(days_short, 0, 0)
-            RollingStatLong = RollingStatistic(days_long, 0, 0)
-            value_to_drop_short = 0.0
-            value_to_drop_long = 0.0
+            sma_short = 0.0
             for dd in ar.Arrow.range('day', datetime.datetime.combine(self.outcome.start_date, datetime.time.min),
                                          datetime.datetime.combine(self.outcome.end_date - datetime.timedelta(days=1),
                                                                    datetime.time.min)):
                 # mi assicuro che esistano quotazioni per l'asset e che non sia una valuta
                 if asset.history.loc[dd.date(), 'Close'] > 0.0 and asset.assetType.assetType != "currency":
                     # set new stop_loss
-                    if asset.history.loc[dd.date(), 'Close'] * 0.9 > stop_loss > 0.0:
-                        stop_loss = asset.history.loc[dd.date(), 'Close'] * 0.9
+                    if asset.history.loc[dd.date(), 'Close'] * stop_loss_pct > stop_loss > 0.0:
+                        stop_loss = asset.history.loc[dd.date(), 'Close'] * stop_loss_pct
                     if asset.history.loc[dd.date(), 'Close'] < stop_loss:
                         logging.debug("\tSTOP LOSS: Requesting SELL for " + str(key) + " on " + str(dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(asset.history.loc[dd.date(), 'Close']))
                         #logging.debug("assetType: " + str(asset.assetType))
@@ -79,14 +50,10 @@ class CustomStrategy(sim_trade.BuyAndHoldTradingStrategy):
                             if dd.date() >= self.outcome.start_date + datetime.timedelta(days=days_long):
                                 value_to_drop_long = asset.history.loc[
                                     dd.date() - datetime.timedelta(days=days_long), 'Close']
-                        RollingStatShort.update(asset.history.loc[dd.date(), 'Close'], value_to_drop_short)
-                        RollingStatLong.update(asset.history.loc[dd.date(), 'Close'], value_to_drop_long)
                         sma_short_old = sma_short
                         sma_long_old = sma_long
-                        sma_short = RollingStatShort.average
-                        sma_long = RollingStatLong.average
-                        std_long = RollingStatLong.stddev
-                        std_short = RollingStatShort.stddev
+                        sma_short = asset.history.loc[dd.date(), 'sma_short']
+                        sma_long = asset.history.loc[dd.date(), 'sma_long']
                         #if sma_short > sma_long*1.01 or asset.history.loc[dd.date(), 'Close'] < sma_long - 2*std_long:
                         if sma_short > sma_long and sma_short_old < sma_long_old:
                         #if asset.history.loc[dd.date(), 'Close'] < (sma_long - 2*std_long):
@@ -95,8 +62,8 @@ class CustomStrategy(sim_trade.BuyAndHoldTradingStrategy):
                                 reason = "SMA"
                             else:
                                 reason = "BOLLINGHER"
-                            if stop_loss < asset.history.loc[dd.date(), 'Close'] * 0.9:
-                                stop_loss = asset.history.loc[dd.date(), 'Close'] * 0.9
+                            if stop_loss < asset.history.loc[dd.date(), 'Close'] * stop_loss_pct:
+                                stop_loss = asset.history.loc[dd.date(), 'Close'] * stop_loss_pct
                             logging.debug("\t" + reason + ": Requesting BUY for " + str(key) + " on " + str(
                                 dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(asset.history.loc[dd.date(), 'Close']) + "Setting stop_loss: " + str(stop_loss))
                             logging.debug("assetType: " + str(asset.assetType))
@@ -157,10 +124,11 @@ if __name__ == "__main__":
         # adesso dovrei aver recuperato tutti i dati...
         # Devo sistemare i gap nelle date perché non voglio continuare a controllare se un indice esiste o meno...
         print("\tFixing Data")
+        myPortfolio.calc_stats()
         myPortfolio.fill_history_gaps()
         # mi salvo il calcolo per velocizzare i miei tests
-        logging.info("\nSaving Initial Portfolio and quotations to: " + str(file_handle.name))
         file_handle = open("./data/save.port.data", "wb")
+        logging.info("\nSaving Initial Portfolio and quotations to: " + str(file_handle.name))
         pickle.dump(myPortfolio, file_handle)
         file_handle.close()
     # devo definire una strategia di Trading
@@ -196,3 +164,10 @@ if __name__ == "__main__":
     #final_port.por_history.plot(kind='line', y='NetValue')
     final_port.por_history['NetValue'].plot(kind='line')
     plt.show()
+    # esamino un'azione per capire cosa ho individuato come punti d'inversione
+    final_port.assets['AMP.MI'].history['Close'].plot()
+    # costruire un dataframe con i segnali di BUY per AMP.MI
+    # pandas_sma_short = final_port.assets['AMP.MI'].history['Close'].history.rolling(window=30).mean()
+    # pandas_sma_short.plot()
+    # plt.scatter()
+    # plt.show()

@@ -18,6 +18,11 @@ import math
 # in tutti i casi, nessun asset può occupare più del 10% del mio portafoglio
 class CustomStrategy(sim_trade.BuyAndHoldTradingStrategy):
 
+    def __init__(self, in_port):
+        super().__init__(in_port)
+        self.description = "CustomStrategy"
+        self.BUY_ORDER_VALUE = 5000.0
+
     def calc_suggested_transactions(self):
         # Strategia base "BUY & HOLD"
         for key, asset in sorted(self.outcome.assets.items()):
@@ -25,52 +30,59 @@ class CustomStrategy(sim_trade.BuyAndHoldTradingStrategy):
             # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o
             # SELL. Nella strategia BUY & HOLD, se il valore di un asset è 0 allora genero un BUY
             stop_loss = 0.0
-            stop_loss_pct = 0.9
-            days_short = 15
-            days_long = 30
-            sma_long = 0.0
-            sma_short = 0.0
-            for dd in ar.Arrow.range('day', datetime.datetime.combine(self.outcome.start_date, datetime.time.min),
+            stop_loss_pct = 0.8
+            #take_profit = 9999999.0
+            #take_profit_pct = 1.2
+            #days_short = 20
+            days_long = 40
+            for dd in ar.Arrow.range('day', datetime.datetime.combine(self.outcome.start_date, datetime.time.min) + datetime.timedelta(days=days_long),
                                          datetime.datetime.combine(self.outcome.end_date - datetime.timedelta(days=1),
                                                                    datetime.time.min)):
-                # mi assicuro che esistano quotazioni per l'asset e che non sia una valuta
-                if asset.history.loc[dd.date(), 'Close'] > 0.0 and asset.assetType.assetType != "currency":
+                # mi assicuro che esistano quotazioni per l'asset, che non sia una valuta e che la varianza sia
+                # significativa, altrimenti siamo in una fase di spostamento laterale
+                if asset.history.loc[dd.date(), 'Close'] > 0.0 and asset.assetType.assetType != "currency" and asset.history.loc[dd.date(), 'std_short'] > 0.02 * asset.history.loc[dd.date(), 'sma_short']:
                     # set new stop_loss
-                    if asset.history.loc[dd.date(), 'Close'] * stop_loss_pct > stop_loss > 0.0:
-                        stop_loss = asset.history.loc[dd.date(), 'Close'] * stop_loss_pct
+                    # TODO: forse STOP-LOSS e TAKE-PROFIT sarebbe meglio calcolarli durante in trading vero e proprio...
                     if asset.history.loc[dd.date(), 'Close'] < stop_loss:
                         logging.debug("\tSTOP LOSS: Requesting SELL for " + str(key) + " on " + str(dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(asset.history.loc[dd.date(), 'Close']))
                         #logging.debug("assetType: " + str(asset.assetType))
                         dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
                         dailyPendTx.append(sim_trade.Transaction("SELL", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0, "STOP LOSS"))
                         stop_loss = 0.0
+                        #take_profit = 9999999.0
                     else:
-                        if dd.date() >= self.outcome.start_date + datetime.timedelta(days=days_short):
-                            value_to_drop_short = asset.history.loc[dd.date() - datetime.timedelta(days=days_short), 'Close']
-                            if dd.date() >= self.outcome.start_date + datetime.timedelta(days=days_long):
-                                value_to_drop_long = asset.history.loc[
-                                    dd.date() - datetime.timedelta(days=days_long), 'Close']
-                        sma_short_old = sma_short
-                        sma_long_old = sma_long
-                        sma_short = asset.history.loc[dd.date(), 'sma_short']
-                        sma_long = asset.history.loc[dd.date(), 'sma_long']
-                        #if sma_short > sma_long*1.01 or asset.history.loc[dd.date(), 'Close'] < sma_long - 2*std_long:
-                        if sma_short > sma_long and sma_short_old < sma_long_old:
-                        #if asset.history.loc[dd.date(), 'Close'] < (sma_long - 2*std_long):
+                        prev_day = dd.date() - datetime.timedelta(days=1)
+                        boll_up_old = asset.history.loc[prev_day, 'sma_short'] + 2* asset.history.loc[prev_day, 'std_short']
+                        boll_down_old = asset.history.loc[prev_day, 'sma_short'] - 2* asset.history.loc[prev_day, 'std_short']
+                        quot_old = asset.history.loc[prev_day, 'Close']
+                        quot = asset.history.loc[dd.date(), 'Close']
+                        boll_up = asset.history.loc[dd.date(), 'sma_short'] + 2* asset.history.loc[dd.date(), 'std_short']
+                        boll_down = asset.history.loc[dd.date(), 'sma_short'] - 2* asset.history.loc[dd.date(), 'std_short']
+
+                        if quot > boll_down and quot_old < boll_down_old:
                             # BUY
-                            if sma_short > sma_long:
-                                reason = "SMA"
-                            else:
-                                reason = "BOLLINGHER"
+                            reason = "BOLLINGER"
                             if stop_loss < asset.history.loc[dd.date(), 'Close'] * stop_loss_pct:
                                 stop_loss = asset.history.loc[dd.date(), 'Close'] * stop_loss_pct
+                            #take_profit = asset.history.loc[dd.date(), 'Close'] * take_profit_pct
                             logging.debug("\t" + reason + ": Requesting BUY for " + str(key) + " on " + str(
-                                dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(asset.history.loc[dd.date(), 'Close']) + "Setting stop_loss: " + str(stop_loss))
+                                dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(asset.history.loc[dd.date(), 'Close']) + "\tSetting stop_loss: " + str(stop_loss))
                             logging.debug("assetType: " + str(asset.assetType))
                             dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
                             dailyPendTx.append(
                                 sim_trade.Transaction("BUY", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0,
-                                                      "UP TREND or LOW Value"))
+                                                      reason))
+                        elif quot < boll_up and quot_old > boll_up_old:
+                            #SELL
+                            reason = "BOLLINGER"
+                            logging.debug("\tBOL: Requesting SELL for " + str(key) + " on " + str(
+                                dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(
+                                asset.history.loc[dd.date(), 'Close']))
+                            dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
+                            dailyPendTx.append(
+                                sim_trade.Transaction("SELL", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0,
+                                                      reason))
+                            stop_loss = 0.0
             print(".", end="", flush=True)
             # l'ultimo giorno vendo tutto.
             if asset.assetType.assetType != "currency":
@@ -134,6 +146,7 @@ if __name__ == "__main__":
     # devo definire una strategia di Trading
     print("\tCalculating Signals")
     my_trading_strategy = CustomStrategy(myPortfolio)
+    #my_trading_strategy = sim_trade.BuyAndHoldTradingStrategy(myPortfolio)
     # calcolo i segnali BUY e SELL
     timestamp = datetime.datetime.now()
     logging.info("\nCalculating BUY/SELL Signals")

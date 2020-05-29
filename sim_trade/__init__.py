@@ -5,6 +5,7 @@ import logging
 import os
 import typing
 from typing import Dict
+import matplotlib.pyplot as plt
 
 import arrow as ar
 import pandas as pd
@@ -262,6 +263,29 @@ class Portfolio:
         self.assets["MC.PA"] = Asset(EQUITY, "LVMH Moët Hennessy Louis Vuitton S.E.", "MC.PA", "EQUIDUCT", "EUR")
         self.assets["VVD.F"] = Asset(EQUITY, "Veolia Environnement S.A.", "VVD.F", "EQUIDUCT", "EUR")
 
+    def calc_stats(self):
+        logging.debug("Entering calc_stats")
+        # TODO: portare questi dati a livello di Portfolio?
+        days_short = 20
+        days_long = 40
+        #asset['SMA_short'] = 0.0
+        #asset['SMA_long'] = 0.0
+        #asset['STD_short'] = 0.0
+        for key, asset in sorted(self.assets.items()):
+            logging.debug("Processing :" + asset.symbol)
+            sma_short = asset.history['Close'].rolling(window=days_short).mean()
+            asset.history['sma_short'] = sma_short
+            sma_long = asset.history['Close'].rolling(window=days_long).mean()
+            asset.history['sma_long'] = sma_long
+            std_short = asset.history['Close'].rolling(window=days_short).std()
+            asset.history['std_short'] = std_short
+            # print(asset.history)
+            # asset.history.plot(y=['Close', 'sma_short', 'sma_long'], title=asset.symbol)
+            # plt.show()
+            print(".", end="", flush=True)
+        print(" ")
+
+
     # TODO: questo metodo dovrebbe essere multi-thread.
     def fill_history_gaps(self):
         logging.debug("Entering fill_history_gaps")
@@ -269,7 +293,7 @@ class Portfolio:
             print(".", end="", flush=True)
             # create a set containing all dates in Range
             logging.debug("Processing :" + asset.symbol)
-            last_row = [ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            last_row = [ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
             if asset.symbol == self.defCurrency:
                 asset.history = pd.DataFrame() # devo definire la struttura
             for dd in ar.Arrow.range('day', datetime.datetime.combine(self.start_date, datetime.time.min),
@@ -385,7 +409,7 @@ class BuyAndHoldTradingStrategy:
         self.outcome.description = self.description
         # setto un valore standard per i BUY oders, in modo che sia possibile investire su tutti gli asset
         #self.BUY_ORDER_VALUE = self.outcome.initial_capital / len(self.outcome.assets.keys())
-        self.BUY_ORDER_VALUE = 10000.0
+        self.BUY_ORDER_VALUE = 5000.0
         logging.info("\nSetting BUY order value to: " + str(self.BUY_ORDER_VALUE))
         # voglio ricevere un portafoglio iniziale che contenga tutti gli input per eseguire la simulazione
         # voglio ricevere una TradingStrategy che contenga le regole da applicare
@@ -398,7 +422,8 @@ class BuyAndHoldTradingStrategy:
             assert isinstance(asset, Asset)
             # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o
             # SELL. Nella strategia BUY & HOLD, se il valore di un asset è 0 allora genero un BUY
-            for dd in ar.Arrow.range('week', datetime.datetime.combine(self.outcome.start_date, datetime.time.min),
+            days_long = 40
+            for dd in ar.Arrow.range('week', datetime.datetime.combine(self.outcome.start_date, datetime.time.min) + datetime.timedelta(days=days_long),
                                          datetime.datetime.combine(self.outcome.end_date - datetime.timedelta(days=1), datetime.time.min)):
 
                 if asset.history.loc[dd.date(), 'OwnedAmount'] == 0.0 and asset.history.loc[dd.date(), 'Close'] > 0.0 and asset.assetType.assetType != "currency":

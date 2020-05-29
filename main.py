@@ -35,12 +35,16 @@ class CustomStrategy(sim_trade.BuyAndHoldTradingStrategy):
             #take_profit_pct = 1.2
             #days_short = 20
             days_long = 40
+            days_buy = []
+            quot_buy = []
+            days_sell = []
+            quot_sell = []
             for dd in ar.Arrow.range('day', datetime.datetime.combine(self.outcome.start_date, datetime.time.min) + datetime.timedelta(days=days_long),
                                          datetime.datetime.combine(self.outcome.end_date - datetime.timedelta(days=1),
                                                                    datetime.time.min)):
                 # mi assicuro che esistano quotazioni per l'asset, che non sia una valuta e che la varianza sia
                 # significativa, altrimenti siamo in una fase di spostamento laterale
-                if asset.history.loc[dd.date(), 'Close'] > 0.0 and asset.assetType.assetType != "currency" and asset.history.loc[dd.date(), 'std_short'] > 0.02 * asset.history.loc[dd.date(), 'sma_short']:
+                if asset.history.loc[dd.date(), 'Close'] > 0.0 and asset.assetType.assetType != "currency" and asset.history.loc[dd.date(), 'std_short'] > 0.03 * asset.history.loc[dd.date(), 'sma_short']:
                     # set new stop_loss
                     # TODO: forse STOP-LOSS e TAKE-PROFIT sarebbe meglio calcolarli durante in trading vero e proprio...
                     if asset.history.loc[dd.date(), 'Close'] < stop_loss:
@@ -62,9 +66,8 @@ class CustomStrategy(sim_trade.BuyAndHoldTradingStrategy):
                         if quot > boll_down and quot_old < boll_down_old:
                             # BUY
                             reason = "BOLLINGER"
-                            if stop_loss < asset.history.loc[dd.date(), 'Close'] * stop_loss_pct:
-                                stop_loss = asset.history.loc[dd.date(), 'Close'] * stop_loss_pct
-                            #take_profit = asset.history.loc[dd.date(), 'Close'] * take_profit_pct
+                            # stop_loss = asset.history.loc[dd.date(), 'Close'] * stop_loss_pct
+                            # take_profit = asset.history.loc[dd.date(), 'Close'] * take_profit_pct
                             logging.debug("\t" + reason + ": Requesting BUY for " + str(key) + " on " + str(
                                 dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(asset.history.loc[dd.date(), 'Close']) + "\tSetting stop_loss: " + str(stop_loss))
                             logging.debug("assetType: " + str(asset.assetType))
@@ -72,6 +75,8 @@ class CustomStrategy(sim_trade.BuyAndHoldTradingStrategy):
                             dailyPendTx.append(
                                 sim_trade.Transaction("BUY", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0,
                                                       reason))
+                            days_buy.append(dd.date())
+                            quot_buy.append(quot)
                         elif quot < boll_up and quot_old > boll_up_old:
                             #SELL
                             reason = "BOLLINGER"
@@ -83,7 +88,15 @@ class CustomStrategy(sim_trade.BuyAndHoldTradingStrategy):
                                 sim_trade.Transaction("SELL", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0,
                                                       reason))
                             stop_loss = 0.0
+                            days_sell.append(dd.date())
+                            quot_sell.append(quot)
             print(".", end="", flush=True)
+            # BUY_points = pd.DataFrame({'Date': days_buy, 'Quotation': quot_buy})
+            # SELL_points = pd.DataFrame({'Date': days_sell, 'Quotation': quot_sell})
+            # ax = asset.history['Close'].plot(title=asset.symbol)
+            # BUY_points.plot(kind='scatter', ax=ax, x='Date', y='Quotation', color="green", alpha=0.5)
+            # SELL_points.plot(kind='scatter', ax=ax, x='Date', y='Quotation', color="red", alpha=0.5)
+            # plt.show()
             # l'ultimo giorno vendo tutto.
             if asset.assetType.assetType != "currency":
                 logging.info("\tRequesting SELL for " + str(key) + " on " + str(self.outcome.end_date))
@@ -179,8 +192,10 @@ if __name__ == "__main__":
     plt.show()
     # esamino un'azione per capire cosa ho individuato come punti d'inversione
     final_port.assets['AMP.MI'].history['Close'].plot()
+    # A scopo didattico, provo a visualizzare i punti di BUY e SELL calcolati
     # costruire un dataframe con i segnali di BUY per AMP.MI
     # pandas_sma_short = final_port.assets['AMP.MI'].history['Close'].history.rolling(window=30).mean()
     # pandas_sma_short.plot()
+    # AX = AX
     # plt.scatter()
     # plt.show()

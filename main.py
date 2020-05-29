@@ -22,6 +22,7 @@ class CustomStrategy(sim_trade.BuyAndHoldTradingStrategy):
         super().__init__(in_port)
         self.description = "CustomStrategy"
         self.BUY_ORDER_VALUE = 5000.0
+        self.outcome.description = self.description
 
     def calc_suggested_transactions(self):
         # Strategia base "BUY & HOLD"

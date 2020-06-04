@@ -16,12 +16,12 @@ import math
 # Buy signal => SOTTO BOLLINGHER, In crescita di più del 10% in 2 settimane
 # SELL = > STOP LOSS, SOPRA BOLLINGHER
 # in tutti i casi, nessun asset può occupare più del 10% del mio portafoglio
-class CustomStrategy(sim_trade.BuyAndHoldTradingStrategy):
+class BollBandsStrategy(sim_trade.BuyAndHoldTradingStrategy):
 
     def __init__(self, in_port):
         super().__init__(in_port)
-        self.description = "CustomStrategy"
-        self.BUY_ORDER_VALUE = 5000.0
+        self.description = "Bollinger bands"
+        self.BUY_ORDER_VALUE = 10000.0
         self.outcome.description = self.description
 
     def calc_suggested_transactions(self):
@@ -34,8 +34,8 @@ class CustomStrategy(sim_trade.BuyAndHoldTradingStrategy):
             stop_loss_pct = 0.8
             #take_profit = 9999999.0
             #take_profit_pct = 1.2
-            #days_short = 20
-            days_long = 40
+            days_short = self.outcome.days_short
+            days_long = self.outcome.days_long
             days_buy = []
             quot_buy = []
             days_sell = []
@@ -107,6 +107,103 @@ class CustomStrategy(sim_trade.BuyAndHoldTradingStrategy):
         return self.outcome.pendingTransactions
 
 
+
+class InvBollbandsStrategy(sim_trade.BuyAndHoldTradingStrategy):
+
+    def __init__(self, in_port):
+        super().__init__(in_port)
+        self.description = "Inverse Bollinger Bands"
+        self.BUY_ORDER_VALUE = 5000.0
+        self.outcome.description = self.description
+
+    def calc_suggested_transactions(self):
+        # Strategia base "BUY & HOLD"
+        for key, asset in sorted(self.outcome.assets.items()):
+            assert isinstance(asset, sim_trade.Asset)
+            # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o
+            # SELL. Nella strategia BUY & HOLD, se il valore di un asset è 0 allora genero un BUY
+            stop_loss = 0.0
+            stop_loss_pct = 0.9
+            #take_profit = 9999999.0
+            take_profit_pct = 1.2
+            days_short = self.outcome.days_short
+            days_long = self.outcome.days_long
+            boll_multi = 1
+            days_buy = []
+            quot_buy = []
+            days_sell = []
+            quot_sell = []
+            for dd in ar.Arrow.range('day', datetime.datetime.combine(self.outcome.start_date, datetime.time.min) + datetime.timedelta(days=days_long),
+                                         datetime.datetime.combine(self.outcome.end_date - datetime.timedelta(days=1),
+                                                                   datetime.time.min)):
+                # mi assicuro che esistano quotazioni per l'asset, che non sia una valuta e che la varianza sia
+                # significativa, altrimenti siamo in una fase di spostamento laterale
+                if asset.history.loc[dd.date(), 'Close'] > 0.0 and asset.assetType.assetType != "currency" and asset.history.loc[dd.date(), 'std_short'] > 0.03 * asset.history.loc[dd.date(), 'sma_short']:
+                    # set new stop_loss
+                    # TODO: forse STOP-LOSS e TAKE-PROFIT sarebbe meglio calcolarli durante in trading vero e proprio...
+                    if asset.history.loc[dd.date(), 'Close'] < stop_loss:
+                        logging.debug("\tSTOP LOSS: Requesting SELL for " + str(key) + " on " + str(dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(asset.history.loc[dd.date(), 'Close']))
+                        #logging.debug("assetType: " + str(asset.assetType))
+                        dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
+                        dailyPendTx.append(sim_trade.Transaction("SELL", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0, "STOP LOSS"))
+                        stop_loss = 0.0
+                        #take_profit = 9999999.0
+                    else:
+                        prev_day = dd.date() - datetime.timedelta(days=1)
+                        boll_up_old = asset.history.loc[prev_day, 'sma_long'] + boll_multi * asset.history.loc[prev_day, 'std_long']
+                        boll_down_old = asset.history.loc[prev_day, 'sma_long'] - boll_multi * asset.history.loc[prev_day, 'std_long']
+                        quot_old = asset.history.loc[prev_day, 'Close']
+                        quot = asset.history.loc[dd.date(), 'Close']
+                        boll_up = asset.history.loc[dd.date(), 'sma_long'] + boll_multi * asset.history.loc[dd.date(), 'std_long']
+                        boll_down = asset.history.loc[dd.date(), 'sma_long'] - boll_multi * asset.history.loc[dd.date(), 'std_long']
+                        sma_long = asset.history.loc[dd.date(), 'sma_long']
+                        sma_long_old = asset.history.loc[prev_day, 'sma_long']
+
+                        if quot > boll_up and quot_old < boll_up_old:
+                            # BUY
+                            reason = "INV BOLLINGER"
+                            # stop_loss = asset.history.loc[dd.date(), 'Close'] * stop_loss_pct
+                            # take_profit = asset.history.loc[dd.date(), 'Close'] * take_profit_pct
+                            logging.debug("\t" + reason + ": Requesting BUY for " + str(key) + " on " + str(
+                                dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(asset.history.loc[dd.date(), 'Close']) + "\tSetting stop_loss: " + str(stop_loss))
+                            logging.debug("assetType: " + str(asset.assetType))
+                            dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
+                            dailyPendTx.append(
+                                sim_trade.Transaction("BUY", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0,
+                                                      reason))
+                            days_buy.append(dd.date())
+                            quot_buy.append(quot)
+                            #stop_loss = quot*stop_loss_pct
+                        elif quot < boll_down and quot_old > boll_down_old:
+                            #SELL
+                            reason = "BOLLINGER"
+                            logging.debug("\tBOL: Requesting SELL for " + str(key) + " on " + str(
+                                dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(
+                                asset.history.loc[dd.date(), 'Close']))
+                            dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
+                            dailyPendTx.append(
+                                sim_trade.Transaction("SELL", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0,
+                                                      reason))
+                            stop_loss = 0.0
+                            days_sell.append(dd.date())
+                            quot_sell.append(quot)
+            print(".", end="", flush=True)
+            # BUY_points = pd.DataFrame({'Date': days_buy, 'Quotation': quot_buy})
+            # SELL_points = pd.DataFrame({'Date': days_sell, 'Quotation': quot_sell})
+            # ax = asset.history['Close'].plot(title=asset.symbol)
+            # BUY_points.plot(kind='scatter', ax=ax, x='Date', y='Quotation', color="green", alpha=0.5)
+            # SELL_points.plot(kind='scatter', ax=ax, x='Date', y='Quotation', color="red", alpha=0.5)
+            # plt.show()
+            # l'ultimo giorno vendo tutto.
+            if asset.assetType.assetType != "currency":
+                logging.info("\tRequesting SELL for " + str(key) + " on " + str(self.outcome.end_date))
+                dailyPendTx = self.outcome.pendingTransactions[self.outcome.end_date]
+                dailyPendTx.append(sim_trade.Transaction("SELL", asset, self.outcome.end_date, 0, 0.0, self.description))
+        print(" ")
+        return self.outcome.pendingTransactions
+
+
+
 if __name__ == "__main__":
     # cominciamo a lavorare
     print("\nStarting...")
@@ -124,9 +221,9 @@ if __name__ == "__main__":
 
     # Last day
     #end_date = datetime.date.today()
-    end_date = datetime.date(2020, 5, 25)
+    end_date = datetime.date(2020, 6, 3)
     # First day
-    start_date = end_date - datetime.timedelta(days=365*5)
+    start_date = datetime.date(2019, 11, 10)
     initial_capital = 300000.0  # EUR
 
 
@@ -159,7 +256,7 @@ if __name__ == "__main__":
         file_handle.close()
     # devo definire una strategia di Trading
     print("\tCalculating Signals")
-    my_trading_strategy = CustomStrategy(myPortfolio)
+    my_trading_strategy = InvBollbandsStrategy(myPortfolio)
     #my_trading_strategy = sim_trade.BuyAndHoldTradingStrategy(myPortfolio)
     # calcolo i segnali BUY e SELL
     timestamp = datetime.datetime.now()

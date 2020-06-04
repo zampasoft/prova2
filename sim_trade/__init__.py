@@ -146,7 +146,7 @@ class Transaction:
 class Portfolio:
     pendingTransactions: Dict[datetime.date, typing.List[Transaction]]
 
-    def __init__(self, start_date : datetime.date, end_date : datetime.date, initial_capital : float, description="Default Portfolio"):
+    def __init__(self, start_date : datetime.date, end_date : datetime.date, initial_capital : float, description="Default Portfolio", days_short=20, days_long=120):
         self.assets = dict()
         # elenco di asset acceduti via simbolo. un giorno capirò se abbia senso una struttura dati diversa
         self.defCurrency = "EUR"
@@ -160,6 +160,8 @@ class Portfolio:
                                            'TotalTaxes'])
         temp['Date'] = pd.to_datetime(temp['Date'])
         self.por_history = temp.set_index('Date')
+        self.days_short = days_short
+        self.days_long = days_long
         # TODO: valutare se spostare pendingTransactions dentro self.por_history
         self.pendingTransactions = dict()
         self.executedTransactions = []
@@ -217,6 +219,14 @@ class Portfolio:
         self.assets["VAR"] = Asset(EQUITY, "Varian Medical Systems, Inc.", "VAR", "NYSE", "USD")
         self.assets["VRTX"] = Asset(EQUITY, "Vertex Pharmaceuticals Incorporated", "VRTX", "NYSE", "USD")
         self.assets["TEAM"] = Asset(EQUITY, "Atlassian Corporation Plc", "TEAM", "NYSE", "USD")
+        self.assets["AMZN"] = Asset(EQUITY, "Amazon", "AMZN", "NASDAQ", "USD")
+        self.assets["NFLX"] = Asset(EQUITY, "Netflix", "NFLX", "NASDAQ", "USD")
+        self.assets["ZM"] = Asset(EQUITY, "Zoom", "ZM", "NASDAQ", "USD")
+        self.assets["DIS"] = Asset(EQUITY, "Disney", "DIS", "NYSE", "USD")
+        self.assets["CHK"] = Asset(EQUITY, "Chesapeake Energy Corporation", "CHK", "NYSE", "USD")
+        self.assets["DPZ"] = Asset(EQUITY, "Domino's Pizza", "DPZ", "NYSE", "USD")
+        self.assets["DXCM"] = Asset(EQUITY, "DexCom, Inc.", "DXCM", "NASDAQ", "USD")
+        self.assets["JAZZ"] = Asset(EQUITY, "Jazz Pharmaceuticals plc", "JAZZ", "NASDAQ", "USD")
 
         # Titolo CH da me selezionati
         self.assets["ALC.SW"] = Asset(EQUITY, "ALCON N", "ALC.SW", "VIRTX", "CHF")
@@ -230,6 +240,8 @@ class Portfolio:
         self.assets["BA.L"] = Asset(EQUITY, "BAE SYSTEMS", "BA.L", "LSE", "GBP")
         self.assets["BP.L"] = Asset(EQUITY, "BP", "BP.L", "LSE", "GBP")
         self.assets["BT-A.L"] = Asset(EQUITY, "BT GROUP", "BT-A.L", "LSE", "GBP")
+        self.assets["CDM.L"] = Asset(EQUITY, "Codemasters Group", "CDM.L", "LSE", "GBP")
+        self.assets["BRBY.L"] = Asset(EQUITY, "Burberry Group", "BRBY.L", "LSE", "GBP")
         self.assets["ESNT.L"] = Asset(EQUITY, "ESSENTRA", "ESNT.L", "LSE", "GBP")
         self.assets["GLEN.L"] = Asset(EQUITY, "GLENCORE", "GLEN.L", "LSE", "GBP")
         self.assets["GSK.L"] = Asset(EQUITY, "GLAXOSMITHKLINE", "GSK.L", "LSE", "GBP")
@@ -247,6 +259,7 @@ class Portfolio:
         self.assets["AMP.MI"] = Asset(EQUITY, "Amplifon", "AMP.MI", "MTA", "EUR")
         self.assets["BRE.MI"] = Asset(EQUITY, "BREMBO", "BRE.MI", "MTA", "EUR")
         self.assets["CPR.MI"] = Asset(EQUITY, "CAMPARI", "CPR.MI", "MTA", "EUR")
+        self.assets["G.MI"] = Asset(EQUITY, "Assicurazioni Generali", "G.MI", "MTA", "EUR")
         self.assets["CERV.MI"] = Asset(EQUITY, "CERVED GROUP", "CERV.MI", "MTA", "EUR")
         self.assets["DSY.PA"] = Asset(EQUITY, "Dassault Systèmes SE", "DSY.PA", "EQUIDUCT", "EUR")
         self.assets["DIA.MI"] = Asset(EQUITY, "DIASORIN", "DIA.MI", "MTA", "EUR")
@@ -264,10 +277,11 @@ class Portfolio:
         self.assets["VVD.F"] = Asset(EQUITY, "Veolia Environnement S.A.", "VVD.F", "EQUIDUCT", "EUR")
 
     def calc_stats(self):
+        # TODO: questo metodo dovrebbe stare a livello di Strategia... Però deve essere eseguito prima di sistemare i
+        #  gaps, quindi per il momento lo lascio a livello di portafoglio
         logging.debug("Entering calc_stats")
-        # TODO: portare questi dati a livello di Portfolio?
-        days_short = 20
-        days_long = 40
+        days_short = self.days_short
+        days_long = self.days_long
         #asset['SMA_short'] = 0.0
         #asset['SMA_long'] = 0.0
         #asset['STD_short'] = 0.0
@@ -279,7 +293,9 @@ class Portfolio:
             asset.history['sma_long'] = sma_long
             std_short = asset.history['Close'].rolling(window=days_short).std()
             asset.history['std_short'] = std_short
-            # print(asset.history)
+
+            std_long = asset.history['Close'].rolling(window=days_long).std()
+            asset.history['std_long'] = std_long
             # asset.history.plot(y=['Close', 'sma_short', 'sma_long'], title=asset.symbol)
             # plt.show()
             print(".", end="", flush=True)
@@ -293,7 +309,7 @@ class Portfolio:
             print(".", end="", flush=True)
             # create a set containing all dates in Range
             logging.debug("Processing :" + asset.symbol)
-            last_row = [ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            last_row = [ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
             if asset.symbol == self.defCurrency:
                 asset.history = pd.DataFrame() # devo definire la struttura
             for dd in ar.Arrow.range('day', datetime.datetime.combine(self.start_date, datetime.time.min),
@@ -316,6 +332,8 @@ class Portfolio:
             asset.history['OwnedAmount'] = 0.0
             asset.history['AverageBuyPrice'] = 0.0 # in DEF CURR
             asset.history['NetWorth'] = 0.0 # in DEF CURR
+            asset.history['TotTaxes'] = 0.0  # in DEF CURR
+            asset.history['TotCommissions'] = 0.0  # in DEF CURR
         print(" ")
 
 

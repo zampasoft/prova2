@@ -15,3 +15,17 @@ STRATEGIA
 provare a fare banda di Bollingher invertita con moltiplicatore 1, 120 gg, e vendere con take profit a +30%
 
 
+
+outcome di alcuni tests:
+Label	                    Initial Cap	    NetValue	    Avg Liq	        Return
+m=1, ord=10.000, TKP=NEVER	€ 300.000,00	€ 403.804,66	€ 105.849,50	153,47%
+m=1, ord=10.000, TKP=30%	€ 300.000,00	€ 382.317,52	€ 115.668,63	144,66%
+m=2, ord=10.000, TKP=NEVER	€ 300.000,00	€ 390.349,28	€ 87.254,63	    142,47%
+m=1, ord=5.000, TKP=NEVER	€ 300.000,00	€ 365.852,06	€ 136.383,16	140,25%
+m=1, ord=5.000, TKP=30%	    € 300.000,00	€ 342.810,46	€ 163.745,40	131,42%
+m=2, ord=5.000, TKP=NEVER	€ 300.000,00	€ 337.755,54	€ 107.861,36	119,65%
+m=2, ord=10.000, TKP=30%	€ 300.000,00	€ 330.451,20	€ 91.371,94	    114,60%
+m=2, ord=5.000, TKP=30%	    € 300.000,00	€ 296.451,54	€ 115.996,04	98,07%
+
+
+

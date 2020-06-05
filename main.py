@@ -113,7 +113,7 @@ class InvBollbandsStrategy(sim_trade.BuyAndHoldTradingStrategy):
     def __init__(self, in_port):
         super().__init__(in_port)
         self.description = "Inverse Bollinger Bands"
-        self.BUY_ORDER_VALUE = 10000.0
+        self.BUY_ORDER_VALUE = 5000.0
         self.outcome.description = self.description
 
     def calc_suggested_transactions(self):
@@ -125,7 +125,7 @@ class InvBollbandsStrategy(sim_trade.BuyAndHoldTradingStrategy):
             stop_loss = 0.0
             stop_loss_pct = 0.9
             take_profit = 9999999.0
-            take_profit_pct = 1.3
+            take_profit_pct = 2.0
             days_short = self.outcome.days_short
             days_long = self.outcome.days_long
             boll_multi = 1
@@ -184,7 +184,7 @@ class InvBollbandsStrategy(sim_trade.BuyAndHoldTradingStrategy):
                             days_buy.append(dd.date())
                             quot_buy.append(quot)
                             # stop_loss = quot*stop_loss_pct
-                            # take_profit = quot * take_profit_pct
+                            take_profit = quot * take_profit_pct
                         elif quot < boll_down and quot_old > boll_down_old:
                             #SELL
                             reason = "BOLLINGER"
@@ -233,8 +233,8 @@ if __name__ == "__main__":
     #end_date = datetime.date.today()
     end_date = datetime.date(2020, 6, 4)
     # First day
-    start_date = datetime.date(2017, 11, 14)
-    initial_capital = 300000.0  # EUR
+    start_date = datetime.date(2015, 6, 9)
+    initial_capital = 700000.0  # EUR
 
 
     try:
@@ -291,12 +291,15 @@ if __name__ == "__main__":
     print("\nNota bene, se il NetValue finale e' inferiore a initial_capital + Dividendi, di fatto c'e' stata una perdita sul capitale")
     print("Se nell'ultimo giorno, il totale delle tasse si abbassa, di fatto si sta scontando un Tax Credit Futuro\n")
     print(final_port.por_history.loc[end_date - datetime.timedelta(days=1)])
+    # grandezze medie e minime
+    print("\n")
+    print(final_port.por_history.mean())
+    print("\n")
+    print(final_port.por_history.min())
     print("\nExecuted Tx: ")
     for t in final_port.executedTransactions:
         print(" Tx: " + str(t))
-    # come calcolare la liquidità media
-    print("\n")
-    print(final_port.por_history.mean())
+
 
     # print(final_port.por_history)
     # final_port.por_history.plot(kind='line', y='NetValue')

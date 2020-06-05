@@ -227,6 +227,8 @@ class Portfolio:
         self.assets["DPZ"] = Asset(EQUITY, "Domino's Pizza", "DPZ", "NYSE", "USD")
         self.assets["DXCM"] = Asset(EQUITY, "DexCom, Inc.", "DXCM", "NASDAQ", "USD")
         self.assets["JAZZ"] = Asset(EQUITY, "Jazz Pharmaceuticals plc", "JAZZ", "NASDAQ", "USD")
+        self.assets["MED"] = Asset(EQUITY, "Medifast, Inc.", "MED", "NYSE", "USD")
+        self.assets["MRNA"] = Asset(EQUITY, "Moderna, Inc.", "MRNA", "NASDAQ", "USD")
 
         # Titolo CH da me selezionati
         self.assets["ALC.SW"] = Asset(EQUITY, "ALCON N", "ALC.SW", "VIRTX", "CHF")
@@ -254,6 +256,11 @@ class Portfolio:
         self.assets["ULVR.L"] = Asset(EQUITY, "UNILEVER", "ULVR.L", "LSE", "GBP")
         self.assets["LGEN.L"] = Asset(EQUITY, "Legal & General Group Plc", "LGEN.L", "LSE", "GBP")
         self.assets["LSE.L"] = Asset(EQUITY, "London Stock Exchange Group plc", "LSE.L", "LSE", "GBP")
+        self.assets["SSE.L"] = Asset(EQUITY, "SSE plc", "SSE.L", "LSE", "GBP")
+        self.assets["AV.L"] = Asset(EQUITY, "Aviva plc", "AV.L", "LSE", "GBP")
+        self.assets["TSCO.L"] = Asset(EQUITY, "Tesco PLC", "TSCO.L", "LSE", "GBP")
+        self.assets["MRW.L"] = Asset(EQUITY, "Wm Morrison Supermarkets PLC", "MRW.L", "LSE", "GBP")
+
 
         # Titoli EUR da me selezionati
         self.assets["AMP.MI"] = Asset(EQUITY, "Amplifon", "AMP.MI", "MTA", "EUR")
@@ -275,6 +282,11 @@ class Portfolio:
         self.assets["VNA.DE"] = Asset(EQUITY, "VONOVIA", "VNA.DE", "XETRA", "EUR")
         self.assets["MC.PA"] = Asset(EQUITY, "LVMH Moët Hennessy Louis Vuitton S.E.", "MC.PA", "EQUIDUCT", "EUR")
         self.assets["VVD.F"] = Asset(EQUITY, "Veolia Environnement S.A.", "VVD.F", "EQUIDUCT", "EUR")
+        self.assets["ISP.MI"] = Asset(EQUITY, "Intesa Sanpaolo", "ISP.MI", "MTA", "EUR")
+        self.assets["MZB.MI"] = Asset(EQUITY, "Massimo Zanetti Beverage Group", "MZB.MI", "MTA", "EUR")
+        self.assets["SAP.DE"] = Asset(EQUITY, "SAP", "SAP.DE", "XETRA", "EUR")
+
+
 
     def calc_stats(self):
         # TODO: questo metodo dovrebbe stare a livello di Strategia... Però deve essere eseguito prima di sistemare i

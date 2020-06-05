@@ -113,7 +113,7 @@ class InvBollbandsStrategy(sim_trade.BuyAndHoldTradingStrategy):
     def __init__(self, in_port):
         super().__init__(in_port)
         self.description = "Inverse Bollinger Bands"
-        self.BUY_ORDER_VALUE = 5000.0
+        self.BUY_ORDER_VALUE = 10000.0
         self.outcome.description = self.description
 
     def calc_suggested_transactions(self):
@@ -124,8 +124,8 @@ class InvBollbandsStrategy(sim_trade.BuyAndHoldTradingStrategy):
             # SELL. Nella strategia BUY & HOLD, se il valore di un asset è 0 allora genero un BUY
             stop_loss = 0.0
             stop_loss_pct = 0.9
-            #take_profit = 9999999.0
-            take_profit_pct = 1.2
+            take_profit = 9999999.0
+            take_profit_pct = 1.3
             days_short = self.outcome.days_short
             days_long = self.outcome.days_long
             boll_multi = 1
@@ -147,7 +147,7 @@ class InvBollbandsStrategy(sim_trade.BuyAndHoldTradingStrategy):
                         dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
                         dailyPendTx.append(sim_trade.Transaction("SELL", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0, "STOP LOSS"))
                         stop_loss = 0.0
-                        #take_profit = 9999999.0
+                        take_profit = 9999999.0
                     else:
                         prev_day = dd.date() - datetime.timedelta(days=1)
                         boll_up_old = asset.history.loc[prev_day, 'sma_long'] + boll_multi * asset.history.loc[prev_day, 'std_long']
@@ -159,11 +159,21 @@ class InvBollbandsStrategy(sim_trade.BuyAndHoldTradingStrategy):
                         sma_long = asset.history.loc[dd.date(), 'sma_long']
                         sma_long_old = asset.history.loc[prev_day, 'sma_long']
 
-                        if quot > boll_up and quot_old < boll_up_old:
+                        if quot > take_profit:
+                            # SELL
+                            reason = "TAKE PROFIT"
+                            logging.debug("\tTKP: Requesting SELL for " + str(key) + " on " + str(
+                                dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(
+                                asset.history.loc[dd.date(), 'Close']))
+                            dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
+                            dailyPendTx.append(sim_trade.Transaction("SELL", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0, reason))
+                            stop_loss = 0.0
+                            take_profit = 9999999.0
+                            days_sell.append(dd.date())
+                            quot_sell.append(quot)
+                        elif quot > boll_up and quot_old < boll_up_old:
                             # BUY
                             reason = "INV BOLLINGER"
-                            # stop_loss = asset.history.loc[dd.date(), 'Close'] * stop_loss_pct
-                            # take_profit = asset.history.loc[dd.date(), 'Close'] * take_profit_pct
                             logging.debug("\t" + reason + ": Requesting BUY for " + str(key) + " on " + str(
                                 dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(asset.history.loc[dd.date(), 'Close']) + "\tSetting stop_loss: " + str(stop_loss))
                             logging.debug("assetType: " + str(asset.assetType))
@@ -173,7 +183,8 @@ class InvBollbandsStrategy(sim_trade.BuyAndHoldTradingStrategy):
                                                       reason))
                             days_buy.append(dd.date())
                             quot_buy.append(quot)
-                            #stop_loss = quot*stop_loss_pct
+                            # stop_loss = quot*stop_loss_pct
+                            # take_profit = quot * take_profit_pct
                         elif quot < boll_down and quot_old > boll_down_old:
                             #SELL
                             reason = "BOLLINGER"
@@ -181,10 +192,9 @@ class InvBollbandsStrategy(sim_trade.BuyAndHoldTradingStrategy):
                                 dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(
                                 asset.history.loc[dd.date(), 'Close']))
                             dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
-                            dailyPendTx.append(
-                                sim_trade.Transaction("SELL", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0,
-                                                      reason))
+                            dailyPendTx.append(sim_trade.Transaction("SELL", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0, reason))
                             stop_loss = 0.0
+                            take_profit = 9999999.0
                             days_sell.append(dd.date())
                             quot_sell.append(quot)
             print(".", end="", flush=True)
@@ -221,9 +231,9 @@ if __name__ == "__main__":
 
     # Last day
     #end_date = datetime.date.today()
-    end_date = datetime.date(2020, 6, 3)
+    end_date = datetime.date(2020, 6, 4)
     # First day
-    start_date = datetime.date(2019, 11, 10)
+    start_date = datetime.date(2017, 11, 14)
     initial_capital = 300000.0  # EUR
 
 
@@ -284,8 +294,12 @@ if __name__ == "__main__":
     print("\nExecuted Tx: ")
     for t in final_port.executedTransactions:
         print(" Tx: " + str(t))
-    print(final_port.por_history)
-    #final_port.por_history.plot(kind='line', y='NetValue')
+    # come calcolare la liquidità media
+    print("\n")
+    print(final_port.por_history.mean())
+
+    # print(final_port.por_history)
+    # final_port.por_history.plot(kind='line', y='NetValue')
     final_port.por_history['NetValue'].plot(kind='line')
     plt.show()
     # esamino un'azione per capire cosa ho individuato come punti d'inversione

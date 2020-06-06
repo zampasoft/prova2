@@ -146,7 +146,7 @@ class Transaction:
 class Portfolio:
     pendingTransactions: Dict[datetime.date, typing.List[Transaction]]
 
-    def __init__(self, start_date : datetime.date, end_date : datetime.date, initial_capital : float, description="Default Portfolio", days_short=20, days_long=120):
+    def __init__(self, start_date : datetime.date, end_date : datetime.date, initial_capital : float, description="Default Portfolio", days_short=20, days_long=150):
         self.assets = dict()
         # elenco di asset acceduti via simbolo. un giorno capirò se abbia senso una struttura dati diversa
         self.defCurrency = "EUR"
@@ -452,7 +452,7 @@ class BuyAndHoldTradingStrategy:
             assert isinstance(asset, Asset)
             # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o
             # SELL. Nella strategia BUY & HOLD, se il valore di un asset è 0 allora genero un BUY
-            days_long = 40
+            days_long = self.outcome.days_long
             for dd in ar.Arrow.range('week', datetime.datetime.combine(self.outcome.start_date, datetime.time.min) + datetime.timedelta(days=days_long),
                                          datetime.datetime.combine(self.outcome.end_date - datetime.timedelta(days=1), datetime.time.min)):
 

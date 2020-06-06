@@ -184,7 +184,7 @@ class InvBollbandsStrategy(sim_trade.BuyAndHoldTradingStrategy):
                             days_buy.append(dd.date())
                             quot_buy.append(quot)
                             # stop_loss = quot*stop_loss_pct
-                            take_profit = quot * take_profit_pct
+                            # take_profit = quot * take_profit_pct
                         elif quot < boll_down and quot_old > boll_down_old:
                             #SELL
                             reason = "BOLLINGER"
@@ -205,10 +205,10 @@ class InvBollbandsStrategy(sim_trade.BuyAndHoldTradingStrategy):
             # SELL_points.plot(kind='scatter', ax=ax, x='Date', y='Quotation', color="red", alpha=0.5)
             # plt.show()
             # l'ultimo giorno vendo tutto.
-            if asset.assetType.assetType != "currency":
-                logging.info("\tRequesting SELL for " + str(key) + " on " + str(self.outcome.end_date))
-                dailyPendTx = self.outcome.pendingTransactions[self.outcome.end_date]
-                dailyPendTx.append(sim_trade.Transaction("SELL", asset, self.outcome.end_date, 0, 0.0, self.description))
+            # if asset.assetType.assetType != "currency":
+            #    logging.info("\tRequesting SELL for " + str(key) + " on " + str(self.outcome.end_date))
+            #    dailyPendTx = self.outcome.pendingTransactions[self.outcome.end_date]
+            #    dailyPendTx.append(sim_trade.Transaction("SELL", asset, self.outcome.end_date, 0, 0.0, self.description))
         print(" ")
         return self.outcome.pendingTransactions
 
@@ -231,10 +231,10 @@ if __name__ == "__main__":
 
     # Last day
     #end_date = datetime.date.today()
-    end_date = datetime.date(2020, 6, 4)
+    end_date = datetime.date(2020, 6, 5)
     # First day
-    start_date = datetime.date(2015, 6, 9)
-    initial_capital = 700000.0  # EUR
+    start_date = datetime.date(2019, 6, 5)
+    initial_capital = 500000.0  # EUR
 
 
     try:
@@ -292,9 +292,9 @@ if __name__ == "__main__":
     print("Se nell'ultimo giorno, il totale delle tasse si abbassa, di fatto si sta scontando un Tax Credit Futuro\n")
     print(final_port.por_history.loc[end_date - datetime.timedelta(days=1)])
     # grandezze medie e minime
-    print("\n")
+    print("\nAverages:")
     print(final_port.por_history.mean())
-    print("\n")
+    print("\nMins:")
     print(final_port.por_history.min())
     print("\nExecuted Tx: ")
     for t in final_port.executedTransactions:

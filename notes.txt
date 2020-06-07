@@ -1,20 +1,21 @@
 miei appunti:
 
-Azioni da aggiungere alla lista: slack e oracle.
+Azioni da aggiungere alla lista: slack, oracle, gap, broadcom, uber.
+apparentemente limitate il portagoglio a 20-25 titoli è una mossa vincente.
 
-Creare un file "Market" in cui listare tutti i titoli da monitorare
+Da fare:
+Rinominare main in SUN_SIM, e portare strategie in file separato
+i test di simulazione li facciamo su 5 anni.
+Il calcolo dei segnali su 12 mesi.
+
+Il portagoglio iniziale va rinominato in "Marketa" in cui listare tutti i titoli da monitorare
 Creare un file "init_trans", in cui elencare una serie di ordini BUY da fare il primo giorno, per avere un portafoglio
 di partenza uguale al mio e vedere come evolve negli anni. (Nella strategia di portafoglio aggiungere un batch di ordini
 iniziali che simuli il mio portafoglio attuale)
 E' anche un modo per confrontare meglio BUY & HOLD con le altre strategie.
 
-fare un programma non per il backtesting, ma per l'attuale calcolo dei segnali, senza caching e sempre
-
 STRATEGIA
-
-provare a fare banda di Bollingher invertita con moltiplicatore 1, 120 gg, e vendere con take profit a +30%
-
-
+rendere i test parametrici per facilitare l'ottimizzazione dei parametri.
 
 outcome di alcuni tests:
 Label	                    Initial Cap	    NetValue	    Avg Liq	        Return

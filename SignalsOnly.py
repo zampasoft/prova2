@@ -52,7 +52,7 @@ if __name__ == "__main__":
     # calcolo i segnali BUY e SELL
     timestamp = datetime.datetime.now()
     logging.info("\nCalculating BUY/SELL Signals")
-    my_strategy_signals = my_trading_strategy.calc_suggested_transactions()
+    my_strategy_signals = my_trading_strategy.calc_suggested_transactions(sell_all=False)
     logging.info("Signals calculated in " + str(datetime.datetime.now() - timestamp))
 
     print("Calculation Outcome:")

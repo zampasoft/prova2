@@ -4,7 +4,6 @@ import logging
 import os
 import sim_trade
 import arrow as ar
-import main
 
 
 if __name__ == "__main__":
@@ -39,16 +38,16 @@ if __name__ == "__main__":
     # adesso dovrei aver recuperato tutti i dati...
     # Devo sistemare i gap nelle date perché non voglio continuare a controllare se un indice esiste o meno...
     print("\tFixing Data")
-    myPortfolio.calc_stats()
+    myPortfolio.calc_stats(days_short=20, days_long=150)
     myPortfolio.fill_history_gaps()
     # devo definire una strategia di Trading
     print("\tCalculating Signals")
-    my_trading_strategy = main.InvBollbandsStrategy(myPortfolio)
+    my_trading_strategy = sim_trade.InvBollbandsStrategy(myPortfolio)
     #my_trading_strategy = sim_trade.BuyAndHoldTradingStrategy(myPortfolio)
     # calcolo i segnali BUY e SELL
     timestamp = datetime.datetime.now()
     logging.info("\nCalculating BUY/SELL Signals")
-    my_strategy_signals = my_trading_strategy.calc_suggested_transactions(sell_all=False)
+    my_strategy_signals = my_trading_strategy.calc_suggested_transactions(sell_all=False, w_short=1.0, w_long=1.0)
     logging.info("Signals calculated in " + str(datetime.datetime.now() - timestamp))
 
     print("Calculation Outcome:")

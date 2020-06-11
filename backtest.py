@@ -1,0 +1,115 @@
+# ver 1.0
+import datetime
+import logging
+import os
+import pandas as pd
+import sim_trade
+import matplotlib.pyplot as plt
+import pickle
+from sim_trade import InvBollbandsStrategy
+
+if __name__ == "__main__":
+    # cominciamo a lavorare
+    print("\nStarting...")
+    # setting up Logging
+    try:
+        os.remove("./logs/backtrace.log")
+    except Exception as e:
+        print(e)
+    logging.basicConfig(filename='./logs/backtrace.log', level=logging.DEBUG)
+    #logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+    logging.info("******************************************************")
+    logging.info("*      NEW START : " + str(datetime.datetime.now()) + "        *")
+    logging.info("******************************************************")
+
+
+    # print DataFrame wide
+    pd.set_option('display.width', 1000)
+
+    # Last day
+    #end_date = datetime.date.today()
+    end_date = datetime.date(2020, 6, 11)
+    # First day
+    start_date = datetime.date(2015, 6, 9)
+    initial_capital = 1000000.0  # EUR set 1.000.000 to test WITHOUT constraints.
+
+    filename = "./data/saved.mkts.data." + str(start_date) + '-' + str(end_date)
+    try:
+        # se esiste questo file, lo carico e risparmio qualche minuto
+        file_handle = open(filename, "rb")
+        print("Loading previously saved Initial Portfolio and quotations")
+        logging.info("\nLoading previously saved Initial Portfolio and quotations from: " + str(file_handle.name))
+        myPortfolio = pickle.load(file_handle)
+        file_handle.close()
+    except FileNotFoundError:
+        # Create and Initialise myPortfolio
+        myPortfolio = sim_trade.Portfolio(start_date, end_date, initial_capital)
+        print("\tInit Portfolio")
+        myPortfolio.loadAssetList()
+        timestamp = datetime.datetime.now()
+        logging.info("\nRetrieving assets history from: " + str(start_date) + " to: " + str(end_date))
+        print("\tLoading quotations")
+        myPortfolio.loadQuotations('./data/cache')
+        logging.info("Retrieve completed in " + str(datetime.datetime.now() - timestamp))
+        # adesso dovrei aver recuperato tutti i dati...
+        # Devo sistemare i gap nelle date perché non voglio continuare a controllare se un indice esiste o meno...
+        print("\tFixing Data")
+        myPortfolio.calc_stats(days_short=20, days_long=150)
+        myPortfolio.fill_history_gaps()
+        # mi salvo il calcolo per velocizzare i miei tests
+        file_handle = open(filename, "wb")
+        logging.info("\nSaving Initial Portfolio and quotations to: " + str(file_handle.name))
+        pickle.dump(myPortfolio, file_handle)
+        file_handle.close()
+    # devo definire una strategia di Trading
+    print("\tCalculating Signals")
+    my_trading_strategy = InvBollbandsStrategy(myPortfolio)
+    # my_trading_strategy = sim_trade.BuyAndHoldTradingStrategy(myPortfolio)
+    # calcolo i segnali BUY e SELL
+    timestamp = datetime.datetime.now()
+    logging.info("\nCalculating BUY/SELL Signals")
+    my_strategy_outcome = my_trading_strategy.calc_suggested_transactions(w_short=1.0, w_long=1.0)
+    logging.info("Signals calculated in " + str(datetime.datetime.now() - timestamp))
+
+    # processo tutte le transazioni pending e vedo cosa succede
+    timestamp = datetime.datetime.now()
+    logging.info("\nExecuting trades")
+    print("\tSimulating trading")
+    # se initial capital è 1.000.000, metto l'ordine a 50.000 per avere dei vincoli, oppure 5.000 per essere
+    # virtualmente senza vincoli di liquidità
+    final_port = my_trading_strategy.runTradingSimulation(orderValue=5000.0)
+    logging.info("Trades completed in " + str(datetime.datetime.now() - timestamp))
+
+    # elaborazione finita visualizziamo l'outcome
+    print("\nEnded, please check log file.\n")
+    print("Simulation Outcome:")
+    print("\nInitial Portfolio")
+    myPortfolio.printReport()
+    print("\nFinal Portfolio:")
+    final_port.printReport()
+    print("\nNota bene, se il NetValue finale e' inferiore a initial_capital + Dividendi, di fatto c'e' stata una perdita sul capitale")
+    print("Se nell'ultimo giorno, il totale delle tasse si abbassa, di fatto si sta scontando un Tax Credit Futuro\n")
+    print(final_port.por_history.loc[end_date - datetime.timedelta(days=1)])
+    # grandezze medie e minime
+    print("\nAverages:")
+    print(final_port.por_history.mean())
+    print("\nMins:")
+    print(final_port.por_history.min())
+    print("\nExecuted Tx: ")
+    for t in final_port.executedTransactions:
+        print(" Tx: " + str(t))
+
+
+    # print(final_port.por_history)
+    # final_port.por_history.plot(kind='line', y='NetValue')
+    final_port.por_history['NetValue'].plot(kind='line')
+    plt.show()
+    # esamino un'azione per capire cosa ho individuato come punti d'inversione
+    final_port.assets['AMP.MI'].history['Close'].plot()
+    # A scopo didattico, provo a visualizzare i punti di BUY e SELL calcolati
+    # costruire un dataframe con i segnali di BUY per AMP.MI
+    # pandas_sma_short = final_port.assets['AMP.MI'].history['Close'].history.rolling(window=30).mean()
+    # pandas_sma_short.plot()
+    # AX = AX
+    # plt.scatter()
+    # plt.show()

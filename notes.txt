@@ -1,7 +1,6 @@
 miei appunti:
 
-Azioni da aggiungere alla lista: slack, oracle, gap, broadcom, uber.
-apparentemente limitate il portagoglio a 20-25 titoli è una mossa vincente.
+Apparentemente limitate il portagoglio a 20-25 titoli è una mossa vincente.
 
 Da fare:
 Rinominare main in SUN_SIM, e portare strategie in file separato

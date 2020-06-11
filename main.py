@@ -18,11 +18,13 @@ class InvBollbandsStrategy(sim_trade.BuyAndHoldTradingStrategy):
     def __init__(self, in_port):
         super().__init__(in_port)
         self.description = "Inverse Bollinger Bands"
-        self.BUY_ORDER_VALUE = 5000.0
+        self.BUY_ORDER_VALUE = 50000.0
+        # se initial capital è 1.000.000, metto l'ordine a 50.000 per avere dei vincoli
         self.outcome.description = self.description
 
     def calc_suggested_transactions(self, sell_all=True):
-        # Strategia base "BUY & HOLD"
+        # Estendo la strategia base "BUY & HOLD"
+        # dovrei mettere il moltiplicatore della banda di Bollingher come parametro del metodo
         for key, asset in sorted(self.outcome.assets.items()):
             assert isinstance(asset, sim_trade.Asset)
             # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o
@@ -124,7 +126,10 @@ if __name__ == "__main__":
     # cominciamo a lavorare
     print("\nStarting...")
     # setting up Logging
-    os.remove("./logs/backtrace.log")
+    try:
+        os.remove("./logs/backtrace.log")
+    except Exception as e:
+        print(e)
     logging.basicConfig(filename='./logs/backtrace.log', level=logging.DEBUG)
     #logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
     logging.info("******************************************************")
@@ -137,10 +142,10 @@ if __name__ == "__main__":
 
     # Last day
     #end_date = datetime.date.today()
-    end_date = datetime.date(2020, 6, 5)
+    end_date = datetime.date(2020, 6, 11)
     # First day
-    start_date = datetime.date(2019, 6, 5)
-    initial_capital = 500000.0  # EUR
+    start_date = datetime.date(2015, 6, 9)
+    initial_capital = 1000000.0  # EUR set 1.000.000 to test WITHOUT constraints.
 
 
     try:

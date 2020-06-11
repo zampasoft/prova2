@@ -112,7 +112,7 @@ class Transaction:
         self.note = note
 
     def __str__(self):
-            return (str(self.when) + " : " + self.verb + " " + self.asset.symbol + " " + str(self.value)) + " " + str(
+            return (str(self.when) + " : " + self.verb + "\t" + self.asset.symbol + "\t" + str(self.value)) + " " + str(
                 self.quantity) + " " + self.state
 
     # credo un metodo statico che userò per ordinare gli array di trabsazioni
@@ -229,6 +229,14 @@ class Portfolio:
         self.assets["JAZZ"] = Asset(EQUITY, "Jazz Pharmaceuticals plc", "JAZZ", "NASDAQ", "USD")
         self.assets["MED"] = Asset(EQUITY, "Medifast, Inc.", "MED", "NYSE", "USD")
         self.assets["MRNA"] = Asset(EQUITY, "Moderna, Inc.", "MRNA", "NASDAQ", "USD")
+        self.assets["AAPL"] = Asset(EQUITY, "Apple Inc.", "AAPL", "NASDAQ", "USD")
+        self.assets["FB"] = Asset(EQUITY, "Facebook, Inc.", "FB", "NASDAQ", "USD")
+        self.assets["DBX"] = Asset(EQUITY, "Dropbox, Inc.", "DBX", "NASDAQ", "USD")
+        self.assets["AVGO"] = Asset(EQUITY, "Broadcom Inc.", "AVGO", "NASDAQ", "USD")
+        self.assets["WORK"] = Asset(EQUITY, "Slack Technologies, Inc.", "WORK", "NYSE", "USD")
+        self.assets["GPS"] = Asset(EQUITY, "The Gap, Inc.", "GPS", "NYSE", "USD")
+        self.assets["TWTR"] = Asset(EQUITY, "Twitter, Inc.", "TWTR", "NYSE", "USD")
+        self.assets["ADBE"] = Asset(EQUITY, "Adobe Inc.", "ADBE", "NASDAQ", "USD")
 
         # Titolo CH da me selezionati
         self.assets["ALC.SW"] = Asset(EQUITY, "ALCON N", "ALC.SW", "VIRTX", "CHF")
@@ -260,6 +268,7 @@ class Portfolio:
         self.assets["AV.L"] = Asset(EQUITY, "Aviva plc", "AV.L", "LSE", "GBP")
         self.assets["TSCO.L"] = Asset(EQUITY, "Tesco PLC", "TSCO.L", "LSE", "GBP")
         self.assets["MRW.L"] = Asset(EQUITY, "Wm Morrison Supermarkets PLC", "MRW.L", "LSE", "GBP")
+        self.assets["OCDO.L"] = Asset(EQUITY, "Ocado Group plc", "OCDO.L", "LSE", "GBP")
 
 
         # Titoli EUR da me selezionati
@@ -274,6 +283,9 @@ class Portfolio:
         self.assets["ENI.MI"] = Asset(EQUITY, "ENI", "ENI.MI", "MTA", "EUR")
         self.assets["FCA.MI"] = Asset(EQUITY, "FCA", "FCA.MI", "MTA", "EUR")
         self.assets["GEO.MI"] = Asset(EQUITY, "GEO", "GEO.MI", "MTA", "EUR")
+        self.assets["NEXI.MI"] = Asset(EQUITY, "Nexi S.p.A.", "NEXI.MI", "MTA", "EUR")
+        self.assets["STM.MI"] = Asset(EQUITY, "STMicroelectronics N.V.", "STM.MI", "MTA", "EUR")
+        self.assets["PST.MI"] = Asset(EQUITY, "Poste Italiane SpA", "PST.MI", "MTA", "EUR")
         self.assets["KER.PA"] = Asset(EQUITY, "Kering SA", "KER.PA", "EQUIDUCT", "EUR")
         self.assets["MONC.MI"] = Asset(EQUITY, "MONCLER", "MONC.MI", "MTA", "EUR")
         self.assets["UCG.MI"] = Asset(EQUITY, "UNICREDIT", "UCG.MI", "MTA", "EUR")
@@ -285,6 +297,9 @@ class Portfolio:
         self.assets["ISP.MI"] = Asset(EQUITY, "Intesa Sanpaolo", "ISP.MI", "MTA", "EUR")
         self.assets["MZB.MI"] = Asset(EQUITY, "Massimo Zanetti Beverage Group", "MZB.MI", "MTA", "EUR")
         self.assets["SAP.DE"] = Asset(EQUITY, "SAP", "SAP.DE", "XETRA", "EUR")
+        self.assets["ADS.DE"] = Asset(EQUITY, "Adidas AG", "ADS.DE", "XETRA", "EUR")
+        self.assets["DPW.DE"] = Asset(EQUITY, "Deutsche Post AG", "DPW.DE", "XETRA", "EUR")
+
 
 
 
@@ -528,6 +543,7 @@ class BuyAndHoldTradingStrategy:
 
 
     def exec_trade(self, t : Transaction):
+        # TODO: spostare order value come parametro di questo metodo, che è l'unico posto in cui viene usato
         # TODO: verificare che lo stato della Transazione sia Pending
         # recupero l'asset su cui devo operare
         logging.debug("Executing transaction: " + str(t))

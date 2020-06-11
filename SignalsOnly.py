@@ -2,12 +2,8 @@
 import datetime
 import logging
 import os
-import pandas as pd
 import sim_trade
 import arrow as ar
-import matplotlib.pyplot as plt
-import pickle
-import math
 import main
 
 

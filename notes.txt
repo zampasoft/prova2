@@ -3,15 +3,16 @@ miei appunti:
 Apparentemente limitate il portagoglio a 20-25 titoli è una mossa vincente.
 
 Da fare:
-Rinominare main in SUN_SIM, e portare strategie in file separato
 i test di simulazione li facciamo su 5 anni.
 Il calcolo dei segnali su 12 mesi.
 
-Il portagoglio iniziale va rinominato in "Marketa" in cui listare tutti i titoli da monitorare
+Il portagoglio iniziale va rinominato in "Markets" perché di fatto ha lo scopo di raccogliere i dati dei mercati
+per tutti i titoli da monitorati.
 Creare un file "init_trans", in cui elencare una serie di ordini BUY da fare il primo giorno, per avere un portafoglio
 di partenza uguale al mio e vedere come evolve negli anni. (Nella strategia di portafoglio aggiungere un batch di ordini
 iniziali che simuli il mio portafoglio attuale)
 E' anche un modo per confrontare meglio BUY & HOLD con le altre strategie.
+Aggiungere calcolo delle tasse per ogni simbolo, così vediamo quanti sono quelli che hanno contributi positivi.
 
 STRATEGIA
 rendere i test parametrici per facilitare l'ottimizzazione dei parametri.

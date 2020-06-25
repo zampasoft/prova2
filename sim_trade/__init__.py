@@ -234,6 +234,14 @@ class Portfolio:
         self.assets["GPS"] = Asset(EQUITY, "The Gap, Inc.", "GPS", "NYSE", "USD")
         self.assets["TWTR"] = Asset(EQUITY, "Twitter, Inc.", "TWTR", "NYSE", "USD")
         self.assets["ADBE"] = Asset(EQUITY, "Adobe Inc.", "ADBE", "NASDAQ", "USD")
+        self.assets["SHOP"] = Asset(EQUITY, "Shopify Inc.", "SHOP", "NYSE", "USD")
+        self.assets["GRPN"] = Asset(EQUITY, "Groupon Inc.", "GRPN", "NASDAQ", "USD")
+        self.assets["SVMK"] = Asset(EQUITY, "SVMK Inc.", "SVMK", "NASDAQ", "USD")
+        self.assets["NET"] = Asset(EQUITY, "Cloudflare Inc.", "NET", "NYSE", "USD")
+        self.assets["FIT"] = Asset(EQUITY, "Fitbit Inc.", "FIT", "NYSE", "USD")
+        self.assets["IT"] = Asset(EQUITY, "Gartner Inc.", "IT", "NYSE", "USD")
+        self.assets["TSLA"] = Asset(EQUITY, "Tesla Inc.", "TSLA", "NASDAQ", "USD")
+
 
         # Titolo CH da me selezionati
         self.assets["ALC.SW"] = Asset(EQUITY, "ALCON N", "ALC.SW", "VIRTX", "CHF")
@@ -242,6 +250,8 @@ class Portfolio:
         self.assets["NESN.SW"] = Asset(EQUITY, "Nestle S.A.", "NESN.SW", "VIRTX", "CHF")
         self.assets["SREN.SW"] = Asset(EQUITY, "Swiss Re AG", "SREN.SW", "VIRTX", "CHF")
         self.assets["ROG.SW"] = Asset(EQUITY, "Roche Holding AG", "ROG.SW", "VIRTX", "CHF")
+        self.assets["LONN.SW"] = Asset(EQUITY, "Lonza Group Ltd", "LONN.SW", "VIRTX", "CHF")
+        self.assets["GIVN.SW"] = Asset(EQUITY, "Givaudan SA", "GIVN.SW", "VIRTX", "CHF")
 
         # Titoli GBP da me selezionati
         self.assets["BA.L"] = Asset(EQUITY, "BAE SYSTEMS", "BA.L", "LSE", "GBP")
@@ -289,7 +299,7 @@ class Portfolio:
         self.assets["EL.PA"] = Asset(EQUITY, "EssilorLuxottica Societe anonyme", "EL.PA", "EQUIDUCT", "EUR")
         self.assets["FME.DE"] = Asset(EQUITY, "FRESENIUS MEDICAL", "FME.DE", "EQUIDUCT", "EUR")
         self.assets["VNA.DE"] = Asset(EQUITY, "VONOVIA", "VNA.DE", "XETRA", "EUR")
-        self.assets["MC.PA"] = Asset(EQUITY, "LVMH Moët Hennessy Louis Vuitton S.E.", "MC.PA", "EQUIDUCT", "EUR")
+        #self.assets["MC.PA"] = Asset(EQUITY, "LVMH Moët Hennessy Louis Vuitton S.E.", "MC.PA", "EQUIDUCT", "EUR")
         self.assets["VVD.F"] = Asset(EQUITY, "Veolia Environnement S.A.", "VVD.F", "EQUIDUCT", "EUR")
         self.assets["ISP.MI"] = Asset(EQUITY, "Intesa Sanpaolo", "ISP.MI", "MTA", "EUR")
         self.assets["MZB.MI"] = Asset(EQUITY, "Massimo Zanetti Beverage Group", "MZB.MI", "MTA", "EUR")

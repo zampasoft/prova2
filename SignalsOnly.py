@@ -37,8 +37,9 @@ if __name__ == "__main__":
     logging.info("Retrieve completed in " + str(datetime.datetime.now() - timestamp))
     # adesso dovrei aver recuperato tutti i dati...
     # Devo sistemare i gap nelle date perché non voglio continuare a controllare se un indice esiste o meno...
-    print("\tFixing Data")
+    print("\tCalculating Basic Stats")
     myPortfolio.calc_stats(days_short=20, days_long=150)
+    print("\tFixing Data")
     myPortfolio.fill_history_gaps()
     # devo definire una strategia di Trading
     print("\tCalculating Signals")

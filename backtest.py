@@ -12,11 +12,12 @@ if __name__ == "__main__":
     # cominciamo a lavorare
     print("\nStarting...")
     # setting up Logging
+    log_file_name="./logs/backtesting.log"
     try:
-        os.remove("./logs/backtrace.log")
+        os.remove(log_file_name)
     except Exception as e:
         print(e)
-    logging.basicConfig(filename='./logs/backtrace.log', level=logging.DEBUG)
+    logging.basicConfig(filename=log_file_name, level=logging.DEBUG)
     #logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
     logging.info("******************************************************")
     logging.info("*      NEW START : " + str(datetime.datetime.now()) + "        *")
@@ -28,10 +29,13 @@ if __name__ == "__main__":
 
     # Last day
     #end_date = datetime.date.today()
-    end_date = datetime.date(2020, 6, 11)
+    end_date = datetime.date(2020, 6, 23)
     # First day
     start_date = datetime.date(2015, 6, 9)
-    initial_capital = 1000000.0  # EUR set 1.000.000 to test WITHOUT constraints.
+    initial_capital = 1000000.0  # 1.000.000 EUR
+    # se initial capital è 1.000.000, metto l'ordine a 50.000 per avere dei vincoli, oppure 5.000 per essere
+    # virtualmente senza vincoli di liquidità
+    max_order = 5000.0
 
     filename = "./data/saved.mkts.data." + str(start_date) + '-' + str(end_date)
     try:
@@ -53,8 +57,9 @@ if __name__ == "__main__":
         logging.info("Retrieve completed in " + str(datetime.datetime.now() - timestamp))
         # adesso dovrei aver recuperato tutti i dati...
         # Devo sistemare i gap nelle date perché non voglio continuare a controllare se un indice esiste o meno...
-        print("\tFixing Data")
+        print("\tCalculating Basic Stats")
         myPortfolio.calc_stats(days_short=20, days_long=150)
+        print("\tFixing Data")
         myPortfolio.fill_history_gaps()
         # mi salvo il calcolo per velocizzare i miei tests
         file_handle = open(filename, "wb")
@@ -75,9 +80,7 @@ if __name__ == "__main__":
     timestamp = datetime.datetime.now()
     logging.info("\nExecuting trades")
     print("\tSimulating trading")
-    # se initial capital è 1.000.000, metto l'ordine a 50.000 per avere dei vincoli, oppure 5.000 per essere
-    # virtualmente senza vincoli di liquidità
-    final_port = my_trading_strategy.runTradingSimulation(orderValue=5000.0)
+    final_port = my_trading_strategy.runTradingSimulation(orderValue=max_order)
     logging.info("Trades completed in " + str(datetime.datetime.now() - timestamp))
 
     # elaborazione finita visualizziamo l'outcome

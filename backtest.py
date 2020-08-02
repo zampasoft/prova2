@@ -29,9 +29,10 @@ if __name__ == "__main__":
 
     # Last day
     #end_date = datetime.date.today()
-    end_date = datetime.date(2020, 6, 23)
+    end_date = datetime.date(2020, 7, 31)
     # First day
-    start_date = datetime.date(2015, 6, 9)
+    #start_date = datetime.date(2015, 6, 9)
+    start_date = datetime.date(2019, 9, 5)
     initial_capital = 1000000.0  # 1.000.000 EUR
     # se initial capital è 1.000.000, metto l'ordine a 50.000 per avere dei vincoli, oppure 5.000 per essere
     # virtualmente senza vincoli di liquidità

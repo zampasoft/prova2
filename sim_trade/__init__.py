@@ -241,6 +241,7 @@ class Portfolio:
         self.assets["FIT"] = Asset(EQUITY, "Fitbit Inc.", "FIT", "NYSE", "USD")
         self.assets["IT"] = Asset(EQUITY, "Gartner Inc.", "IT", "NYSE", "USD")
         self.assets["TSLA"] = Asset(EQUITY, "Tesla Inc.", "TSLA", "NASDAQ", "USD")
+        self.assets["SWBI"] = Asset(EQUITY, "Smith & Wesson Brands Inc.", "SWBI", "NASDAQ", "USD")
 
 
         # Titolo CH da me selezionati
@@ -299,7 +300,7 @@ class Portfolio:
         self.assets["EL.PA"] = Asset(EQUITY, "EssilorLuxottica Societe anonyme", "EL.PA", "EQUIDUCT", "EUR")
         self.assets["FME.DE"] = Asset(EQUITY, "FRESENIUS MEDICAL", "FME.DE", "EQUIDUCT", "EUR")
         self.assets["VNA.DE"] = Asset(EQUITY, "VONOVIA", "VNA.DE", "XETRA", "EUR")
-        #self.assets["MC.PA"] = Asset(EQUITY, "LVMH Moët Hennessy Louis Vuitton S.E.", "MC.PA", "EQUIDUCT", "EUR")
+        self.assets["MC.PA"] = Asset(EQUITY, "LVMH Moët Hennessy Louis Vuitton S.E.", "MC.PA", "EQUIDUCT", "EUR")
         self.assets["VVD.F"] = Asset(EQUITY, "Veolia Environnement S.A.", "VVD.F", "EQUIDUCT", "EUR")
         self.assets["ISP.MI"] = Asset(EQUITY, "Intesa Sanpaolo", "ISP.MI", "MTA", "EUR")
         self.assets["MZB.MI"] = Asset(EQUITY, "Massimo Zanetti Beverage Group", "MZB.MI", "MTA", "EUR")
@@ -409,7 +410,7 @@ class Portfolio:
         # setto una cache per i pandas_datareader
         # TODO: dovrei rendere la location e la durata della cache parametriche
         expire_after = datetime.timedelta(days=3)
-        session = requests_cache.CachedSession(cache_name=cache_file, backend='sqlite', expire_after=expire_after)
+        session = requests_cache.CachedSession(cache_name=cache_file, backend='sqlite', expire_after=expire_after, allowable_codes=(200, ))
         # get Quotations & Dividends for all Assets in myPortfolio
         for key, value in sorted(self.assets.items()):
             print(".", end="", flush=True)
@@ -422,6 +423,7 @@ class Portfolio:
             if str(key) != self.defCurrency:
                 value.history = pdr.DataReader(value.symbol, "yahoo", self.start_date, self.end_date,
                                                            session=session)
+                logging.debug("number of objects retrieved: " + str(value.history.size))
                 if value.assetType.hasDividends():
                     logging.debug("\t" + str(key) + " has dividends")
                     try:
@@ -560,7 +562,7 @@ class BuyAndHoldTradingStrategy:
         asset = self.outcome.assets[t.asset.symbol]
 
         #recupero il fattore di conversione per la valuta
-        GBPEUR = self.outcome.assets['GBP'].history.loc[t.when]['Open']/100
+        GBPEUR = self.outcome.assets['GBP'].history.loc[t.when]['Open'] / 100.0
         CHFEUR = self.outcome.assets['CHF'].history.loc[t.when]['Open']
         USDEUR = self.outcome.assets['USD'].history.loc[t.when]['Open']
 
@@ -572,6 +574,7 @@ class BuyAndHoldTradingStrategy:
                 curr_conv = GBPEUR
             elif asset.currency == "CHF":
                 curr_conv = CHFEUR
+        logging.debug(asset.currency + " curr_conv " + str(curr_conv))
 
         if t.verb == "BUY":
             logging.debug("Buying " + str(t))
@@ -579,6 +582,7 @@ class BuyAndHoldTradingStrategy:
 
             #  assumo di eseguire gli ordini di BUY e SELL come prima
             #  azione della giornata, avendoli calcolati la sera del giorno prima
+            logging.debug("asset price " + str(asset.history.loc[t.when]['Open']))
             quantity = math.floor(self.BUY_ORDER_VALUE / (asset.history.loc[t.when]['Open']*curr_conv))
             asset_price = quantity * asset.history.loc[t.when]['Open'] * curr_conv
             commission = asset_price * asset.assetType.buyCommission
@@ -643,7 +647,7 @@ class BuyAndHoldTradingStrategy:
             t.quantity = asset.history.loc[t.when]['OwnedAmount']
             self.outcome.por_history.loc[t.when]['TotalDividens'] += net_divd
             self.outcome.executedTransactions.append(t)
-            logging.debug("Dividend from " + str(asset.symbol) + "tot Value: " + str(asset.history.loc[t.when]['OwnedAmount'] * t.value * curr_conv * (1 - asset.assetType.tax_rate)))
+            logging.debug("Dividend from " + str(asset.symbol) + " tot Value: " + str(asset.history.loc[t.when]['OwnedAmount'] * t.value * curr_conv * (1 - asset.assetType.tax_rate)))
         else:
             logging.debug("Ignoring Tx: " + str(t))
             t.state = "failed"

@@ -14,6 +14,11 @@ iniziali che simuli il mio portafoglio attuale)
 E' anche un modo per confrontare meglio BUY & HOLD con le altre strategie.
 Aggiungere calcolo delle tasse per ogni simbolo, così vediamo quanti sono quelli che hanno contributi positivi.
 
+
+TRENDING vs BOUNDED
+Sarebbe utile capire se su mercati diversi funzionano strategie diverse, magari US è meglio TRending, in EU è meglio
+una strategia bounded
+
 STRATEGIA
 rendere i test parametrici per facilitare l'ottimizzazione dei parametri.
 

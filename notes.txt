@@ -1,8 +1,28 @@
 miei appunti:
 
+Come usare il programma:
+il primo lancio della giornata: 
+spostarsi nella directory: cd /home/nemofox/PycharmProjects/BackTesting
+cancellare i dati vecchi: rm data/*
+se ci sono errori nel recupero: sqlitebrowser data/cache.sqlite
+cancellare le ultime 10 righe
+per assicurarsi che i dati siano cachati correttamente a fine download eseguire: grep retrieved logs/backtesting.log
+e verificare che tutti i dataframe abbiano un numero simile di oggetti.
+>> questa procedura e' implementata nella script "daily_check.sh"
+
+
+
+
+
 Apparentemente limitate il portagoglio a 20-25 titoli è una mossa vincente.
 
 Da fare:
+Urgenti:
+- nel fix data, individuare outlier come probabili errori e sostituire con media a 20 gg
+- definiamo outlier uno scostamento superiore a 5 sigma (?) dalla media
+- implementare sempre due metodi INV Bollingher (mercato trending) e Bollingher (mercato bounded)
+
+
 i test di simulazione li facciamo su 5 anni.
 Il calcolo dei segnali su 12 mesi.
 

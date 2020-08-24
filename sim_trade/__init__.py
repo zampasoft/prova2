@@ -258,7 +258,7 @@ class Portfolio:
         self.assets["BA.L"] = Asset(EQUITY, "BAE SYSTEMS", "BA.L", "LSE", "GBP")
         self.assets["BP.L"] = Asset(EQUITY, "BP", "BP.L", "LSE", "GBP")
         self.assets["BT-A.L"] = Asset(EQUITY, "BT GROUP", "BT-A.L", "LSE", "GBP")
-        self.assets["CDM.L"] = Asset(EQUITY, "Codemasters Group", "CDM.L", "LSE", "GBP")
+        #self.assets["CDM.L"] = Asset(EQUITY, "Codemasters Group", "CDM.L", "LSE", "GBP")
         self.assets["BRBY.L"] = Asset(EQUITY, "Burberry Group", "BRBY.L", "LSE", "GBP")
         self.assets["ESNT.L"] = Asset(EQUITY, "ESSENTRA", "ESNT.L", "LSE", "GBP")
         self.assets["GLEN.L"] = Asset(EQUITY, "GLENCORE", "GLEN.L", "LSE", "GBP")
@@ -276,7 +276,7 @@ class Portfolio:
         self.assets["AV.L"] = Asset(EQUITY, "Aviva plc", "AV.L", "LSE", "GBP")
         self.assets["TSCO.L"] = Asset(EQUITY, "Tesco PLC", "TSCO.L", "LSE", "GBP")
         self.assets["MRW.L"] = Asset(EQUITY, "Wm Morrison Supermarkets PLC", "MRW.L", "LSE", "GBP")
-        self.assets["OCDO.L"] = Asset(EQUITY, "Ocado Group plc", "OCDO.L", "LSE", "GBP")
+        #self.assets["OCDO.L"] = Asset(EQUITY, "Ocado Group plc", "OCDO.L", "LSE", "GBP")
 
 
         # Titoli EUR da me selezionati
@@ -423,7 +423,7 @@ class Portfolio:
             if str(key) != self.defCurrency:
                 value.history = pdr.DataReader(value.symbol, "yahoo", self.start_date, self.end_date,
                                                            session=session)
-                logging.debug("number of objects retrieved: " + str(value.history.size))
+                logging.debug("number of objects retrieved: " + str(value.history.size) + " for " + value.symbol)
                 if value.assetType.hasDividends():
                     logging.debug("\t" + str(key) + " has dividends")
                     try:

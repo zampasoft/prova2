@@ -28,11 +28,11 @@ if __name__ == "__main__":
     pd.set_option('display.width', 1000)
 
     # Last day
-    #end_date = datetime.date.today()
-    end_date = datetime.date(2020, 7, 31)
+    end_date = datetime.date.today()
+    #end_date = datetime.date(2020, 8, 3)
     # First day
     #start_date = datetime.date(2015, 6, 9)
-    start_date = datetime.date(2019, 9, 5)
+    start_date = datetime.date(2019, 11, 5)
     initial_capital = 1000000.0  # 1.000.000 EUR
     # se initial capital è 1.000.000, metto l'ordine a 50.000 per avere dei vincoli, oppure 5.000 per essere
     # virtualmente senza vincoli di liquidità

@@ -220,7 +220,6 @@ class Portfolio:
         self.assets["NFLX"] = Asset(EQUITY, "Netflix", "NFLX", "NASDAQ", "USD")
         self.assets["ZM"] = Asset(EQUITY, "Zoom", "ZM", "NASDAQ", "USD")
         self.assets["DIS"] = Asset(EQUITY, "Disney", "DIS", "NYSE", "USD")
-        self.assets["CHK"] = Asset(EQUITY, "Chesapeake Energy Corporation", "CHK", "NYSE", "USD")
         self.assets["DPZ"] = Asset(EQUITY, "Domino's Pizza", "DPZ", "NYSE", "USD")
         self.assets["DXCM"] = Asset(EQUITY, "DexCom, Inc.", "DXCM", "NASDAQ", "USD")
         self.assets["JAZZ"] = Asset(EQUITY, "Jazz Pharmaceuticals plc", "JAZZ", "NASDAQ", "USD")
@@ -276,7 +275,7 @@ class Portfolio:
         self.assets["AV.L"] = Asset(EQUITY, "Aviva plc", "AV.L", "LSE", "GBP")
         self.assets["TSCO.L"] = Asset(EQUITY, "Tesco PLC", "TSCO.L", "LSE", "GBP")
         self.assets["MRW.L"] = Asset(EQUITY, "Wm Morrison Supermarkets PLC", "MRW.L", "LSE", "GBP")
-        #self.assets["OCDO.L"] = Asset(EQUITY, "Ocado Group plc", "OCDO.L", "LSE", "GBP")
+        self.assets["OCDO.L"] = Asset(EQUITY, "Ocado Group plc", "OCDO.L", "LSE", "GBP")
 
 
         # Titoli EUR da me selezionati
@@ -353,6 +352,16 @@ class Portfolio:
                                      datetime.datetime.combine(self.end_date, datetime.time.min)):
                 try:
                     last_row = asset.history.loc[dd.date(), : ]
+                    # ogni tanto le quotazioni inglesi fanno casino tra pence e pound.
+                    # se il valore esiste, ma rappresenta un errore, allora lo sostituisco con la media a 20 gg
+                    if asset.currency == "GBP" and not math.isnan(last_row['sma_short']):
+                        # se il valore è inferiore al 2% della media corta, probabilmente hanno invertito GBP e GBp
+                        if last_row['Close'] < last_row['sma_short'] * 0.02:
+                            logging.info("Found Outlier: managing as GBP/GBp error for " + asset.symbol + " on " + str(dd.date()))
+                            last_row['Close'] = last_row['Close'] * 100
+                            # di solito se è sbagliato il close lo è anche l'Open
+                            if last_row['Open'] < last_row['sma_short'] * 0.02:
+                                last_row['Open'] = last_row['Open'] * 100
                 except KeyError as e:
                     # non esiste l'indice
                     logging.debug("\tMissing Index: " + str(dd.date()) + " in Asset " + str(asset.symbol))
@@ -658,6 +667,7 @@ class BuyAndHoldTradingStrategy:
 
 # Per definire una strategia più complessa estendo la classe BuyAndHoldTradingStrategy e faccio overload del metodo
 # che calcola le suggested transactions
+# questa strategia funziona bene in mercati trending
 class InvBollbandsStrategy(BuyAndHoldTradingStrategy):
 
     def __init__(self, in_port):
@@ -667,7 +677,164 @@ class InvBollbandsStrategy(BuyAndHoldTradingStrategy):
 
     def calc_suggested_transactions(self, sell_all=True, w_short=1.0, w_long=1.0):
         # Estendo la strategia base "BUY & HOLD"
-        # dovrei mettere il moltiplicatore della banda di Bollingher come parametro del metodo
+        # w_short e w_long sono i moltiplicatori delle banda di Bollingher short e long
+        for key, asset in sorted(self.outcome.assets.items()):
+            assert isinstance(asset, Asset)
+            # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o
+            # SELL. Nella strategia BUY & HOLD, se il valore di un asset è 0 allora genero un BUY
+            days_short = self.outcome.days_short
+            days_long = self.outcome.days_long
+            boll_multi = w_long
+            days_buy = []
+            quot_buy = []
+            days_sell = []
+            quot_sell = []
+            for dd in ar.Arrow.range('day', datetime.datetime.combine(self.outcome.start_date, datetime.time.min) + datetime.timedelta(days=days_long),
+                                         datetime.datetime.combine(self.outcome.end_date - datetime.timedelta(days=1),
+                                                                   datetime.time.min)):
+                # mi assicuro che esistano quotazioni per l'asset, che non sia una valuta e che la varianza sia
+                # significativa, altrimenti siamo in una fase di spostamento laterale
+                if asset.history.loc[dd.date(), 'Close'] > 0.0 and asset.assetType.assetType != "currency" and asset.history.loc[dd.date(), 'std_short'] > 0.03 * asset.history.loc[dd.date(), 'sma_short']:
+
+                    prev_day = dd.date() - datetime.timedelta(days=1)
+                    boll_up_old = asset.history.loc[prev_day, 'sma_long'] + boll_multi * asset.history.loc[prev_day, 'std_long']
+                    boll_down_old = asset.history.loc[prev_day, 'sma_long'] - boll_multi * asset.history.loc[prev_day, 'std_long']
+                    quot_old = asset.history.loc[prev_day, 'Close']
+                    quot = asset.history.loc[dd.date(), 'Close']
+                    boll_up = asset.history.loc[dd.date(), 'sma_long'] + boll_multi * asset.history.loc[dd.date(), 'std_long']
+                    boll_down = asset.history.loc[dd.date(), 'sma_long'] - boll_multi * asset.history.loc[dd.date(), 'std_long']
+                    sma_long = asset.history.loc[dd.date(), 'sma_long']
+                    sma_long_old = asset.history.loc[prev_day, 'sma_long']
+
+                    if quot > boll_up and quot_old < boll_up_old:
+                        # BUY
+                        reason = "INV BOLLINGER"
+                        logging.debug("\t" + reason + ": Requesting BUY for " + str(key) + " on " + str(
+                            dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(asset.history.loc[dd.date(), 'Close']))
+                        logging.debug("assetType: " + str(asset.assetType))
+                        dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
+                        dailyPendTx.append(
+                            Transaction("BUY", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0,
+                                                  reason))
+                        days_buy.append(dd.date())
+                        quot_buy.append(quot)
+                    elif quot < boll_down and quot_old > boll_down_old:
+                        #SELL
+                        reason = "BOLLINGER"
+                        logging.debug("\tBOL: Requesting SELL for " + str(key) + " on " + str(
+                            dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(
+                            asset.history.loc[dd.date(), 'Close']))
+                        dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
+                        dailyPendTx.append(Transaction("SELL", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0, reason))
+                        days_sell.append(dd.date())
+                        quot_sell.append(quot)
+            print(".", end="", flush=True)
+            # BUY_points = pd.DataFrame({'Date': days_buy, 'Quotation': quot_buy})
+            # SELL_points = pd.DataFrame({'Date': days_sell, 'Quotation': quot_sell})
+            # ax = asset.history['Close'].plot(title=asset.symbol)
+            # BUY_points.plot(kind='scatter', ax=ax, x='Date', y='Quotation', color="green", alpha=0.5)
+            # SELL_points.plot(kind='scatter', ax=ax, x='Date', y='Quotation', color="red", alpha=0.5)
+            # plt.show()
+            if sell_all:
+            # l'ultimo giorno vendo tutto.
+             if asset.assetType.assetType != "currency":
+                logging.info("\tRequesting SELL for " + str(key) + " on " + str(self.outcome.end_date))
+                dailyPendTx = self.outcome.pendingTransactions[self.outcome.end_date]
+                dailyPendTx.append(Transaction("SELL", asset, self.outcome.end_date, 0, 0.0, self.description))
+        print(" ")
+        return self.outcome.pendingTransactions
+
+
+# Per definire una strategia più complessa estendo la classe BuyAndHoldTradingStrategy e faccio overload del metodo
+# che calcola le suggested transactions
+# questa strategia funziona bene in mercati bounded
+class BollbandsStrategy(BuyAndHoldTradingStrategy):
+
+    def __init__(self, in_port):
+        super().__init__(in_port)
+        self.description = "Bollinger Bands"
+        self.outcome.description = self.description
+
+    def calc_suggested_transactions(self, sell_all=True, w_short=1.0, w_long=1.0):
+        # Estendo la strategia base "BUY & HOLD"
+        # w_short e w_long sono i moltiplicatori delle banda di Bollingher short e long
+        for key, asset in sorted(self.outcome.assets.items()):
+            assert isinstance(asset, Asset)
+            # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o
+            # SELL. Nella strategia BUY & HOLD, se il valore di un asset è 0 allora genero un BUY
+            days_short = self.outcome.days_short
+            days_long = self.outcome.days_long
+            boll_multi = w_long
+            days_buy = []
+            quot_buy = []
+            days_sell = []
+            quot_sell = []
+            for dd in ar.Arrow.range('day', datetime.datetime.combine(self.outcome.start_date, datetime.time.min) + datetime.timedelta(days=days_long),
+                                         datetime.datetime.combine(self.outcome.end_date - datetime.timedelta(days=1),
+                                                                   datetime.time.min)):
+                # mi assicuro che esistano quotazioni per l'asset, che non sia una valuta e che la varianza sia
+                # significativa, altrimenti siamo in una fase di spostamento laterale
+                if asset.history.loc[dd.date(), 'Close'] > 0.0 and asset.assetType.assetType != "currency" and asset.history.loc[dd.date(), 'std_short'] > 0.03 * asset.history.loc[dd.date(), 'sma_short']:
+
+                    prev_day = dd.date() - datetime.timedelta(days=1)
+                    boll_up_old = asset.history.loc[prev_day, 'sma_long'] + boll_multi * asset.history.loc[prev_day, 'std_long']
+                    boll_down_old = asset.history.loc[prev_day, 'sma_long'] - boll_multi * asset.history.loc[prev_day, 'std_long']
+                    quot_old = asset.history.loc[prev_day, 'Close']
+                    quot = asset.history.loc[dd.date(), 'Close']
+                    boll_up = asset.history.loc[dd.date(), 'sma_long'] + boll_multi * asset.history.loc[dd.date(), 'std_long']
+                    boll_down = asset.history.loc[dd.date(), 'sma_long'] - boll_multi * asset.history.loc[dd.date(), 'std_long']
+                    sma_long = asset.history.loc[dd.date(), 'sma_long']
+                    sma_long_old = asset.history.loc[prev_day, 'sma_long']
+
+                    if quot > boll_down and quot_old < boll_down_old:
+                        # BUY
+                        reason = "BOLLINGER"
+                        logging.debug("\t" + reason + ": Requesting BUY for " + str(key) + " on " + str(
+                            dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(asset.history.loc[dd.date(), 'Close']))
+                        logging.debug("assetType: " + str(asset.assetType))
+                        dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
+                        dailyPendTx.append(
+                            Transaction("BUY", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0,
+                                                  reason))
+                        days_buy.append(dd.date())
+                        quot_buy.append(quot)
+                    elif quot < boll_up and quot_old > boll_up_old:
+                        #SELL
+                        reason = "BOLLINGER"
+                        logging.debug("\tBOL: Requesting SELL for " + str(key) + " on " + str(
+                            dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(
+                            asset.history.loc[dd.date(), 'Close']))
+                        dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
+                        dailyPendTx.append(Transaction("SELL", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0, reason))
+                        days_sell.append(dd.date())
+                        quot_sell.append(quot)
+            print(".", end="", flush=True)
+            # BUY_points = pd.DataFrame({'Date': days_buy, 'Quotation': quot_buy})
+            # SELL_points = pd.DataFrame({'Date': days_sell, 'Quotation': quot_sell})
+            # ax = asset.history['Close'].plot(title=asset.symbol)
+            # BUY_points.plot(kind='scatter', ax=ax, x='Date', y='Quotation', color="green", alpha=0.5)
+            # SELL_points.plot(kind='scatter', ax=ax, x='Date', y='Quotation', color="red", alpha=0.5)
+            # plt.show()
+            if sell_all:
+            # l'ultimo giorno vendo tutto.
+             if asset.assetType.assetType != "currency":
+                logging.info("\tRequesting SELL for " + str(key) + " on " + str(self.outcome.end_date))
+                dailyPendTx = self.outcome.pendingTransactions[self.outcome.end_date]
+                dailyPendTx.append(Transaction("SELL", asset, self.outcome.end_date, 0, 0.0, self.description))
+        print(" ")
+        return self.outcome.pendingTransactions
+
+# Strategia complessa a piacere, con stop-loss e takeprofit
+class ComplexStrategy(BuyAndHoldTradingStrategy):
+
+    def __init__(self, in_port):
+        super().__init__(in_port)
+        self.description = "Custom"
+        self.outcome.description = self.description
+
+    def calc_suggested_transactions(self, sell_all=True, w_short=1.0, w_long=1.0):
+        # Estendo la strategia base "BUY & HOLD"
+        # w_short e w_long sono i moltiplicatori delle banda di Bollingher short e long
         for key, asset in sorted(self.outcome.assets.items()):
             assert isinstance(asset, Asset)
             # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o

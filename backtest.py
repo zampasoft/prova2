@@ -110,9 +110,10 @@ if __name__ == "__main__":
     # print(final_port.por_history)
     # final_port.por_history.plot(kind='line', y='NetValue')
     final_port.por_history['NetValue'].plot(kind='line')
+    myPortfolio.por_history['NetValue'].plot(kind='line')
     plt.show()
     # esamino un'azione per capire cosa ho individuato come punti d'inversione
-    final_port.assets['AMP.MI'].history['Close'].plot()
+    # final_port.assets['AMP.MI'].history['Close'].plot()
     # A scopo didattico, provo a visualizzare i punti di BUY e SELL calcolati
     # costruire un dataframe con i segnali di BUY per AMP.MI
     # pandas_sma_short = final_port.assets['AMP.MI'].history['Close'].history.rolling(window=30).mean()

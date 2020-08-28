@@ -6,6 +6,7 @@ import pandas as pd
 import sim_trade
 import matplotlib.pyplot as plt
 import pickle
+from sim_trade import BuyAndHoldTradingStrategy
 from sim_trade import InvBollbandsStrategy
 from sim_trade import BollbandsStrategy
 
@@ -37,7 +38,7 @@ if __name__ == "__main__":
     initial_capital = 1000000.0  # 1.000.000 EUR
     # se initial capital è 1.000.000, metto l'ordine a 50.000 per avere dei vincoli, oppure 5.000 per essere
     # virtualmente senza vincoli di liquidità
-    max_order = 50000.0
+    max_order = 34400.0
 
     filename = "./data/saved.mkts.data." + str(start_date) + '-' + str(end_date)
     try:
@@ -70,8 +71,9 @@ if __name__ == "__main__":
         file_handle.close()
     # devo definire una strategia di Trading
     print("\tCalculating Signals")
-    my_trading_strategy = InvBollbandsStrategy(myPortfolio)
-    #my_trading_strategy = BollbandsStrategy(myPortfolio)
+    my_trading_strategy = BuyAndHoldTradingStrategy(myPortfolio)
+    # my_trading_strategy = InvBollbandsStrategy(myPortfolio)
+    # my_trading_strategy = BollbandsStrategy(myPortfolio)
     # calcolo i segnali BUY e SELL
     timestamp = datetime.datetime.now()
     logging.info("\nCalculating BUY/SELL Signals")

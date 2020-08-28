@@ -143,7 +143,7 @@ class Transaction:
 class Portfolio:
     pendingTransactions: Dict[datetime.date, typing.List[Transaction]]
 
-    def __init__(self, start_date : datetime.date, end_date : datetime.date, initial_capital : float, description="Default Portfolio"):
+    def __init__(self, start_date : datetime.date, end_date : datetime.date, initial_capital : float = 0.0, description="Default Portfolio"):
         self.assets = dict()
         # elenco di asset acceduti via simbolo. un giorno capirò se abbia senso una struttura dati diversa
         self.defCurrency = "EUR"
@@ -241,6 +241,7 @@ class Portfolio:
         self.assets["IT"] = Asset(EQUITY, "Gartner Inc.", "IT", "NYSE", "USD")
         self.assets["TSLA"] = Asset(EQUITY, "Tesla Inc.", "TSLA", "NASDAQ", "USD")
         self.assets["SWBI"] = Asset(EQUITY, "Smith & Wesson Brands Inc.", "SWBI", "NASDAQ", "USD")
+        self.assets["ABT"] = Asset(EQUITY, "Abbott Laboratories", "ABT", "NYSE", "USD")
 
 
         # Titolo CH da me selezionati
@@ -419,7 +420,7 @@ class Portfolio:
         # setto una cache per i pandas_datareader
         # TODO: dovrei rendere la location e la durata della cache parametriche
         expire_after = datetime.timedelta(days=3)
-        session = requests_cache.CachedSession(cache_name=cache_file, backend='sqlite', expire_after=expire_after, allowable_codes=(200, ))
+        session = requests_cache.CachedSession(cache_name=cache_file, backend='sqlite', expire_after=expire_after, allowable_codes=(200, ), fast_save=True)
         # get Quotations & Dividends for all Assets in myPortfolio
         for key, value in sorted(self.assets.items()):
             print(".", end="", flush=True)
@@ -480,8 +481,11 @@ class BuyAndHoldTradingStrategy:
         # restiruisco un nuovo Portafoglio elaborato con le regole
 
     # TODO: questo metodo dovrebbe essere multi-thread.
-    def calc_suggested_transactions(self):
+    def calc_suggested_transactions(self, sell_all=True, **kwparams):
         # Strategia base "BUY & HOLD"
+        wish_list = ["IBM", "GLEN.L", "MCRO.L", "MSFT", "GOOG", "GOOGL", "KAZ.L", "BRE.MI", "CRM", "RSW.L", "FME.DE",
+                     "ENEL.MI", "EQIX", "LLOY.L", "BP.L", "HSBA.L", "RWI.L", "SOON.SW", "BA.L", "PHAU.MI", "UCG.MI",
+                     "GSK.L", "TWLO", "ESNT.L", "BT.L", "GEO.MI", "ENI.MI", "NOVN.SW"]
         for key, asset in sorted(self.outcome.assets.items()):
             assert isinstance(asset, Asset)
             # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o
@@ -490,19 +494,22 @@ class BuyAndHoldTradingStrategy:
             for dd in ar.Arrow.range('week', datetime.datetime.combine(self.outcome.start_date, datetime.time.min) + datetime.timedelta(days=days_long),
                                          datetime.datetime.combine(self.outcome.end_date - datetime.timedelta(days=1), datetime.time.min)):
 
-                if asset.history.loc[dd.date(), 'OwnedAmount'] == 0.0 and asset.history.loc[dd.date(), 'Close'] > 0.0 and asset.assetType.assetType != "currency":
+                if asset.symbol in wish_list and asset.history.loc[dd.date(), 'OwnedAmount'] == 0.0 and asset.history.loc[dd.date(), 'Close'] > 0.0 and asset.assetType.assetType != "currency":
                     logging.debug("\tRequesting BUY for " + str(key) + " on " + str(dd.date() +
                                                                                datetime.timedelta(days=1)))
                     logging.debug("assetType: " + str(asset.assetType))
                     dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
                     dailyPendTx.append(Transaction("BUY", asset, dd.date() +
                                                                datetime.timedelta(days=1), 0, 0.0, self.description))
+                    wish_list.remove(asset.symbol)
             print(".", end="", flush=True)
             # l'ultimo giorno vendo tutto.
-            if asset.assetType.assetType != "currency":
-                logging.info("\tRequesting SELL for " + str(key) + " on " + str(self.outcome.end_date))
-                dailyPendTx = self.outcome.pendingTransactions[self.outcome.end_date]
-                dailyPendTx.append(Transaction("SELL", asset, self.outcome.end_date, 0, 0.0, self.description))
+            if sell_all:
+            # l'ultimo giorno vendo tutto.
+                if asset.assetType.assetType != "currency":
+                    logging.info("\tRequesting SELL for " + str(key) + " on " + str(self.outcome.end_date))
+                    dailyPendTx = self.outcome.pendingTransactions[self.outcome.end_date]
+                    dailyPendTx.append(Transaction("SELL", asset, self.outcome.end_date, 0, 0.0, self.description))
         print(" ")
         return self.outcome.pendingTransactions
 
@@ -677,6 +684,8 @@ class InvBollbandsStrategy(BuyAndHoldTradingStrategy):
 
     def calc_suggested_transactions(self, sell_all=True, w_short=1.0, w_long=1.0):
         # Estendo la strategia base "BUY & HOLD"
+        # per confrontare mele con mele, partirei sempre dal Buy and Hold
+        super().calc_suggested_transactions(sell_all=False)
         # w_short e w_long sono i moltiplicatori delle banda di Bollingher short e long
         for key, asset in sorted(self.outcome.assets.items()):
             assert isinstance(asset, Asset)
@@ -757,6 +766,8 @@ class BollbandsStrategy(BuyAndHoldTradingStrategy):
 
     def calc_suggested_transactions(self, sell_all=True, w_short=1.0, w_long=1.0):
         # Estendo la strategia base "BUY & HOLD"
+        # per confrontare mele con mele, partirei sempre dal Buy and Hold
+        super().calc_suggested_transactions(sell_all=False)
         # w_short e w_long sono i moltiplicatori delle banda di Bollingher short e long
         for key, asset in sorted(self.outcome.assets.items()):
             assert isinstance(asset, Asset)

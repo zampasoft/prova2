@@ -485,7 +485,7 @@ class BuyAndHoldTradingStrategy:
         # Strategia base "BUY & HOLD"
         wish_list = ["IBM", "GLEN.L", "MCRO.L", "MSFT", "GOOG", "GOOGL", "KAZ.L", "BRE.MI", "CRM", "RSW.L", "FME.DE",
                      "ENEL.MI", "EQIX", "LLOY.L", "BP.L", "HSBA.L", "RWI.L", "SOON.SW", "BA.L", "PHAU.MI", "UCG.MI",
-                     "GSK.L", "TWLO", "ESNT.L", "BT.L", "GEO.MI", "ENI.MI", "NOVN.SW"]
+                     "GSK.L", "TWLO", "ESNT.L", "BT-A.L", "GEO.MI", "ENI.MI", "NOVN.SW"]
         for key, asset in sorted(self.outcome.assets.items()):
             assert isinstance(asset, Asset)
             # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o
@@ -682,10 +682,11 @@ class InvBollbandsStrategy(BuyAndHoldTradingStrategy):
         self.description = "Inverse Bollinger Bands"
         self.outcome.description = self.description
 
-    def calc_suggested_transactions(self, sell_all=True, w_short=1.0, w_long=1.0):
+    def calc_suggested_transactions(self, sell_all=True, initial_buy=True, w_short=1.0, w_long=1.0):
         # Estendo la strategia base "BUY & HOLD"
         # per confrontare mele con mele, partirei sempre dal Buy and Hold
-        super().calc_suggested_transactions(sell_all=False)
+        if initial_buy:
+            super().calc_suggested_transactions(sell_all=False)
         # w_short e w_long sono i moltiplicatori delle banda di Bollingher short e long
         for key, asset in sorted(self.outcome.assets.items()):
             assert isinstance(asset, Asset)
@@ -764,10 +765,11 @@ class BollbandsStrategy(BuyAndHoldTradingStrategy):
         self.description = "Bollinger Bands"
         self.outcome.description = self.description
 
-    def calc_suggested_transactions(self, sell_all=True, w_short=1.0, w_long=1.0):
+    def calc_suggested_transactions(self, sell_all=True, initial_buy=True, w_short=1.0, w_long=1.0):
         # Estendo la strategia base "BUY & HOLD"
         # per confrontare mele con mele, partirei sempre dal Buy and Hold
-        super().calc_suggested_transactions(sell_all=False)
+        if initial_buy:
+            super().calc_suggested_transactions(sell_all=False)
         # w_short e w_long sono i moltiplicatori delle banda di Bollingher short e long
         for key, asset in sorted(self.outcome.assets.items()):
             assert isinstance(asset, Asset)

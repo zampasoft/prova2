@@ -71,9 +71,9 @@ if __name__ == "__main__":
         file_handle.close()
     # devo definire una strategia di Trading
     print("\tCalculating Signals")
-    my_trading_strategy = BuyAndHoldTradingStrategy(myPortfolio)
+    # my_trading_strategy = BuyAndHoldTradingStrategy(myPortfolio)
     # my_trading_strategy = InvBollbandsStrategy(myPortfolio)
-    # my_trading_strategy = BollbandsStrategy(myPortfolio)
+    my_trading_strategy = BollbandsStrategy(myPortfolio)
     # calcolo i segnali BUY e SELL
     timestamp = datetime.datetime.now()
     logging.info("\nCalculating BUY/SELL Signals")

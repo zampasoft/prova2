@@ -15,7 +15,7 @@ if __name__ == "__main__":
     except Exception as e:
         print(e)
     logging.basicConfig(filename='./logs/signals.log', level=logging.DEBUG)
-    #logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+    # logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
     logging.info("******************************************************")
     logging.info("*      NEW START : " + str(datetime.datetime.now()) + "        *")
     logging.info("******************************************************")
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     # devo definire una strategia di Trading
     print("\tCalculating Signals")
     my_trading_strategy = sim_trade.InvBollbandsStrategy(myPortfolio)
-    #my_trading_strategy = sim_trade.BuyAndHoldTradingStrategy(myPortfolio)
+    # my_trading_strategy = sim_trade.BuyAndHoldTradingStrategy(myPortfolio)
     # calcolo i segnali BUY e SELL
     timestamp = datetime.datetime.now()
     logging.info("\nCalculating BUY/SELL Signals")
@@ -62,6 +62,4 @@ if __name__ == "__main__":
 
     # elaborazione finita visualizziamo l'outcome
     print("\nEnded, please check log file.\n")
-
-
 

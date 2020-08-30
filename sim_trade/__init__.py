@@ -486,22 +486,23 @@ class BuyAndHoldTradingStrategy:
         wish_list = ["IBM", "GLEN.L", "MCRO.L", "MSFT", "GOOG", "GOOGL", "KAZ.L", "BRE.MI", "CRM", "RSW.L", "FME.DE",
                      "ENEL.MI", "EQIX", "LLOY.L", "BP.L", "HSBA.L", "RWI.L", "SOON.SW", "BA.L", "PHAU.MI", "UCG.MI",
                      "GSK.L", "TWLO", "ESNT.L", "BT-A.L", "GEO.MI", "ENI.MI", "NOVN.SW"]
+        days_long = self.outcome.days_long
         for key, asset in sorted(self.outcome.assets.items()):
             assert isinstance(asset, Asset)
             # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o
             # SELL. Nella strategia BUY & HOLD, se il valore di un asset è 0 allora genero un BUY
-            days_long = self.outcome.days_long
-            for dd in ar.Arrow.range('week', datetime.datetime.combine(self.outcome.start_date, datetime.time.min) + datetime.timedelta(days=days_long),
-                                         datetime.datetime.combine(self.outcome.end_date - datetime.timedelta(days=1), datetime.time.min)):
-
-                if asset.symbol in wish_list and asset.history.loc[dd.date(), 'OwnedAmount'] == 0.0 and asset.history.loc[dd.date(), 'Close'] > 0.0 and asset.assetType.assetType != "currency":
-                    logging.debug("\tRequesting BUY for " + str(key) + " on " + str(dd.date() +
-                                                                               datetime.timedelta(days=1)))
-                    logging.debug("assetType: " + str(asset.assetType))
-                    dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
-                    dailyPendTx.append(Transaction("BUY", asset, dd.date() +
-                                                               datetime.timedelta(days=1), 0, 0.0, self.description))
-                    wish_list.remove(asset.symbol)
+            if asset.symbol in wish_list:
+                for dd in ar.Arrow.range('week', datetime.datetime.combine(self.outcome.start_date, datetime.time.min) + datetime.timedelta(days=days_long),
+                                             datetime.datetime.combine(self.outcome.end_date - datetime.timedelta(days=1), datetime.time.min)):
+                    if asset.history.loc[dd.date(), 'Close'] > 0.0 and asset.assetType.assetType != "currency":
+                        logging.debug("\tRequesting BUY for " + str(key) + " on " + str(dd.date() +
+                                                                                   datetime.timedelta(days=1)))
+                        logging.debug("assetType: " + str(asset.assetType))
+                        dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
+                        dailyPendTx.append(Transaction("BUY", asset, dd.date() +
+                                                                   datetime.timedelta(days=1), 0, 0.0, self.description))
+                        wish_list.remove(asset.symbol)
+                        break
             print(".", end="", flush=True)
             # l'ultimo giorno vendo tutto.
             if sell_all:

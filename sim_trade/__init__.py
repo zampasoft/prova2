@@ -719,7 +719,7 @@ class InvBollbandsStrategy(BuyAndHoldTradingStrategy):
 
                     if quot > boll_up and quot_old < boll_up_old:
                         # BUY
-                        reason = "INV BOLLINGER"
+                        reason = "TRENDING UP"
                         logging.debug("\t" + reason + ": Requesting BUY for " + str(key) + " on " + str(
                             dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(asset.history.loc[dd.date(), 'Close']))
                         logging.debug("assetType: " + str(asset.assetType))
@@ -731,7 +731,7 @@ class InvBollbandsStrategy(BuyAndHoldTradingStrategy):
                         quot_buy.append(quot)
                     elif quot < boll_down and quot_old > boll_down_old:
                         #SELL
-                        reason = "BOLLINGER"
+                        reason = "TRENDING DOWN"
                         logging.debug("\tBOL: Requesting SELL for " + str(key) + " on " + str(
                             dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(
                             asset.history.loc[dd.date(), 'Close']))
@@ -802,7 +802,7 @@ class BollbandsStrategy(BuyAndHoldTradingStrategy):
 
                     if quot > boll_down and quot_old < boll_down_old:
                         # BUY
-                        reason = "BOLLINGER"
+                        reason = "CHEAP"
                         logging.debug("\t" + reason + ": Requesting BUY for " + str(key) + " on " + str(
                             dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(asset.history.loc[dd.date(), 'Close']))
                         logging.debug("assetType: " + str(asset.assetType))
@@ -814,7 +814,7 @@ class BollbandsStrategy(BuyAndHoldTradingStrategy):
                         quot_buy.append(quot)
                     elif quot < boll_up and quot_old > boll_up_old:
                         #SELL
-                        reason = "BOLLINGER"
+                        reason = "EXPENSIVE"
                         logging.debug("\tBOL: Requesting SELL for " + str(key) + " on " + str(
                             dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(
                             asset.history.loc[dd.date(), 'Close']))
@@ -846,17 +846,16 @@ class ComplexStrategy(BuyAndHoldTradingStrategy):
         self.description = "Custom"
         self.outcome.description = self.description
 
-    def calc_suggested_transactions(self, sell_all=True, w_short=1.0, w_long=1.0):
+    def calc_suggested_transactions(self, sell_all=True, initial_buy=True, w_short=1.0, w_long=1.0):
         # Estendo la strategia base "BUY & HOLD"
+        # per confrontare mele con mele, partirei sempre dal Buy and Hold
+        if initial_buy:
+            super().calc_suggested_transactions(sell_all=False)
         # w_short e w_long sono i moltiplicatori delle banda di Bollingher short e long
         for key, asset in sorted(self.outcome.assets.items()):
             assert isinstance(asset, Asset)
             # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o
             # SELL. Nella strategia BUY & HOLD, se il valore di un asset è 0 allora genero un BUY
-            stop_loss = 0.0
-            stop_loss_pct = 0.9
-            take_profit = 9999999.0
-            take_profit_pct = 2.0
             days_short = self.outcome.days_short
             days_long = self.outcome.days_long
             boll_multi = w_long
@@ -870,64 +869,54 @@ class ComplexStrategy(BuyAndHoldTradingStrategy):
                 # mi assicuro che esistano quotazioni per l'asset, che non sia una valuta e che la varianza sia
                 # significativa, altrimenti siamo in una fase di spostamento laterale
                 if asset.history.loc[dd.date(), 'Close'] > 0.0 and asset.assetType.assetType != "currency" and asset.history.loc[dd.date(), 'std_short'] > 0.03 * asset.history.loc[dd.date(), 'sma_short']:
-                    # set new stop_loss
-                    # TODO: forse STOP-LOSS e TAKE-PROFIT sarebbe meglio calcolarli durante in trading vero e proprio...
-                    if asset.history.loc[dd.date(), 'Close'] < stop_loss:
-                        logging.debug("\tSTOP LOSS: Requesting SELL for " + str(key) + " on " + str(dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(asset.history.loc[dd.date(), 'Close']))
-                        #logging.debug("assetType: " + str(asset.assetType))
-                        dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
-                        dailyPendTx.append(Transaction("SELL", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0, "STOP LOSS"))
-                        stop_loss = 0.0
-                        take_profit = 9999999.0
-                    else:
-                        prev_day = dd.date() - datetime.timedelta(days=1)
-                        boll_up_old = asset.history.loc[prev_day, 'sma_long'] + boll_multi * asset.history.loc[prev_day, 'std_long']
-                        boll_down_old = asset.history.loc[prev_day, 'sma_long'] - boll_multi * asset.history.loc[prev_day, 'std_long']
-                        quot_old = asset.history.loc[prev_day, 'Close']
-                        quot = asset.history.loc[dd.date(), 'Close']
-                        boll_up = asset.history.loc[dd.date(), 'sma_long'] + boll_multi * asset.history.loc[dd.date(), 'std_long']
-                        boll_down = asset.history.loc[dd.date(), 'sma_long'] - boll_multi * asset.history.loc[dd.date(), 'std_long']
-                        sma_long = asset.history.loc[dd.date(), 'sma_long']
-                        sma_long_old = asset.history.loc[prev_day, 'sma_long']
 
-                        if quot > take_profit:
-                            # SELL
-                            reason = "TAKE PROFIT"
-                            logging.debug("\tTKP: Requesting SELL for " + str(key) + " on " + str(
-                                dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(
-                                asset.history.loc[dd.date(), 'Close']))
-                            dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
-                            dailyPendTx.append(Transaction("SELL", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0, reason))
-                            stop_loss = 0.0
-                            take_profit = 9999999.0
-                            days_sell.append(dd.date())
-                            quot_sell.append(quot)
-                        elif quot > boll_up and quot_old < boll_up_old:
-                            # BUY
-                            reason = "INV BOLLINGER"
-                            logging.debug("\t" + reason + ": Requesting BUY for " + str(key) + " on " + str(
-                                dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(asset.history.loc[dd.date(), 'Close']) + "\tSetting stop_loss: " + str(stop_loss))
-                            logging.debug("assetType: " + str(asset.assetType))
-                            dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
-                            dailyPendTx.append(
-                                Transaction("BUY", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0,
-                                                      reason))
-                            days_buy.append(dd.date())
-                            quot_buy.append(quot)
-                            # stop_loss = quot*stop_loss_pct
-                            # take_profit = quot * take_profit_pct
-                        elif quot < boll_down and quot_old > boll_down_old:
-                            #SELL
-                            reason = "BOLLINGER"
-                            logging.debug("\tBOL: Requesting SELL for " + str(key) + " on " + str(
-                                dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(
-                                asset.history.loc[dd.date(), 'Close']))
-                            dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
-                            dailyPendTx.append(Transaction("SELL", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0, reason))
-                            stop_loss = 0.0
-                            take_profit = 9999999.0
-                            days_sell.append(dd.date())
-                            quot_sell.append(quot)
+                    prev_day = dd.date() - datetime.timedelta(days=1)
+                    boll_up_old = asset.history.loc[prev_day, 'sma_long'] + boll_multi * asset.history.loc[prev_day, 'std_long']
+                    boll_down_old = asset.history.loc[prev_day, 'sma_long'] - boll_multi * asset.history.loc[prev_day, 'std_long']
+                    quot_old = asset.history.loc[prev_day, 'Close']
+                    quot = asset.history.loc[dd.date(), 'Close']
+                    boll_up = asset.history.loc[dd.date(), 'sma_long'] + boll_multi * asset.history.loc[dd.date(), 'std_long']
+                    boll_down = asset.history.loc[dd.date(), 'sma_long'] - boll_multi * asset.history.loc[dd.date(), 'std_long']
+                    sma_long = asset.history.loc[dd.date(), 'sma_long']
+                    sma_long_old = asset.history.loc[prev_day, 'sma_long']
+                    sma_short = asset.history.loc[dd.date(), 'sma_short']
+                    sma_short_old = asset.history.loc[prev_day, 'sma_short']
+                    boll_up_short = sma_short + w_short * asset.history.loc[prev_day, 'std_short']
+                    boll_up_short_old = sma_short_old + w_short * asset.history.loc[prev_day, 'std_short']
+
+                    if quot > boll_up and quot_old < boll_up_old:
+                        # BUY
+                        reason = "TRENDING UP"
+                        logging.debug("\t" + reason + ": Requesting BUY for " + str(key) + " on " + str(
+                            dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(asset.history.loc[dd.date(), 'Close']))
+                        logging.debug("assetType: " + str(asset.assetType))
+                        dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
+                        dailyPendTx.append(
+                            Transaction("BUY", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0,
+                                                  reason))
+                        days_buy.append(dd.date())
+                        quot_buy.append(quot)
+                    elif quot < boll_down and quot_old > boll_down_old:
+                        #SELL
+                        reason = "TRENDING DOWN"
+                        logging.debug("\tBOL: Requesting SELL for " + str(key) + " on " + str(
+                            dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(
+                            asset.history.loc[dd.date(), 'Close']))
+                        dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
+                        dailyPendTx.append(Transaction("SELL", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0, reason))
+                        days_sell.append(dd.date())
+                        quot_sell.append(quot)
+                    elif quot < boll_up_short and quot_old > boll_up_short_old:
+                        #SELL
+                        reason = "TAKE PROFIT"
+                        logging.debug("\tTake Profit: Requesting SELL for " + str(key) + " on " + str(
+                            dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(
+                            asset.history.loc[dd.date(), 'Close']))
+                        dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
+                        dailyPendTx.append(Transaction("SELL", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0, reason))
+                        days_sell.append(dd.date())
+                        quot_sell.append(quot)
+
             print(".", end="", flush=True)
             # BUY_points = pd.DataFrame({'Date': days_buy, 'Quotation': quot_buy})
             # SELL_points = pd.DataFrame({'Date': days_sell, 'Quotation': quot_sell})

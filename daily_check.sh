@@ -6,7 +6,8 @@ rm /home/nemofox/PycharmProjects/BackTesting/data/*
 python3 SignalsOnly.py
 
 while [ $? -ne 0 ]; do
-        sqlitebrowser data/cache.sqlite
+	sqlite3  data/cache.sqlite 'delete from responses ORDER BY rowid DESC LIMIT 10;'
+        # sqlitebrowser data/cache.sqlite
 	python3 SignalsOnly.py
 done
 

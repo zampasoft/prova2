@@ -6,9 +6,7 @@ import pandas as pd
 import sim_trade
 import matplotlib.pyplot as plt
 import pickle
-from sim_trade import BuyAndHoldTradingStrategy
-from sim_trade import InvBollbandsStrategy
-from sim_trade import BollbandsStrategy
+
 
 if __name__ == "__main__":
     # cominciamo a lavorare
@@ -29,8 +27,8 @@ if __name__ == "__main__":
     pd.set_option('display.width', 1000)
 
     # Last day
-    # end_date = datetime.date.today()
-    end_date = datetime.date(2020, 8, 28)
+    end_date = datetime.date.today()
+    # end_date = datetime.date(2020, 8, 28)
     # First day
     start_date = datetime.date(2015, 6, 9)
     # start_date = datetime.date(2017, 9, 5)
@@ -38,6 +36,7 @@ if __name__ == "__main__":
     # se initial capital è 1.000.000, metto l'ordine a 50.000 per avere dei vincoli, oppure 5.000 per essere
     # virtualmente senza vincoli di liquidità
     max_order = 34400.0
+    # max_order = 5000.0
 
     filename = "./data/saved.mkts.data." + str(start_date) + '-' + str(end_date)
     try:
@@ -70,13 +69,13 @@ if __name__ == "__main__":
         file_handle.close()
     # devo definire una strategia di Trading
     print("\tCalculating Signals")
-    # my_trading_strategy = BuyAndHoldTradingStrategy(myPortfolio)
-    my_trading_strategy = InvBollbandsStrategy(myPortfolio)
-    # my_trading_strategy = BollbandsStrategy(myPortfolio)
+    # my_trading_strategy = sim_trade.BuyAndHoldTradingStrategy(myPortfolio)
+    my_trading_strategy = sim_trade.ComplexStrategy(myPortfolio)
+    # my_trading_strategy = sim_trade.BollbandsStrategy(myPortfolio)
     # calcolo i segnali BUY e SELL
     timestamp = datetime.datetime.now()
     logging.info("\nCalculating BUY/SELL Signals")
-    my_strategy_outcome = my_trading_strategy.calc_suggested_transactions(w_short=1.0, w_long=1.0)
+    my_strategy_outcome = my_trading_strategy.calc_suggested_transactions(w_short=3.0, w_long=1.0)
     logging.info("Signals calculated in " + str(datetime.datetime.now() - timestamp))
 
     # processo tutte le transazioni pending e vedo cosa succede
@@ -87,9 +86,9 @@ if __name__ == "__main__":
     logging.info("Trades completed in " + str(datetime.datetime.now() - timestamp))
 
     # calculating base case
-    if False:
+    if True:
         print("\nCalculating base case")
-        base_strat = BuyAndHoldTradingStrategy(myPortfolio)
+        base_strat = sim_trade.InvBollbandsStrategy(myPortfolio)
         base_outcome = base_strat.calc_suggested_transactions()
         base_port = base_strat.runTradingSimulation(orderValue=max_order)
         base_port.por_history['NetValue'].plot(kind='line')

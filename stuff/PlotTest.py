@@ -12,6 +12,6 @@ temp = pd.DataFrame(data, columns=['Date', 'Liquidity', 'NetValue', 'TotalCommis
 temp['Date'] = pd.to_datetime(temp['Date'])
 por_history = temp.set_index('Date')
 
-por_history['NetValue'].plot()
-por_history['Liquidity'].plot()
+por_history['NetValue'].plot(label="foo", legend=True)
+por_history['Liquidity'].plot(label="buzz", legend=True)
 plt.show()

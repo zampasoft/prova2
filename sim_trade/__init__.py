@@ -319,9 +319,9 @@ class Portfolio:
         self.days_long = days_long
         logging.debug("Setting days_short: " + str(self.days_short))
         logging.debug("Setting days_long: " + str(self.days_long))
-        #asset['SMA_short'] = 0.0
-        #asset['SMA_long'] = 0.0
-        #asset['STD_short'] = 0.0
+        # asset['SMA_short'] = 0.0
+        # asset['SMA_long'] = 0.0
+        # asset['STD_short'] = 0.0
         for key, asset in sorted(self.assets.items()):
             logging.debug("Processing :" + asset.symbol)
             sma_short = asset.history['Close'].rolling(window=days_short).mean()
@@ -483,9 +483,10 @@ class BuyAndHoldTradingStrategy:
     # TODO: questo metodo dovrebbe essere multi-thread.
     def calc_suggested_transactions(self, sell_all=True, **kwparams):
         # Strategia base "BUY & HOLD"
-        wish_list = ["IBM", "GLEN.L", "MCRO.L", "MSFT", "GOOG", "GOOGL", "KAZ.L", "BRE.MI", "CRM", "RSW.L", "FME.DE",
-                     "ENEL.MI", "EQIX", "LLOY.L", "BP.L", "HSBA.L", "RWI.L", "SOON.SW", "BA.L", "PHAU.MI", "UCG.MI",
-                     "GSK.L", "TWLO", "ESNT.L", "BT-A.L", "GEO.MI", "ENI.MI", "NOVN.SW"]
+        # wish_list = ["IBM", "GLEN.L", "MCRO.L", "MSFT", "GOOG", "GOOGL", "KAZ.L", "BRE.MI", "CRM", "RSW.L", "FME.DE",
+        #             "ENEL.MI", "EQIX", "LLOY.L", "BP.L", "HSBA.L", "RWI.L", "SOON.SW", "BA.L", "PHAU.MI", "UCG.MI",
+        #             "GSK.L", "TWLO", "ESNT.L", "BT-A.L", "GEO.MI", "ENI.MI", "NOVN.SW"]
+        wish_list = ["ENEL.MI", "PHAU.MI", "NEXI.MI", "DPW.DE", "FME.DE", "KER.PA", "AV.L", "LSE.L", "RSW.L", "TEAM", "SWBI", "SVMK", "MED", "NOW", "WORK", "DIS", "VNA.DE"]
         days_long = self.outcome.days_long
         for key, asset in sorted(self.outcome.assets.items()):
             assert isinstance(asset, Asset)
@@ -515,11 +516,13 @@ class BuyAndHoldTradingStrategy:
         return self.outcome.pendingTransactions
 
     # Creo il metodo TradingSimulation che deve iterare dentro un range di date, eseguire gli ordini e aggiornare i valori
-    def runTradingSimulation(self, orderValue = 5000.0):
+    def runTradingSimulation(self, max_orders = 25.0):
         logging.debug("Processing portfolio \'{0}\' start_date = {1} end_date = {2}".format(self.outcome.description,
                                                                                             str(self.outcome.start_date),
                                                                                             str(self.outcome.end_date)))
-        self.BUY_ORDER_VALUE = orderValue
+        self.BUY_ORDER_VALUE = self.outcome.initial_capital / max_orders
+        # max_orders = rappresenta una stima del numero massimo di ordini eseguiti in un BUY & HOLD.
+        # con strategie più complesse, è una indicazione spannometrica del numero di titoli massimo nel portafoglio
         logging.info("\nSetting BUY order value to: " + str(self.BUY_ORDER_VALUE))
         # prima di tutto comincio a stampare la lista della transazioni pending
         #for key, value in self.outcome.pendingTransactions.items():
@@ -567,6 +570,8 @@ class BuyAndHoldTradingStrategy:
                     self.exec_trade(t)
             # calcolo il valore netto di Portafoglio alla fine della giornata di Trading.
             self.outcome.port_net_value(dd.date())
+            # ricalcolo order value come percentuale del net value
+            self.BUY_ORDER_VALUE = self.outcome.por_history.loc[dd.date()]['NetValue'] / max_orders
         print("\nBella zio!")
         return self.outcome
 
@@ -732,7 +737,7 @@ class InvBollbandsStrategy(BuyAndHoldTradingStrategy):
                     elif quot < boll_down and quot_old > boll_down_old:
                         #SELL
                         reason = "TRENDING DOWN"
-                        logging.debug("\tBOL: Requesting SELL for " + str(key) + " on " + str(
+                        logging.debug("\t" + reason + ": Requesting SELL for " + str(key) + " on " + str(
                             dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(
                             asset.history.loc[dd.date(), 'Close']))
                         dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
@@ -815,7 +820,7 @@ class BollbandsStrategy(BuyAndHoldTradingStrategy):
                     elif quot < boll_up and quot_old > boll_up_old:
                         #SELL
                         reason = "EXPENSIVE"
-                        logging.debug("\tBOL: Requesting SELL for " + str(key) + " on " + str(
+                        logging.debug("\t" + reason + ": Requesting SELL for " + str(key) + " on " + str(
                             dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(
                             asset.history.loc[dd.date(), 'Close']))
                         dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
@@ -830,13 +835,14 @@ class BollbandsStrategy(BuyAndHoldTradingStrategy):
             # SELL_points.plot(kind='scatter', ax=ax, x='Date', y='Quotation', color="red", alpha=0.5)
             # plt.show()
             if sell_all:
-            # l'ultimo giorno vendo tutto.
-             if asset.assetType.assetType != "currency":
-                logging.info("\tRequesting SELL for " + str(key) + " on " + str(self.outcome.end_date))
-                dailyPendTx = self.outcome.pendingTransactions[self.outcome.end_date]
-                dailyPendTx.append(Transaction("SELL", asset, self.outcome.end_date, 0, 0.0, self.description))
+                # l'ultimo giorno vendo tutto.
+                if asset.assetType.assetType != "currency":
+                    logging.info("\tRequesting SELL for " + str(key) + " on " + str(self.outcome.end_date))
+                    dailyPendTx = self.outcome.pendingTransactions[self.outcome.end_date]
+                    dailyPendTx.append(Transaction("SELL", asset, self.outcome.end_date, 0, 0.0, self.description))
         print(" ")
         return self.outcome.pendingTransactions
+
 
 # Strategia complessa a piacere, con stop-loss e takeprofit
 class ComplexStrategy(BuyAndHoldTradingStrategy):
@@ -881,8 +887,12 @@ class ComplexStrategy(BuyAndHoldTradingStrategy):
                     sma_long_old = asset.history.loc[prev_day, 'sma_long']
                     sma_short = asset.history.loc[dd.date(), 'sma_short']
                     sma_short_old = asset.history.loc[prev_day, 'sma_short']
-                    boll_up_short = sma_short + w_short * asset.history.loc[prev_day, 'std_short']
-                    boll_up_short_old = sma_short_old + w_short * asset.history.loc[prev_day, 'std_short']
+                    boll_up2 = asset.history.loc[dd.date(), 'sma_long'] + boll_multi * 2 * asset.history.loc[dd.date(), 'std_long']
+                    boll_up2_old = asset.history.loc[prev_day, 'sma_long'] + boll_multi * 2 * asset.history.loc[prev_day, 'std_long']
+                    boll_down2 = asset.history.loc[dd.date(), 'sma_long'] - boll_multi * 2 * asset.history.loc[
+                        dd.date(), 'std_long']
+                    boll_down2_old = asset.history.loc[prev_day, 'sma_long'] - boll_multi * 2 * asset.history.loc[
+                        prev_day, 'std_long']
 
                     if quot > boll_up and quot_old < boll_up_old:
                         # BUY
@@ -899,24 +909,13 @@ class ComplexStrategy(BuyAndHoldTradingStrategy):
                     elif quot < boll_down and quot_old > boll_down_old:
                         #SELL
                         reason = "TRENDING DOWN"
-                        logging.debug("\tBOL: Requesting SELL for " + str(key) + " on " + str(
+                        logging.debug("\t" + reason + ": Requesting SELL for " + str(key) + " on " + str(
                             dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(
                             asset.history.loc[dd.date(), 'Close']))
                         dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
                         dailyPendTx.append(Transaction("SELL", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0, reason))
                         days_sell.append(dd.date())
                         quot_sell.append(quot)
-                    elif quot < boll_up_short and quot_old > boll_up_short_old:
-                        #SELL
-                        reason = "TAKE PROFIT"
-                        logging.debug("\tTake Profit: Requesting SELL for " + str(key) + " on " + str(
-                            dd.date() + datetime.timedelta(days=1)) + "\tquotation: " + str(
-                            asset.history.loc[dd.date(), 'Close']))
-                        dailyPendTx = self.outcome.pendingTransactions[dd.date() + datetime.timedelta(days=1)]
-                        dailyPendTx.append(Transaction("SELL", asset, dd.date() + datetime.timedelta(days=1), 0, 0.0, reason))
-                        days_sell.append(dd.date())
-                        quot_sell.append(quot)
-
             print(".", end="", flush=True)
             # BUY_points = pd.DataFrame({'Date': days_buy, 'Quotation': quot_buy})
             # SELL_points = pd.DataFrame({'Date': days_sell, 'Quotation': quot_sell})
@@ -932,3 +931,108 @@ class ComplexStrategy(BuyAndHoldTradingStrategy):
                 dailyPendTx.append(Transaction("SELL", asset, self.outcome.end_date, 0, 0.0, self.description))
         print(" ")
         return self.outcome.pendingTransactions
+
+    def exec_trade(self, t : Transaction):
+        # TODO: spostare order value come parametro di questo metodo, che è l'unico posto in cui viene usato
+        # TODO: verificare che lo stato della Transazione sia Pending
+        # recupero l'asset su cui devo operare
+        logging.debug("Executing transaction: " + str(t))
+        asset = self.outcome.assets[t.asset.symbol]
+
+        #recupero il fattore di conversione per la valuta
+        GBPEUR = self.outcome.assets['GBP'].history.loc[t.when]['Open'] / 100.0
+        CHFEUR = self.outcome.assets['CHF'].history.loc[t.when]['Open']
+        USDEUR = self.outcome.assets['USD'].history.loc[t.when]['Open']
+
+        curr_conv = 1.0
+        if asset.currency != "EUR":
+            if asset.currency == "USD":
+                curr_conv = USDEUR
+            elif asset.currency == "GBP":
+                curr_conv = GBPEUR
+            elif asset.currency == "CHF":
+                curr_conv = CHFEUR
+        logging.debug(asset.currency + " curr_conv " + str(curr_conv))
+
+        if t.verb == "BUY":
+            logging.debug("Buying " + str(t))
+            # TODO: improve Buying Quantity calculation...
+
+            #  assumo di eseguire gli ordini di BUY e SELL come prima
+            #  azione della giornata, avendoli calcolati la sera del giorno prima
+            logging.debug("asset price " + str(asset.history.loc[t.when]['Open']))
+            quantity = math.floor(self.BUY_ORDER_VALUE / (asset.history.loc[t.when]['Open']*curr_conv))
+            asset_price = quantity * asset.history.loc[t.when]['Open'] * curr_conv
+            commission = asset_price * asset.assetType.buyCommission
+            if self.outcome.por_history.loc[t.when]['Liquidity'] >= (asset_price + commission) and quantity > 0.0 and asset.history.loc[t.when]['OwnedAmount'] == 0:
+                # eseguo tx
+                # diminuisco liquidità
+                self.outcome.por_history.loc[t.when]['Liquidity'] -= (asset_price + commission)
+                # aumento il monte commissioni
+                self.outcome.por_history.loc[t.when]['TotalCommissions'] += commission
+                # modifico average buy price
+                asset.history.loc[t.when]['AverageBuyPrice'] = (asset.history.loc[t.when]['OwnedAmount']*asset.history.loc[t.when]['AverageBuyPrice'] + asset_price)/(asset.history.loc[t.when]['OwnedAmount'] + quantity)
+                # aumento quantità posseduta
+                asset.history.loc[t.when]['OwnedAmount'] += quantity
+                t.state = "executed"
+                t.quantity = quantity
+                t.value = asset_price
+                logging.info("Tx " + str(t) + "\tvalue: " + str(asset_price))
+                self.outcome.executedTransactions.append(t)
+            else:
+                # tx fallita per mancanza di liquidità
+                t.state = "failed"
+                if asset.history.loc[t.when]['OwnedAmount'] == 0:
+                    t.note += "Not enough liquidity. Transaction" + str(t) + " failed."
+                    logging.debug("Tx failed, Not enough liquidity. (Avail. Liquidity: " + str(self.outcome.por_history.loc[t.when]['Liquidity']) + ")")
+                else:
+                    t.note += "Asset already in portfolio. Transaction" + str(t) + " failed."
+                    logging.debug("Tx failed, Asset " + asset.symbol + " already in portfolio")
+                self.outcome.failedTransactions.append(t)
+        elif t.verb == "SELL":
+            logging.debug("Selling " + str(t))
+            if asset.history.loc[t.when]['OwnedAmount'] > 0.0:
+                # vendo
+                quantity = asset.history.loc[t.when]['OwnedAmount']
+                asset_price = quantity * asset.history.loc[t.when]['Open'] * curr_conv
+                commission = asset_price * asset.assetType.buyCommission
+                asset.history.loc[t.when]['OwnedAmount'] = 0.0
+                # calcolo le tasse
+                tax = (asset_price - quantity * asset.history.loc[t.when]['AverageBuyPrice']) * asset.assetType.tax_rate
+                #aggiorno liquidità
+                self.outcome.por_history.loc[t.when]['Liquidity'] += (asset_price - commission - tax)
+                # aumento il monte commissioni
+                self.outcome.por_history.loc[t.when]['TotalCommissions'] += commission
+                # aggiorno le tasse totali
+                self.outcome.por_history.loc[t.when]['TotalTaxes'] += tax
+                # FIXME: devo aggiornare le tasse su ciascuna azione
+                t.state = "executed"
+                t.quantity = quantity
+                t.value = asset_price
+                logging.info("Tx " + str(t) + "\tvalue: " + str(asset_price))
+                self.outcome.executedTransactions.append(t)
+            else:
+                t.state = "failed"
+                t.note += "Nothing to SELL. Transaction" + str(t) + " failed."
+                logging.debug("Tx failed, Nothing to SELL")
+                self.outcome.failedTransactions.append(t)
+        elif t.verb == "DIVIDEND":
+            logging.debug("DVND " + str(t))
+            tax = asset.assetType.tax_rate * curr_conv * asset.history.loc[t.when]['OwnedAmount'] * t.value
+            logging.debug("TAX: " + str(tax))
+            net_divd = asset.history.loc[t.when]['OwnedAmount'] * t.value * curr_conv * (1 - asset.assetType.tax_rate)
+            logging.debug("Net dividend: " + str(net_divd))
+            self.outcome.por_history.loc[t.when]['Liquidity'] += net_divd
+            t.state = "executed"
+            # aggiorno le tasse totali
+            self.outcome.por_history.loc[t.when]['TotalTaxes'] += tax
+            t.quantity = asset.history.loc[t.when]['OwnedAmount']
+            self.outcome.por_history.loc[t.when]['TotalDividens'] += net_divd
+            self.outcome.executedTransactions.append(t)
+            logging.debug("Dividend from " + str(asset.symbol) + " tot Value: " + str(asset.history.loc[t.when]['OwnedAmount'] * t.value * curr_conv * (1 - asset.assetType.tax_rate)))
+        else:
+            logging.debug("Ignoring Tx: " + str(t))
+            t.state = "failed"
+            t.note += " - no instructions for VERB: " + t.verb
+            self.outcome.failedTransactions.append(t)
+        # TODO: rimuovere transazione da pendingTransactions

@@ -30,13 +30,9 @@ if __name__ == "__main__":
     end_date = datetime.date.today()
     # end_date = datetime.date(2020, 8, 28)
     # First day
-    start_date = datetime.date(2015, 6, 9)
-    # start_date = datetime.date(2017, 9, 5)
+    # start_date = datetime.date(2015, 6, 9)
+    start_date = datetime.date(2019, 11, 5)
     initial_capital = 1000000.0  # 1.000.000 EUR
-    # se initial capital è 1.000.000, metto l'ordine a 50.000 per avere dei vincoli, oppure 5.000 per essere
-    # virtualmente senza vincoli di liquidità
-    max_order = 34400.0
-    # max_order = 5000.0
 
     filename = "./data/saved.mkts.data." + str(start_date) + '-' + str(end_date)
     try:
@@ -82,24 +78,26 @@ if __name__ == "__main__":
     timestamp = datetime.datetime.now()
     logging.info("\nExecuting trades")
     print("\tSimulating trading")
-    final_port = my_trading_strategy.runTradingSimulation(orderValue=max_order)
+    final_port = my_trading_strategy.runTradingSimulation(max_orders=25)
     logging.info("Trades completed in " + str(datetime.datetime.now() - timestamp))
 
     # calculating base case
+    benchmark = myPortfolio
     if True:
         print("\nCalculating base case")
         base_strat = sim_trade.InvBollbandsStrategy(myPortfolio)
         base_outcome = base_strat.calc_suggested_transactions()
-        base_port = base_strat.runTradingSimulation(orderValue=max_order)
-        base_port.por_history['NetValue'].plot(kind='line')
+        base_port = base_strat.runTradingSimulation(max_orders=25)
+        base_port.por_history['NetValue'].plot(kind='line', label="benchmark", legend=True)
+        benchmark = base_port
         # TODO: bisognerebbe salvarlo serializzato come fatto per il portafolgio iniziale
 
     # elaborazione finita visualizziamo l'outcome
     print("\nEnded, please check log file.\n")
     print("Simulation Outcome:")
-    print("\nInitial Portfolio")
-    myPortfolio.printReport()
-    print("\nFinal Portfolio:")
+    print("\nBenchmark Strategy")
+    benchmark.printReport()
+    print("\nTested Strategy:")
     final_port.printReport()
     print("\nNota bene, se il NetValue finale e' inferiore a initial_capital + Dividendi, di fatto c'e' stata una perdita sul capitale")
     print("Se nell'ultimo giorno, il totale delle tasse si abbassa, di fatto si sta scontando un Tax Credit Futuro\n")
@@ -115,7 +113,7 @@ if __name__ == "__main__":
 
     # print(final_port.por_history)
     # final_port.por_history.plot(kind='line', y='NetValue')
-    final_port.por_history['NetValue'].plot(kind='line')
+    final_port.por_history['NetValue'].plot(kind='line', label="tested", legend=True)
     # myPortfolio.por_history['NetValue'].plot(kind='line')
     plt.show()
     # esamino un'azione per capire cosa ho individuato come punti d'inversione

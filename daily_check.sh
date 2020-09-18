@@ -3,12 +3,15 @@
 cd  /home/nemofox/PycharmProjects/BackTesting
 rm /home/nemofox/PycharmProjects/BackTesting/data/*
 
+let MAX_RETRIES=10
+let TRIES=0
 python3 SignalsOnly.py
 
-while [ $? -ne 0 ]; do
+while [ $? -ne 0 ] && [ $TRIES -lt $MAX_RETRIES ]; do
+	let TRIES=$TRIES+1
 	sqlite3  data/cache.sqlite 'delete from responses ORDER BY rowid DESC LIMIT 10;'
         # sqlitebrowser data/cache.sqlite
-	python3 SignalsOnly.py
+	python3 SignalsOnly.py	
 done
 
 echo " "

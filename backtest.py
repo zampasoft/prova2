@@ -31,7 +31,7 @@ if __name__ == "__main__":
     # end_date = datetime.date(2020, 8, 28)
     # First day
     # start_date = datetime.date(2015, 6, 9)
-    start_date = datetime.date(2019, 11, 5)
+    start_date = datetime.date(2020, 4, 9)
     initial_capital = 1000000.0  # 1.000.000 EUR
 
     filename = "./data/saved.mkts.data." + str(start_date) + '-' + str(end_date)
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     # calcolo i segnali BUY e SELL
     timestamp = datetime.datetime.now()
     logging.info("\nCalculating BUY/SELL Signals")
-    my_strategy_outcome = my_trading_strategy.calc_suggested_transactions(w_short=3.0, w_long=1.0)
+    my_strategy_outcome = my_trading_strategy.calc_suggested_transactions(initial_buy=True, w_short=3.0, w_long=1.0)
     logging.info("Signals calculated in " + str(datetime.datetime.now() - timestamp))
 
     # processo tutte le transazioni pending e vedo cosa succede
@@ -83,10 +83,10 @@ if __name__ == "__main__":
 
     # calculating base case
     benchmark = myPortfolio
-    if True:
+    if False:
         print("\nCalculating base case")
         base_strat = sim_trade.InvBollbandsStrategy(myPortfolio)
-        base_outcome = base_strat.calc_suggested_transactions()
+        base_outcome = base_strat.calc_suggested_transactions(initial_buy=True)
         base_port = base_strat.runTradingSimulation(max_orders=25)
         base_port.por_history['NetValue'].plot(kind='line', label="benchmark", legend=True)
         benchmark = base_port

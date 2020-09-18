@@ -242,6 +242,11 @@ class Portfolio:
         self.assets["TSLA"] = Asset(EQUITY, "Tesla Inc.", "TSLA", "NASDAQ", "USD")
         self.assets["SWBI"] = Asset(EQUITY, "Smith & Wesson Brands Inc.", "SWBI", "NASDAQ", "USD")
         self.assets["ABT"] = Asset(EQUITY, "Abbott Laboratories", "ABT", "NYSE", "USD")
+        self.assets["NKLA"] = Asset(EQUITY, "Nikola Corporation", "NKLA", "NASDAQ", "USD")
+        self.assets["TDOC"] = Asset(EQUITY, "Teladoc", "TDOC", "NYSE", "USD")
+        self.assets["PINS"] = Asset(EQUITY, "Pinterest", "PINS", "NYSE", "USD")
+        self.assets["PTON"] = Asset(EQUITY, "Peloton Interactive Inc.", "PTON", "NASDAQ", "USD")
+        self.assets["SNOW"] = Asset(EQUITY, "Snowflake Inc.", "SNOW", "NYSE", "USD")
 
 
         # Titolo CH da me selezionati
@@ -486,7 +491,8 @@ class BuyAndHoldTradingStrategy:
         # wish_list = ["IBM", "GLEN.L", "MCRO.L", "MSFT", "GOOG", "GOOGL", "KAZ.L", "BRE.MI", "CRM", "RSW.L", "FME.DE",
         #             "ENEL.MI", "EQIX", "LLOY.L", "BP.L", "HSBA.L", "RWI.L", "SOON.SW", "BA.L", "PHAU.MI", "UCG.MI",
         #             "GSK.L", "TWLO", "ESNT.L", "BT-A.L", "GEO.MI", "ENI.MI", "NOVN.SW"]
-        wish_list = ["ENEL.MI", "PHAU.MI", "NEXI.MI", "DPW.DE", "FME.DE", "KER.PA", "AV.L", "LSE.L", "RSW.L", "TEAM", "SWBI", "SVMK", "MED", "NOW", "WORK", "DIS", "VNA.DE"]
+        wish_list = ["ENEL.MI", "PHAU.MI", "NEXI.MI", "DPW.DE", "FME.DE", "AV.L", "LSE.L", "RSW.L", "SWBI", "MED",
+                     "NOW", "DIS", "VNA.DE", "GOOGL", "KER.PA", "MSFT", "NKLA", "SVMK", "TEAM", "TWLO", "ULVR.L", "WORK"]
         days_long = self.outcome.days_long
         for key, asset in sorted(self.outcome.assets.items()):
             assert isinstance(asset, Asset)

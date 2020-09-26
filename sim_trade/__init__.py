@@ -247,6 +247,8 @@ class Portfolio:
         self.assets["PINS"] = Asset(EQUITY, "Pinterest", "PINS", "NYSE", "USD")
         self.assets["PTON"] = Asset(EQUITY, "Peloton Interactive Inc.", "PTON", "NASDAQ", "USD")
         self.assets["SNOW"] = Asset(EQUITY, "Snowflake Inc.", "SNOW", "NYSE", "USD")
+        self.assets["U"] = Asset(EQUITY, "Unity Software Inc.", "U", "NYSE", "USD")
+        self.assets["ILMN"] = Asset(EQUITY, "Illumina, Inc.", "ILMN", "NASDAQ", "USD")
 
 
         # Titolo CH da me selezionati
@@ -938,7 +940,7 @@ class ComplexStrategy(BuyAndHoldTradingStrategy):
         print(" ")
         return self.outcome.pendingTransactions
 
-    def exec_trade(self, t : Transaction):
+    def exec_trade(self, t : Transaction, allow_BUY = True):
         # TODO: spostare order value come parametro di questo metodo, che è l'unico posto in cui viene usato
         # TODO: verificare che lo stato della Transazione sia Pending
         # recupero l'asset su cui devo operare
@@ -960,7 +962,7 @@ class ComplexStrategy(BuyAndHoldTradingStrategy):
                 curr_conv = CHFEUR
         logging.debug(asset.currency + " curr_conv " + str(curr_conv))
 
-        if t.verb == "BUY":
+        if t.verb == "BUY" and allow_BUY:
             logging.debug("Buying " + str(t))
             # TODO: improve Buying Quantity calculation...
 
@@ -1042,3 +1044,78 @@ class ComplexStrategy(BuyAndHoldTradingStrategy):
             t.note += " - no instructions for VERB: " + t.verb
             self.outcome.failedTransactions.append(t)
         # TODO: rimuovere transazione da pendingTransactions
+
+    def runTradingSimulation(self, max_orders = 25.0):
+        logging.debug("Processing portfolio \'{0}\' start_date = {1} end_date = {2}".format(self.outcome.description,
+                                                                                            str(self.outcome.start_date),
+                                                                                            str(self.outcome.end_date)))
+        self.BUY_ORDER_VALUE = self.outcome.initial_capital / max_orders
+        # max_orders = rappresenta una stima del numero massimo di ordini eseguiti in un BUY & HOLD.
+        # con strategie più complesse, è una indicazione spannometrica del numero di titoli massimo nel portafoglio
+        logging.info("\nSetting BUY order value to: " + str(self.BUY_ORDER_VALUE))
+        # prima di tutto comincio a stampare la lista della transazioni pending
+        #for key, value in self.outcome.pendingTransactions.items():
+        #    print ("Key: " + str(key))
+        #    for tx in value:
+        #        print(" Tx: " + str(tx))
+        # self.outcome.pendingTransactions.sort(reverse=False, key=Transaction.to_datetime)
+        # il trading parte da start_date + 1 gg, prima non posso avere ordini basati su nessun dato
+        NetValue_SMA = self.outcome.initial_capital
+        allow_BUY = True
+        first_trading_day = self.outcome.start_date + datetime.timedelta(days=1)
+        # inizializzo un paio di variabili che utilizzo per stampre un'idea di progress bar
+        count = 0
+        mod = len(self.outcome.por_history) -1
+        # inizio a fare il vero trading
+        for dd in ar.Arrow.range('day', datetime.datetime.combine(first_trading_day, datetime.time.min),
+                                datetime.datetime.combine(self.outcome.end_date, datetime.time.min)):
+            logging.debug("\tProcessing Trading Day " + str(dd.date()))
+            # dovrei iterare sui giorni ed eseguire le transazioni
+            # prima di tutto copio i valori por_history e asset history da ieri
+            # prima di tutto, passo tutti gli asset e se amount è > 0 calcolo il CLOSE_PRICE in EUR
+            # mi serve un metodo per calcolare il valore del Port in un dato giorno.
+            # ... devo riempire tutti i giorni per ...
+            # ...
+            # assumo
+            prev_day = dd.date() - datetime.timedelta(days=1)
+            # copio port history
+            self.outcome.por_history.loc[dd.date()] = self.outcome.por_history.loc[prev_day]
+            # processo gli asset
+            for sym, asset in self.outcome.assets.items():
+                count += 1
+                if count % mod == 0:
+                    print(".", end="", flush=True)
+                # propago i cambiamenti del giorno precedente
+                asset.history.loc[dd.date()]['OwnedAmount'] = asset.history.loc[prev_day]['OwnedAmount']
+                asset.history.loc[dd.date()]['AverageBuyPrice'] = asset.history.loc[prev_day]['AverageBuyPrice']
+            today_tx = []
+            try:
+                #today_tx = self.outcome.pendingTransactions[datetime.datetime.combine(r.date(), datetime.time.min)]
+                today_tx = self.outcome.pendingTransactions[dd.date()]
+                today_tx.sort(reverse=False, key=Transaction.to_datetime)
+            except KeyError as ke:
+                logging.exception(ke)
+                logging.debug("No pending TX for day: " + str(dd.date))
+            if len(today_tx) > 0:
+                for t in today_tx:
+                    self.exec_trade(t, allow_BUY)
+            # calcolo il valore netto di Portafoglio alla fine della giornata di Trading.
+            self.outcome.port_net_value(dd.date())
+            # ricalcolo order value come percentuale del net value
+            self.BUY_ORDER_VALUE = self.outcome.por_history.loc[dd.date()]['NetValue'] / max_orders
+            # se il net value è sotto la media mobile a 20 giorni del net value, assumo che i mercati stiano scendendo e blocco i segnali di BUY
+            NetValue_SMA_old = NetValue_SMA
+            try:
+                NetValue_SMA = NetValue_SMA_old + ( self.outcome.por_history.loc[dd.date()]['NetValue'] - self.outcome.por_history.loc[dd.date()-datetime.timedelta(days=20)]['NetValue'] ) / 20
+            except KeyError as ke:
+                NetValue_SMA = NetValue_SMA_old
+            logging.debug("Net Value SMA on " + str(dd.date()) + " " + str(NetValue_SMA))
+            logging.debug(
+                "Net Value on " + str(dd.date()) + " " + str(self.outcome.por_history.loc[dd.date()]['NetValue']))
+            if self.outcome.por_history.loc[dd.date()]['NetValue'] < NetValue_SMA:
+                logging.debug("setting ALLOW_BUY = False")
+                allow_BUY = False
+            else:
+                allow_BUY = True
+        print("\nBella zio!")
+        return self.outcome

@@ -24,7 +24,7 @@ if __name__ == "__main__":
     end_date = datetime.date.today()
     # end_date = datetime.date(2020, 6, 5)
     # First day
-    start_date = datetime.date(2020, 4, 9)
+    start_date = datetime.date(2020, 1, 30)
     initial_capital = 500000.0  # EUR
 
     myPortfolio = sim_trade.Portfolio(start_date, end_date, initial_capital)

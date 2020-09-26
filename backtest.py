@@ -31,7 +31,7 @@ if __name__ == "__main__":
     # end_date = datetime.date(2020, 8, 28)
     # First day
     # start_date = datetime.date(2015, 6, 9)
-    start_date = datetime.date(2020, 4, 9)
+    start_date = datetime.date(2020, 1, 30)
     initial_capital = 1000000.0  # 1.000.000 EUR
 
     filename = "./data/saved.mkts.data." + str(start_date) + '-' + str(end_date)
@@ -66,6 +66,7 @@ if __name__ == "__main__":
     # devo definire una strategia di Trading
     print("\tCalculating Signals")
     # my_trading_strategy = sim_trade.BuyAndHoldTradingStrategy(myPortfolio)
+    # my_trading_strategy = sim_trade.InvBollbandsStrategy(myPortfolio)
     my_trading_strategy = sim_trade.ComplexStrategy(myPortfolio)
     # my_trading_strategy = sim_trade.BollbandsStrategy(myPortfolio)
     # calcolo i segnali BUY e SELL
@@ -83,13 +84,20 @@ if __name__ == "__main__":
 
     # calculating base case
     benchmark = myPortfolio
-    if False:
-        print("\nCalculating base case")
-        base_strat = sim_trade.InvBollbandsStrategy(myPortfolio)
+    if True:
+        print("\nCalculating Buy & Hold")
+        # base_strat = sim_trade.InvBollbandsStrategy(myPortfolio)
+        # base_strat = sim_trade.BollbandsStrategy(myPortfolio)
+        base_strat = sim_trade.BuyAndHoldTradingStrategy(myPortfolio)
         base_outcome = base_strat.calc_suggested_transactions(initial_buy=True)
         base_port = base_strat.runTradingSimulation(max_orders=25)
-        base_port.por_history['NetValue'].plot(kind='line', label="benchmark", legend=True)
+        base_port.por_history['NetValue'].plot(kind='line', label="Buy&Hold", legend=True)
         benchmark = base_port
+        print("\nCalculating InvBollingherBands")
+        bounded_strat = sim_trade.InvBollbandsStrategy(myPortfolio)
+        bounded_outcome = bounded_strat.calc_suggested_transactions(initial_buy=True)
+        bounded_port = bounded_strat.runTradingSimulation(max_orders=25)
+        bounded_port.por_history['NetValue'].plot(kind='line', label="InvBollingherBands", legend=True)
         # TODO: bisognerebbe salvarlo serializzato come fatto per il portafolgio iniziale
 
     # elaborazione finita visualizziamo l'outcome
@@ -113,7 +121,12 @@ if __name__ == "__main__":
 
     # print(final_port.por_history)
     # final_port.por_history.plot(kind='line', y='NetValue')
-    final_port.por_history['NetValue'].plot(kind='line', label="tested", legend=True)
+    final_port.por_history['NetValue'].plot(kind='line', label="Custom", legend=True)
+
+    NetValue_sma_short = final_port.por_history['NetValue'].rolling(window=20).mean()
+    final_port.por_history['NetValue_sma_short'] = NetValue_sma_short
+    final_port.por_history['NetValue_sma_short'].plot(kind='line', label="Trending_SMA", legend=True)
+
     # myPortfolio.por_history['NetValue'].plot(kind='line')
     plt.show()
     # esamino un'azione per capire cosa ho individuato come punti d'inversione

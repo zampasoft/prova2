@@ -249,7 +249,9 @@ class Portfolio:
         self.assets["SNOW"] = Asset(EQUITY, "Snowflake Inc.", "SNOW", "NYSE", "USD")
         self.assets["U"] = Asset(EQUITY, "Unity Software Inc.", "U", "NYSE", "USD")
         self.assets["ILMN"] = Asset(EQUITY, "Illumina, Inc.", "ILMN", "NASDAQ", "USD")
-
+        self.assets["ORCL"] = Asset(EQUITY, "Oracle Corporation", "ORCL", "NYSE", "USD")
+        self.assets["PLTR"] = Asset(EQUITY, "Palantir Technologies Inc.", "PLTR", "NASDAQ", "USD")
+        self.assets["ASAN"] = Asset(EQUITY, "Asana, Inc.", "ASAN", "NASDAQ", "USD")
 
         # Titolo CH da me selezionati
         self.assets["ALC.SW"] = Asset(EQUITY, "ALCON N", "ALC.SW", "VIRTX", "CHF")
@@ -284,6 +286,7 @@ class Portfolio:
         self.assets["TSCO.L"] = Asset(EQUITY, "Tesco PLC", "TSCO.L", "LSE", "GBP")
         self.assets["MRW.L"] = Asset(EQUITY, "Wm Morrison Supermarkets PLC", "MRW.L", "LSE", "GBP")
         self.assets["OCDO.L"] = Asset(EQUITY, "Ocado Group plc", "OCDO.L", "LSE", "GBP")
+        self.assets["DGE.L"] = Asset(EQUITY, "Diageo plc", "DGE.L", "LSE", "GBP")
 
 
         # Titoli EUR da me selezionati
@@ -314,6 +317,7 @@ class Portfolio:
         self.assets["SAP.DE"] = Asset(EQUITY, "SAP", "SAP.DE", "XETRA", "EUR")
         self.assets["ADS.DE"] = Asset(EQUITY, "Adidas AG", "ADS.DE", "XETRA", "EUR")
         self.assets["DPW.DE"] = Asset(EQUITY, "Deutsche Post AG", "DPW.DE", "XETRA", "EUR")
+        self.assets["SFL.MI"] = Asset(EQUITY, "Safilo Group S.p.A.", "SFL.MI", "MTA", "EUR")
 
 
 
@@ -490,11 +494,8 @@ class BuyAndHoldTradingStrategy:
     # TODO: questo metodo dovrebbe essere multi-thread.
     def calc_suggested_transactions(self, sell_all=True, **kwparams):
         # Strategia base "BUY & HOLD"
-        # wish_list = ["IBM", "GLEN.L", "MCRO.L", "MSFT", "GOOG", "GOOGL", "KAZ.L", "BRE.MI", "CRM", "RSW.L", "FME.DE",
-        #             "ENEL.MI", "EQIX", "LLOY.L", "BP.L", "HSBA.L", "RWI.L", "SOON.SW", "BA.L", "PHAU.MI", "UCG.MI",
-        #             "GSK.L", "TWLO", "ESNT.L", "BT-A.L", "GEO.MI", "ENI.MI", "NOVN.SW"]
-        wish_list = ["ENEL.MI", "PHAU.MI", "NEXI.MI", "DPW.DE", "FME.DE", "AV.L", "LSE.L", "RSW.L", "SWBI", "MED",
-                     "NOW", "DIS", "VNA.DE", "GOOGL", "KER.PA", "MSFT", "NKLA", "SVMK", "TEAM", "TWLO", "ULVR.L", "WORK"]
+        # wish_list = ["IBM", "GLEN.L", "MCRO.L", "MSFT", "GOOG", "GOOGL", "KAZ.L", "BRE.MI", "CRM", "RSW.L", "FME.DE", "ENEL.MI", "EQIX", "LLOY.L", "BP.L", "HSBA.L", "RWI.L", "SOON.SW", "BA.L", "PHAU.MI", "UCG.MI", "GSK.L", "TWLO", "ESNT.L", "BT-A.L", "GEO.MI", "ENI.MI", "NOVN.SW"]
+        wish_list = ["AMZN", "ENEL.MI", "PHAU.MI", "NEXI.MI", "DPW.DE", "CPR.MI", "AV.L", "LSE.L", "RSW.L", "SWBI", "MED",  "NOW", "DIS", "VNA.DE", "GOOGL", "KER.PA", "MSFT", "NKLA", "SVMK", "TEAM", "TWLO", "ULVR.L", "WORK"]
         days_long = self.outcome.days_long
         for key, asset in sorted(self.outcome.assets.items()):
             assert isinstance(asset, Asset)

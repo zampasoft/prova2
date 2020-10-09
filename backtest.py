@@ -6,7 +6,6 @@ import pandas as pd
 import sim_trade
 import matplotlib.pyplot as plt
 import pickle
-import arrow as ar
 
 
 if __name__ == "__main__":
@@ -29,11 +28,13 @@ if __name__ == "__main__":
 
     # Last day
     end_date = datetime.date.today()
-    # end_date = datetime.date(2020, 8, 28)
+    # end_date = datetime.date(2020, 4, 3)
     # First day
     # start_date = datetime.date(2015, 6, 9)
     start_date = datetime.date(2020, 1, 30)
     initial_capital = 1000000.0  # 1.000.000 EUR
+    sell_all = False
+
 
     filename = "./data/saved.mkts.data." + str(start_date) + '-' + str(end_date)
     try:
@@ -73,14 +74,15 @@ if __name__ == "__main__":
     # calcolo i segnali BUY e SELL
     timestamp = datetime.datetime.now()
     logging.info("\nCalculating BUY/SELL Signals")
-    my_strategy_signals = my_trading_strategy.calc_suggested_transactions(sell_all=False, initial_buy=True, w_short=3.0, w_long=1.0)
+    my_strategy_signals = my_trading_strategy.calc_suggested_transactions(sell_all=sell_all, initial_buy=True, w_short=3.0, w_long=1.0)
     logging.info("Signals calculated in " + str(datetime.datetime.now() - timestamp))
     # Printing raw Signals
     print("Calculation Outcome:")
     print("\nSignalled Tx: ")
-    for dd in ar.Arrow.range('day', datetime.datetime.combine(start_date, datetime.time.min),
-                             datetime.datetime.combine(end_date, datetime.time.min)):
-        for t in my_strategy_signals[dd.date()]:
+
+
+    for dd in pd.date_range(start=start_date, end=end_date):
+        for t in my_strategy_signals[dd]:
             if t.verb == "BUY" or t.verb == "SELL":
                 print(" Tx: " + str(t))
 
@@ -98,13 +100,13 @@ if __name__ == "__main__":
         # base_strat = sim_trade.InvBollbandsStrategy(myPortfolio)
         # base_strat = sim_trade.BollbandsStrategy(myPortfolio)
         base_strat = sim_trade.BuyAndHoldTradingStrategy(myPortfolio)
-        base_signals = base_strat.calc_suggested_transactions(sell_all=False, initial_buy=True)
+        base_signals = base_strat.calc_suggested_transactions(sell_all=sell_all, initial_buy=True)
         base_port = base_strat.runTradingSimulation(max_orders=25)
         base_port.por_history['NetValue'].plot(kind='line', label="Buy&Hold", legend=True)
         benchmark = base_port
         print("\nCalculating InvBollingherBands")
         bounded_strat = sim_trade.InvBollbandsStrategy(myPortfolio)
-        bounded_signals = bounded_strat.calc_suggested_transactions(sell_all=False, initial_buy=True)
+        bounded_signals = bounded_strat.calc_suggested_transactions(sell_all=sell_all, initial_buy=True)
         bounded_port = bounded_strat.runTradingSimulation(max_orders=25)
         bounded_port.por_history['NetValue'].plot(kind='line', label="InvBollingherBands", legend=True)
         # TODO: bisognerebbe salvarlo serializzato come fatto per il portafolgio iniziale
@@ -118,7 +120,7 @@ if __name__ == "__main__":
     final_port.printReport()
     print("\nNota bene, se il NetValue finale e' inferiore a initial_capital + Dividendi, di fatto c'e' stata una perdita sul capitale")
     print("Se nell'ultimo giorno, il totale delle tasse si abbassa, di fatto si sta scontando un Tax Credit Futuro\n")
-    print(final_port.por_history.loc[end_date - datetime.timedelta(days=1)])
+    print(final_port.por_history.loc[datetime.datetime.combine(end_date - datetime.timedelta(days=1), datetime.time.min)])
     # grandezze medie e minime
     print("\nAverages:")
     print(final_port.por_history.mean())

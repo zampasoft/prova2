@@ -6,6 +6,7 @@ import pandas as pd
 import sim_trade
 import matplotlib.pyplot as plt
 import pickle
+from pandas.tseries.offsets import BDay
 
 
 if __name__ == "__main__":
@@ -27,11 +28,11 @@ if __name__ == "__main__":
     pd.set_option('display.width', 1000)
 
     # Last day
-    end_date = datetime.date.today()
+    end_date = datetime.date.today() + BDay(0)
     # end_date = datetime.date(2020, 4, 3)
     # First day
     # start_date = datetime.date(2015, 6, 9)
-    start_date = datetime.date(2020, 1, 30)
+    start_date = datetime.date(2020, 2, 5)
     initial_capital = 1000000.0  # 1.000.000 EUR
     sell_all = False
 
@@ -81,7 +82,7 @@ if __name__ == "__main__":
     print("\nSignalled Tx: ")
 
 
-    for dd in pd.date_range(start=start_date, end=end_date):
+    for dd in pd.date_range(start=start_date, end=end_date, freq='B'):
         for t in my_strategy_signals[dd]:
             if t.verb == "BUY" or t.verb == "SELL":
                 print(" Tx: " + str(t))
@@ -107,7 +108,7 @@ if __name__ == "__main__":
         print("\nCalculating InvBollingherBands")
         bounded_strat = sim_trade.InvBollbandsStrategy(myPortfolio)
         bounded_signals = bounded_strat.calc_suggested_transactions(sell_all=sell_all, initial_buy=True)
-        bounded_port = bounded_strat.runTradingSimulation(max_orders=25)
+        bounded_port = bounded_strat.runTradingSimulation(max_orders=30)
         bounded_port.por_history['NetValue'].plot(kind='line', label="InvBollingherBands", legend=True)
         # TODO: bisognerebbe salvarlo serializzato come fatto per il portafolgio iniziale
 

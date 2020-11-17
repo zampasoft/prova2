@@ -18,9 +18,11 @@ Apparentemente limitate il portagoglio a 20-25 titoli è una mossa vincente.
 
 Da fare:
 Urgenti:
-- nel fix data, individuare outlier come probabili errori e sostituire con media a 20 gg
-- definiamo outlier uno scostamento superiore a 5 sigma (?) dalla media
-- implementare sempre due metodi INV Bollingher (mercato trending) e Bollingher (mercato bounded)
+- implementare metodo score per BUY multipli in BUY&HOLD, adesso è implementato in INV Bollingher
+- mettere lista azioni su file CSV che poi carico
+- le performance delle diverse strategia di Trading va paragonata sulla media e non solo sul valore finale.
+- il grafico dovrebbe partire da quando parte la strategia, e non i dati.
+- aggiungere possibilità di immettere ordini con data nella strategia BUY&Hold
 
 
 i test di simulazione li facciamo su 5 anni.
@@ -28,10 +30,6 @@ Il calcolo dei segnali su 12 mesi.
 
 Il portagoglio iniziale va rinominato in "Markets" perché di fatto ha lo scopo di raccogliere i dati dei mercati
 per tutti i titoli da monitorati.
-Creare un file "init_trans", in cui elencare una serie di ordini BUY da fare il primo giorno, per avere un portafoglio
-di partenza uguale al mio e vedere come evolve negli anni. (Nella strategia di portafoglio aggiungere un batch di ordini
-iniziali che simuli il mio portafoglio attuale)
-E' anche un modo per confrontare meglio BUY & HOLD con le altre strategie.
 Aggiungere calcolo delle tasse per ogni simbolo, così vediamo quanti sono quelli che hanno contributi positivi.
 
 

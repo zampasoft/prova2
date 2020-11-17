@@ -107,9 +107,14 @@ if __name__ == "__main__":
         benchmark = base_port
         print("\nCalculating InvBollingherBands")
         bounded_strat = sim_trade.InvBollbandsStrategy(myPortfolio)
+        ## bounded_strat = sim_trade.BollbandsStrategy(myPortfolio)
         bounded_signals = bounded_strat.calc_suggested_transactions(sell_all=sell_all, initial_buy=True)
         bounded_port = bounded_strat.runTradingSimulation(max_orders=30)
         bounded_port.por_history['NetValue'].plot(kind='line', label="InvBollingherBands", legend=True)
+        print("\nExecuted Tx: ")
+        for t in bounded_port.executedTransactions:
+            if t.verb == "BUY" or t.verb == "SELL":
+                print(" Tx: " + str(t))
         # TODO: bisognerebbe salvarlo serializzato come fatto per il portafolgio iniziale
 
     # elaborazione finita visualizziamo l'outcome
@@ -121,7 +126,7 @@ if __name__ == "__main__":
     final_port.printReport()
     print("\nNota bene, se il NetValue finale e' inferiore a initial_capital + Dividendi, di fatto c'e' stata una perdita sul capitale")
     print("Se nell'ultimo giorno, il totale delle tasse si abbassa, di fatto si sta scontando un Tax Credit Futuro\n")
-    print(final_port.por_history.loc[datetime.datetime.combine(end_date - datetime.timedelta(days=1), datetime.time.min)])
+    print(final_port.por_history.loc[datetime.datetime.combine(end_date - BDay(1), datetime.time.min)])
     # grandezze medie e minime
     print("\nAverages:")
     print(final_port.por_history.mean())

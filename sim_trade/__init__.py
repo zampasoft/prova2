@@ -268,6 +268,12 @@ class Portfolio:
         self.assets["DOW"] = Asset(EQUITY, "Dow Inc.", "DOW", "NYSE", "USD")
         self.assets["GE"] = Asset(EQUITY, "General Electric Company", "GE", "NYSE", "USD")
         self.assets["JNJ"] = Asset(EQUITY, "Johnson & Johnson", "JNJ", "NYSE", "USD")
+        self.assets["PFE"] = Asset(EQUITY, "Pfizer Inc.", "PFE", "NYSE", "USD")
+        self.assets["JPM"] = Asset(EQUITY, "JPMorgan Chase & Co.", "JPM", "NYSE", "USD")
+        self.assets["XOM"] = Asset(EQUITY, "Exxon Mobil Corporation", "XOM", "NYSE", "USD")
+        self.assets["CS"] = Asset(EQUITY, "The Goldman Sachs Group", "CS", "NYSE", "USD")
+        self.assets["MS"] = Asset(EQUITY, "Morgan Stanley", "MS", "NYSE", "USD")
+        self.assets["CVX"] = Asset(EQUITY, "Chevron Corporation","CVX", "NYSE", "USD")
 
 
         # Titolo CH da me selezionati
@@ -333,6 +339,7 @@ class Portfolio:
         self.assets["VVD.F"] = Asset(EQUITY, "Veolia Environnement S.A.", "VVD.F", "EQUIDUCT", "EUR")
         self.assets["ISP.MI"] = Asset(EQUITY, "Intesa Sanpaolo", "ISP.MI", "MTA", "EUR")
         self.assets["MZB.MI"] = Asset(EQUITY, "Massimo Zanetti Beverage Group", "MZB.MI", "MTA", "EUR")
+        self.assets["PRT.MI"] = Asset(EQUITY, "Esprinet S.p.A.", "PRT.MI", "MTA", "EUR")
         self.assets["SAP.DE"] = Asset(EQUITY, "SAP", "SAP.DE", "XETRA", "EUR")
         self.assets["ADS.DE"] = Asset(EQUITY, "Adidas AG", "ADS.DE", "XETRA", "EUR")
         self.assets["DPW.DE"] = Asset(EQUITY, "Deutsche Post AG", "DPW.DE", "XETRA", "EUR")
@@ -344,6 +351,7 @@ class Portfolio:
         self.assets["SU.PA"] = Asset(EQUITY, "Schneider Electric S.E.", "SU.PA", "EQUIDUCT", "EUR")
         self.assets["RI.PA"] = Asset(EQUITY, "Pernod Ricard SA", "RI.PA", "EQUIDUCT", "EUR")
         self.assets["ILTY.MI"] = Asset(EQUITY, "Illimity Bank S.p.A.", "ILTY.MI", "MTA", "EUR")
+        self.assets["LDO.MI"] = Asset(EQUITY, "Leonardo S.p.A.", "LDO.MI", "MTA", "EUR")
 
 
 
@@ -518,7 +526,7 @@ class BuyAndHoldTradingStrategy:
     def calc_suggested_transactions(self, sell_all=True, **kwparams):
         # Strategia base "BUY & HOLD"
         # wish_list = ["IBM", "GLEN.L", "MCRO.L", "MSFT", "GOOG", "GOOGL", "KAZ.L", "BRE.MI", "CRM", "RSW.L", "FME.DE", "ENEL.MI", "EQIX", "LLOY.L", "BP.L", "HSBA.L", "RWI.L", "SOON.SW", "BA.L", "PHAU.MI", "UCG.MI", "GSK.L", "TWLO", "ESNT.L", "BT-A.L", "GEO.MI", "ENI.MI", "NOVN.SW"]
-        wish_list = ["AMZN", "DPZ", "PHAU.MI", "NEXI.MI", "DPW.DE", "CPR.MI", "SOON.SW", "LSE.L", "SWBI", "MED",  "NOW", "DIS", "VNA.DE", "GOOGL", "KER.PA", "MSFT", "NKLA", "SVMK", "TEAM", "TWLO", "ULVR.L", "BRBY.L", "GES", "NFLX", "DOCU"]
+        wish_list = ["AMZN", "DPZ", "PHAU.MI", "NEXI.MI", "CPR.MI", "SOON.SW", "LSE.L", "MED",  "NOW", "DIS", "VNA.DE", "GOOGL", "MSFT", "NKLA", "SVMK", "TEAM", "TWLO", "ULVR.L", "BRBY.L", "GES", "NFLX", "DOCU", "HSBA.L"]
         days_long = self.outcome.days_long
         for key, asset in sorted(self.outcome.assets.items()):
             assert isinstance(asset, Asset)

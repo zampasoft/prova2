@@ -37,7 +37,7 @@ if __name__ == "__main__":
     sell_all = False
 
 
-    filename = "./data/saved.mkts.data." + str(start_date) + '-' + str(end_date)
+    filename = "./data/saved.mkts.data." + str(start_date) + '-' + str(end_date.date())
     try:
         # se esiste questo file, lo carico e risparmio qualche minuto
         file_handle = open(filename, "rb")
@@ -128,9 +128,16 @@ if __name__ == "__main__":
     print("Se nell'ultimo giorno, il totale delle tasse si abbassa, di fatto si sta scontando un Tax Credit Futuro\n")
     print(final_port.por_history.loc[datetime.datetime.combine(end_date - BDay(1), datetime.time.min)])
     # grandezze medie e minime
+
     print("\nAverages:")
+    print("\nBenchmark Strategy")
+    print(benchmark.por_history.mean())
+    print("\nTested Strategy:")
     print(final_port.por_history.mean())
     print("\nMins:")
+    print("\nBenchmark Strategy")
+    print(benchmark.por_history.min())
+    print("\nTested Strategy:")
     print(final_port.por_history.min())
     print("\nExecuted Tx: ")
     for t in final_port.executedTransactions:

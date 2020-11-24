@@ -60,7 +60,7 @@ if __name__ == "__main__":
         print("\tCalculating Basic Stats")
         myPortfolio.calc_stats(days_short=20, days_long=150)
         print("\tFixing Data")
-        myPortfolio.fill_history_gaps()
+        myPortfolio.fix_history_data()
         # mi salvo il calcolo per velocizzare i miei tests
         file_handle = open(filename, "wb")
         logging.info("\nSaving Initial Portfolio and quotations to: " + str(file_handle.name))

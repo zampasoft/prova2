@@ -377,16 +377,21 @@ class Portfolio:
             print(".", end="", flush=True)
         print(" ")
 
-    # TODO: questo metodo dovrebbe essere multi-thread.
-    def fill_history_gaps(self):
-        logging.debug("Entering fill_history_gaps")
+    # TODO: questo metodo dovrebbe essere multi-process.
+    def fix_history_data(self):
+        logging.debug("Entering fix_history_data")
         for key, asset in sorted(self.assets.items()):
             print(".", end="", flush=True)
             # create a set containing all dates in Range
             logging.debug("Processing :" + asset.symbol)
+            # logging.debug(asset.history)
             last_row = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
             if asset.symbol == self.defCurrency:
                 asset.history = pd.DataFrame()  # devo definire la struttura
+            if asset.history.index.has_duplicates:
+                logging.error("There are duplicates in the history for " + asset.symbol)
+                # remove duplicates, keep first
+                asset.history = asset.history[~asset.history.index.duplicated(keep='first')]
             for dd in pd.date_range(start=self.start_date, end=self.end_date, freq='B'):
                 try:
                     last_row = asset.history.loc[dd, :]
@@ -394,7 +399,7 @@ class Portfolio:
                     # se il valore esiste, ma rappresenta un errore, allora lo sostituisco con la media a 20 gg
                     if asset.currency == "GBP" and not math.isnan(last_row['sma_short']):
                         # se il valore è inferiore al 2% della media corta, probabilmente hanno invertito GBP e GBp
-                        if last_row['Close'] < last_row['sma_short'] * 0.02:
+                        if last_row['Close'] < (last_row['sma_short'] * 0.02):
                             logging.info("Found Outlier: managing as GBP/GBp error for " + asset.symbol + " on " + str(
                                 dd.date()))
                             last_row['Close'] = last_row['Close'] * 100
@@ -409,7 +414,8 @@ class Portfolio:
                     # e altre volte semplicemente pesco un festivo come primo giorno
                     # da capire
                 except Exception as e:
-                    logging.exception("Unexpected error:" + str(e))
+                    logging.debug("\nLast Row: " + str(last_row))
+                    logging.exception("\nUnexpected error:" + str(e))
                     exit(-1)
             # asset.history = asset.history.sort_index()
             # estendo il DataFrame aggiungendo la colonna OwnedAmount

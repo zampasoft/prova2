@@ -18,7 +18,7 @@ Apparentemente limitate il portagoglio a 20-25 titoli è una mossa vincente.
 
 Da fare:
 Urgenti:
-- implementare metodo score per BUY multipli in BUY&HOLD, adesso è implementato in INV Bollingher
+- estebdere score a Bollingher
 - mettere lista azioni su file CSV che poi carico
 - le performance delle diverse strategia di Trading va paragonata sulla media e non solo sul valore finale.
 - il grafico dovrebbe partire da quando parte la strategia, e non i dati.

@@ -77,21 +77,12 @@ if __name__ == "__main__":
     logging.info("\nCalculating BUY/SELL Signals")
     my_strategy_signals = my_trading_strategy.calc_suggested_transactions(sell_all=sell_all, initial_buy=True, w_short=3.0, w_long=1.0)
     logging.info("Signals calculated in " + str(datetime.datetime.now() - timestamp))
-    # Printing raw Signals
-    print("Calculation Outcome:")
-    print("\nSignalled Tx: ")
-
-
-    for dd in pd.date_range(start=start_date, end=end_date, freq='B'):
-        for t in my_strategy_signals[dd]:
-            if t.verb == "BUY" or t.verb == "SELL":
-                print(" Tx: " + str(t))
 
     # processo tutte le transazioni pending e vedo cosa succede
     timestamp = datetime.datetime.now()
     logging.info("\nExecuting trades")
     print("\tSimulating trading")
-    final_port = my_trading_strategy.runTradingSimulation(max_orders=25)
+    final_port = my_trading_strategy.runTradingSimulation(max_orders=26)
     logging.info("Trades completed in " + str(datetime.datetime.now() - timestamp))
 
     # calculating base case
@@ -102,20 +93,33 @@ if __name__ == "__main__":
         # base_strat = sim_trade.BollbandsStrategy(myPortfolio)
         base_strat = sim_trade.BuyAndHoldTradingStrategy(myPortfolio)
         base_signals = base_strat.calc_suggested_transactions(sell_all=sell_all, initial_buy=True)
-        base_port = base_strat.runTradingSimulation(max_orders=25)
+        base_port = base_strat.runTradingSimulation(max_orders=26)
         base_port.por_history['NetValue'].plot(kind='line', label="Buy&Hold", legend=True)
         benchmark = base_port
         print("\nCalculating InvBollingherBands")
         bounded_strat = sim_trade.InvBollbandsStrategy(myPortfolio)
         ## bounded_strat = sim_trade.BollbandsStrategy(myPortfolio)
         bounded_signals = bounded_strat.calc_suggested_transactions(sell_all=sell_all, initial_buy=True)
+        # Printing raw Signals
+        print("Calculation Outcome:")
+        print("\nSignalled Tx: ")
+
+        for dd in pd.date_range(start=start_date, end=end_date, freq='B'):
+            for t in bounded_signals[dd]:
+                if t.verb == "BUY" or t.verb == "SELL":
+                    print(" Tx: " + str(t))
         bounded_port = bounded_strat.runTradingSimulation(max_orders=30)
         bounded_port.por_history['NetValue'].plot(kind='line', label="InvBollingherBands", legend=True)
-        print("\nExecuted Tx: ")
+        print("\n" + bounded_port.description + " Executed Tx: ")
         for t in bounded_port.executedTransactions:
             if t.verb == "BUY" or t.verb == "SELL":
                 print(" Tx: " + str(t))
         # TODO: bisognerebbe salvarlo serializzato come fatto per il portafolgio iniziale
+
+    print("\n" + final_port.description + " Executed Tx: ")
+    for t in final_port.executedTransactions:
+        if t.verb == "BUY" or t.verb == "SELL":
+            print(" Tx: " + str(t))
 
     # elaborazione finita visualizziamo l'outcome
     print("\nEnded, please check log file.\n")
@@ -139,10 +143,7 @@ if __name__ == "__main__":
     print(benchmark.por_history.min())
     print("\nTested Strategy:")
     print(final_port.por_history.min())
-    print("\nExecuted Tx: ")
-    for t in final_port.executedTransactions:
-        if t.verb == "BUY" or t.verb == "SELL":
-            print(" Tx: " + str(t))
+
 
     # print(final_port.por_history)
     # final_port.por_history.plot(kind='line', y='NetValue')

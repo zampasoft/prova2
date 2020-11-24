@@ -1,5 +1,6 @@
 # ver 1.0
 import copy as cp
+import csv
 import datetime
 import logging
 import math
@@ -528,7 +529,7 @@ class BuyAndHoldTradingStrategy:
         # wish_list = ["IBM", "GLEN.L", "MCRO.L", "MSFT", "GOOG", "GOOGL", "KAZ.L", "BRE.MI", "CRM", "RSW.L", "FME.DE", "ENEL.MI", "EQIX", "LLOY.L", "BP.L", "HSBA.L", "RWI.L", "SOON.SW", "BA.L", "PHAU.MI", "UCG.MI", "GSK.L", "TWLO", "ESNT.L", "BT-A.L", "GEO.MI", "ENI.MI", "NOVN.SW"]
         wish_list = ["AMZN", "DPZ", "PHAU.MI", "NEXI.MI", "CPR.MI", "SOON.SW", "LSE.L", "MED", "NOW", "DIS", "VNA.DE",
                      "GOOGL", "MSFT", "NKLA", "SVMK", "TEAM", "TWLO", "ULVR.L", "BRBY.L", "GES", "NFLX", "DOCU",
-                     "HSBA.L", "G.MI", "COTY"]
+                     "DPW.DE", "KER.PA", "SWBI"]
         days_long = self.outcome.days_long
         for key, asset in sorted(self.outcome.assets.items()):
             assert isinstance(asset, Asset)
@@ -923,70 +924,40 @@ class ComplexStrategy(BuyAndHoldTradingStrategy):
         # per confrontare mele con mele, partirei sempre dal Buy and Hold
         if initial_buy:
             super().calc_suggested_transactions(sell_all=False)
-        # w_short e w_long sono i moltiplicatori delle banda di Bollingher short e long
-        for key, asset in sorted(self.outcome.assets.items()):
-            assert isinstance(asset, Asset)
-            # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o
-            # SELL. Nella strategia BUY & HOLD, se il valore di un asset è 0 allora genero un BUY
-            days_short = self.outcome.days_short
-            days_long = self.outcome.days_long
-            boll_multi = w_long
-            days_buy = []
-            quot_buy = []
-            days_sell = []
-            quot_sell = []
-            for dd in pd.date_range(start=(self.outcome.start_date + BDay(days_long)),
-                                    end=(self.outcome.end_date - BDay(1)), freq='B'):
-                # mi assicuro che esistano quotazioni per l'asset, che non sia una valuta e che la varianza sia
-                # significativa, altrimenti siamo in una fase di spostamento laterale
-                if asset.history.loc[dd, 'Close'] > 0.0 and asset.assetType.assetType != "currency" and \
-                        asset.history.loc[dd, 'std_short'] > 0.03 * asset.history.loc[dd, 'sma_short']:
 
-                    prev_day = dd - BDay(1)
-                    boll_up_old = asset.history.loc[prev_day, 'sma_long'] + boll_multi * asset.history.loc[
-                        prev_day, 'std_long']
-                    boll_down_old = asset.history.loc[prev_day, 'sma_long'] - boll_multi * asset.history.loc[
-                        prev_day, 'std_long']
-                    quot_old = asset.history.loc[prev_day, 'Close']
+        # da qui in poi applico le transazioni che ho registrato in un file CSV
+        filename = "./sim_trade/myTransactions.csv"
+        with open(filename, newline='') as csvfile:
+            tx_reader = csv.reader(csvfile, dialect='excel')
+            first_row = True
+            for row in tx_reader:
+                if first_row:
+                    # la prima riga contiene i titoli, la ignoro
+                    first_row = False
+                else:
+                    # we expect DATE, VERB, SYMBOL, FULL NAME
+                    dd = datetime.datetime.strptime(row[0], '%d/%m/%Y')
+                    verb = row[1]
+                    symbol = row[2]
+                    fullname = row[3]
+                    asset = self.outcome.assets[symbol]
                     quot = asset.history.loc[dd, 'Close']
-                    boll_up = asset.history.loc[dd, 'sma_long'] + boll_multi * asset.history.loc[dd, 'std_long']
-                    boll_down = asset.history.loc[dd, 'sma_long'] - boll_multi * asset.history.loc[dd, 'std_long']
-                    sma_long = asset.history.loc[dd, 'sma_long']
-                    sma_long_old = asset.history.loc[prev_day, 'sma_long']
-                    sma_short = asset.history.loc[dd, 'sma_short']
-                    sma_short_old = asset.history.loc[prev_day, 'sma_short']
-                    boll_up2 = asset.history.loc[dd, 'sma_long'] + boll_multi * 2 * asset.history.loc[dd, 'std_long']
-                    boll_up2_old = asset.history.loc[prev_day, 'sma_long'] + boll_multi * 2 * asset.history.loc[
-                        prev_day, 'std_long']
-                    boll_down2 = asset.history.loc[dd, 'sma_long'] - boll_multi * 2 * asset.history.loc[dd, 'std_long']
-                    boll_down2_old = asset.history.loc[prev_day, 'sma_long'] - boll_multi * 2 * asset.history.loc[
-                        prev_day, 'std_long']
-
-                    if quot > boll_up and quot_old < boll_up_old:
-                        # BUY
-                        reason = "TRENDING UP"
+                    reason = "MANUAL TX"
+                    if verb == "BUY":
                         score = self.scoreSignal(asset, dd)
-                        logging.debug("\t" + reason + ": Requesting BUY for " + str(key) + " on " + str(
-                            dd.date() + BDay(1)) + "\tquotation: " + str(
-                            asset.history.loc[dd, 'Close']) + "\tscore: " + str(score))
+                        logging.debug("\t" + reason + ": Requesting BUY for " + str(symbol) + " on " + str(
+                            dd.date()) + "\tquotation: " + str(quot) + "\tscore: " + str(score))
                         logging.debug("assetType: " + str(asset.assetType))
-                        dailyPendTx = self.outcome.pendingTransactions[dd + BDay(1)]
-                        dailyPendTx.append(
-                            Transaction("BUY", asset, dd + BDay(1), 0, 0.0,
-                                        reason, score=score))
-                        days_buy.append(dd)
-                        quot_buy.append(quot)
-                    elif quot < boll_down and quot_old > boll_down_old:
-                        # SELL
-                        reason = "TRENDING DOWN"
-                        logging.debug("\t" + reason + ": Requesting SELL for " + str(key) + " on " + str(
-                            dd.date() + BDay(1)) + "\tquotation: " + str(
-                            asset.history.loc[dd, 'Close']))
-                        dailyPendTx = self.outcome.pendingTransactions[dd + BDay(1)]
-                        dailyPendTx.append(Transaction("SELL", asset, dd + BDay(1), 0, 0.0, reason))
-                        days_sell.append(dd)
-                        quot_sell.append(quot)
-            print(".", end="", flush=True)
+                        dailyPendTx = self.outcome.pendingTransactions[dd]
+                        dailyPendTx.append(Transaction("BUY", asset, dd, 0, 0.0, reason, score=score))
+                    elif verb == "SELL":
+                        logging.debug("\t" + reason + ": Requesting SELL for " + str(symbol) + " on " + str(
+                            dd.date()) + "\tquotation: " + str(quot))
+                        dailyPendTx = self.outcome.pendingTransactions[dd]
+                        dailyPendTx.append(Transaction("SELL", asset, dd, 0, 0.0, reason))
+                    else:
+                        #unexpected, log error and carry on
+                        logging.error(verb + " : is not a valid VERB")
             # BUY_points = pd.DataFrame({'Date': days_buy, 'Quotation': quot_buy})
             # SELL_points = pd.DataFrame({'Date': days_sell, 'Quotation': quot_sell})
             # ax = asset.history['Close'].plot(title=asset.symbol)
@@ -996,7 +967,7 @@ class ComplexStrategy(BuyAndHoldTradingStrategy):
             if sell_all:
                 # l'ultimo giorno vendo tutto.
                 if asset.assetType.assetType != "currency":
-                    logging.info("\tRequesting SELL for " + str(key) + " on " + str(self.outcome.end_date))
+                    logging.info("\tRequesting SELL for " + str(symbol) + " on " + str(self.outcome.end_date))
                     dailyPendTx = self.outcome.pendingTransactions[
                         datetime.datetime.combine(self.outcome.end_date, datetime.time.min)]
                     dailyPendTx.append(
@@ -1005,185 +976,5 @@ class ComplexStrategy(BuyAndHoldTradingStrategy):
         print(" ")
         return self.outcome.pendingTransactions
 
-    def exec_trade(self, t: Transaction):
-        # TODO: spostare order value come parametro di questo metodo, che è l'unico posto in cui viene usato
-        # TODO: verificare che lo stato della Transazione sia Pending
-        # recupero l'asset su cui devo operare
-        logging.debug("Executing transaction: " + str(t))
-        asset = self.outcome.assets[t.asset.symbol]
 
-        # recupero il fattore di conversione per la valuta
-        GBPEUR = self.outcome.assets['GBP'].history.loc[t.when]['Open'] / 100.0
-        CHFEUR = self.outcome.assets['CHF'].history.loc[t.when]['Open']
-        USDEUR = self.outcome.assets['USD'].history.loc[t.when]['Open']
 
-        curr_conv = 1.0
-        if asset.currency != "EUR":
-            if asset.currency == "USD":
-                curr_conv = USDEUR
-            elif asset.currency == "GBP":
-                curr_conv = GBPEUR
-            elif asset.currency == "CHF":
-                curr_conv = CHFEUR
-        logging.debug(asset.currency + " curr_conv " + str(curr_conv))
-
-        if t.verb == "BUY":
-            logging.debug("Buying " + str(t))
-            # TODO: improve Buying Quantity calculation...
-
-            #  assumo di eseguire gli ordini di BUY e SELL come prima
-            #  azione della giornata, avendoli calcolati la sera del giorno prima
-            logging.debug("asset price " + str(asset.history.loc[t.when]['Open']))
-            quantity = math.floor(self.BUY_ORDER_VALUE / (asset.history.loc[t.when]['Open'] * curr_conv))
-            asset_price = quantity * asset.history.loc[t.when]['Open'] * curr_conv
-            commission = asset_price * asset.assetType.buyCommission
-            if self.outcome.por_history.loc[t.when]['Liquidity'] >= (asset_price + commission) and quantity > 0.0 and \
-                    asset.history.loc[t.when]['OwnedAmount'] == 0:
-                # eseguo tx
-                # diminuisco liquidità
-                self.outcome.por_history.loc[t.when]['Liquidity'] -= (asset_price + commission)
-                # aumento il monte commissioni
-                self.outcome.por_history.loc[t.when]['TotalCommissions'] += commission
-                # modifico average buy price
-                asset.history.loc[t.when]['AverageBuyPrice'] = (asset.history.loc[t.when]['OwnedAmount'] *
-                                                                asset.history.loc[t.when][
-                                                                    'AverageBuyPrice'] + asset_price) / (
-                                                                           asset.history.loc[t.when][
-                                                                               'OwnedAmount'] + quantity)
-                # aumento quantità posseduta
-                asset.history.loc[t.when]['OwnedAmount'] += quantity
-                t.state = "executed"
-                t.quantity = quantity
-                t.value = asset_price
-                logging.info("Tx " + str(t) + "\tvalue: " + str(asset_price))
-                self.outcome.executedTransactions.append(t)
-            else:
-                # tx fallita per mancanza di liquidità
-                t.state = "failed"
-                if asset.history.loc[t.when]['OwnedAmount'] == 0:
-                    t.note += "Not enough liquidity. Transaction" + str(t) + " failed."
-                    logging.debug("Tx failed, Not enough liquidity. (Avail. Liquidity: " + str(
-                        self.outcome.por_history.loc[t.when]['Liquidity']) + ")")
-                else:
-                    t.note += "Asset already in portfolio. Transaction" + str(t) + " failed."
-                    logging.debug("Tx failed, Asset " + asset.symbol + " already in portfolio")
-                self.outcome.failedTransactions.append(t)
-        elif t.verb == "SELL":
-            logging.debug("Selling " + str(t))
-            if asset.history.loc[t.when]['OwnedAmount'] > 0.0:
-                # vendo
-                quantity = asset.history.loc[t.when]['OwnedAmount']
-                asset_price = quantity * asset.history.loc[t.when]['Open'] * curr_conv
-                commission = asset_price * asset.assetType.buyCommission
-                asset.history.loc[t.when]['OwnedAmount'] = 0.0
-                # calcolo le tasse
-                tax = (asset_price - quantity * asset.history.loc[t.when]['AverageBuyPrice']) * asset.assetType.tax_rate
-                # aggiorno liquidità
-                self.outcome.por_history.loc[t.when]['Liquidity'] += (asset_price - commission - tax)
-                # aumento il monte commissioni
-                self.outcome.por_history.loc[t.when]['TotalCommissions'] += commission
-                # aggiorno le tasse totali
-                self.outcome.por_history.loc[t.when]['TotalTaxes'] += tax
-                # FIXME: devo aggiornare le tasse su ciascuna azione
-                t.state = "executed"
-                t.quantity = quantity
-                t.value = asset_price
-                logging.info("Tx " + str(t) + "\tvalue: " + str(asset_price))
-                self.outcome.executedTransactions.append(t)
-            else:
-                t.state = "failed"
-                t.note += "Nothing to SELL. Transaction" + str(t) + " failed."
-                logging.debug("Tx failed, Nothing to SELL")
-                self.outcome.failedTransactions.append(t)
-        elif t.verb == "DIVIDEND":
-            logging.debug("DVND " + str(t))
-            tax = asset.assetType.tax_rate * curr_conv * asset.history.loc[t.when]['OwnedAmount'] * t.value
-            logging.debug("TAX: " + str(tax))
-            net_divd = asset.history.loc[t.when]['OwnedAmount'] * t.value * curr_conv * (1 - asset.assetType.tax_rate)
-            logging.debug("Net dividend: " + str(net_divd))
-            self.outcome.por_history.loc[t.when]['Liquidity'] += net_divd
-            t.state = "executed"
-            # aggiorno le tasse totali
-            self.outcome.por_history.loc[t.when]['TotalTaxes'] += tax
-            t.quantity = asset.history.loc[t.when]['OwnedAmount']
-            self.outcome.por_history.loc[t.when]['TotalDividens'] += net_divd
-            self.outcome.executedTransactions.append(t)
-            logging.debug("Dividend from " + str(asset.symbol) + " tot Value: " + str(
-                asset.history.loc[t.when]['OwnedAmount'] * t.value * curr_conv * (1 - asset.assetType.tax_rate)))
-        else:
-            logging.debug("Ignoring Tx: " + str(t))
-            t.state = "failed"
-            t.note += " - no instructions for VERB: " + t.verb
-            self.outcome.failedTransactions.append(t)
-        # TODO: rimuovere transazione da pendingTransactions
-
-    def runTradingSimulation(self, max_orders=25.0):
-        logging.debug("Processing portfolio \'{0}\' start_date = {1} end_date = {2}".format(self.outcome.description,
-                                                                                            str(
-                                                                                                self.outcome.start_date),
-                                                                                            str(self.outcome.end_date)))
-        self.BUY_ORDER_VALUE = self.outcome.initial_capital / max_orders
-        # max_orders = rappresenta una stima del numero massimo di ordini eseguiti in un BUY & HOLD.
-        # con strategie più complesse, è una indicazione spannometrica del numero di titoli massimo nel portafoglio
-        logging.info("\nSetting BUY order value to: " + str(self.BUY_ORDER_VALUE))
-        # prima di tutto comincio a stampare la lista della transazioni pending
-        # for key, value in self.outcome.pendingTransactions.items():
-        #    print ("Key: " + str(key))
-        #    for tx in value:
-        #        print(" Tx: " + str(tx))
-        # self.outcome.pendingTransactions.sort(reverse=False, key=Transaction.to_datetime)
-        # il trading parte da start_date + 1 gg, prima non posso avere ordini basati su nessun dato
-        NetValue_SMA = self.outcome.initial_capital
-        first_trading_day = self.outcome.start_date + BDay(1)
-        # inizializzo un paio di variabili che utilizzo per stampre un'idea di progress bar
-        count = 0
-        mod = len(self.outcome.por_history) - 1
-        # inizio a fare il vero trading
-        for dd in pd.date_range(start=first_trading_day, end=self.outcome.end_date, freq='B'):
-            logging.debug("\tProcessing Trading Day " + str(dd.date()))
-            # dovrei iterare sui giorni ed eseguire le transazioni
-            # prima di tutto copio i valori por_history e asset history da ieri
-            # prima di tutto, passo tutti gli asset e se amount è > 0 calcolo il CLOSE_PRICE in EUR
-            # mi serve un metodo per calcolare il valore del Port in un dato giorno.
-            # ... devo riempire tutti i giorni per ...
-            # ...
-            # assumo
-            prev_day = dd - BDay(1)
-            # copio port history
-            self.outcome.por_history.loc[dd] = self.outcome.por_history.loc[prev_day]
-            # processo gli asset
-            for sym, asset in self.outcome.assets.items():
-                count += 1
-                if count % mod == 0:
-                    print(".", end="", flush=True)
-                # propago i cambiamenti del giorno precedente
-                asset.history.loc[dd, 'OwnedAmount'] = asset.history.loc[prev_day, 'OwnedAmount']
-                asset.history.loc[dd, 'AverageBuyPrice'] = asset.history.loc[prev_day, 'AverageBuyPrice']
-            today_tx = []
-            try:
-                # today_tx = self.outcome.pendingTransactions[datetime.datetime.combine(r.date(), datetime.time.min)]
-                today_tx = self.outcome.pendingTransactions[dd]
-                today_tx.sort(reverse=False, key=Transaction.to_datetime)
-            except KeyError as ke:
-                logging.exception(ke)
-                logging.debug("No pending TX for day: " + str(dd.date))
-            if len(today_tx) > 0:
-                for t in today_tx:
-                    self.exec_trade(t)
-            # calcolo il valore netto di Portafoglio alla fine della giornata di Trading.
-            self.outcome.port_net_value(dd)
-            # ricalcolo order value come percentuale del net value
-            self.BUY_ORDER_VALUE = self.outcome.por_history.loc[dd]['NetValue'] / max_orders
-            # se il net value è sotto la media mobile a 20 giorni del net value, assumo che i mercati stiano scendendo e blocco i segnali di BUY
-            NetValue_SMA_old = NetValue_SMA
-            try:
-                NetValue_SMA = NetValue_SMA_old + (
-                            self.outcome.por_history.loc[dd]['NetValue'] - self.outcome.por_history.loc[dd - BDay(20)][
-                        'NetValue']) / 20
-            except KeyError as ke:
-                NetValue_SMA = NetValue_SMA_old
-            logging.debug("Net Value SMA on " + str(dd.date()) + " " + str(NetValue_SMA))
-            logging.debug(
-                "Net Value on " + str(dd.date()) + " " + str(self.outcome.por_history.loc[dd]['NetValue']))
-        print("\nBella zio!")
-        return self.outcome

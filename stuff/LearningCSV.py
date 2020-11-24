@@ -17,5 +17,6 @@ with open(filename, newline='') as csvfile:
             dd = datetime.strptime(row[0], '%d/%m/%Y')
             verb = row[1]
             symbol = row[2]
-            print(str(dd) + " " + str(verb) + " " + str(symbol))
+            fullname = row[3]
+            print(str(dd) + "\t" + verb + "\t" + symbol + "\t" + fullname)
 

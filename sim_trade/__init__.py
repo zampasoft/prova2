@@ -912,7 +912,7 @@ class BollbandsStrategy(BuyAndHoldTradingStrategy):
 
 
 # Strategia complessa a piacere, con stop-loss e takeprofit
-class ComplexStrategy(BuyAndHoldTradingStrategy):
+class CustomStrategy(BuyAndHoldTradingStrategy):
 
     def __init__(self, in_port):
         super().__init__(in_port)
@@ -956,8 +956,9 @@ class ComplexStrategy(BuyAndHoldTradingStrategy):
                         dailyPendTx = self.outcome.pendingTransactions[dd]
                         dailyPendTx.append(Transaction("SELL", asset, dd, 0, 0.0, reason))
                     else:
-                        #unexpected, log error and carry on
+                        #unexpected, log error and raise exception
                         logging.error(verb + " : is not a valid VERB")
+                        raise Exception(verb + " : is not a valid VERB")
             # BUY_points = pd.DataFrame({'Date': days_buy, 'Quotation': quot_buy})
             # SELL_points = pd.DataFrame({'Date': days_sell, 'Quotation': quot_sell})
             # ax = asset.history['Close'].plot(title=asset.symbol)
@@ -973,7 +974,6 @@ class ComplexStrategy(BuyAndHoldTradingStrategy):
                     dailyPendTx.append(
                         Transaction("SELL", asset, datetime.datetime.combine(self.outcome.end_date, datetime.time.min),
                                     0, 0.0, self.description))
-        print(" ")
         return self.outcome.pendingTransactions
 
 

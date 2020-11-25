@@ -18,11 +18,9 @@ Apparentemente limitate il portagoglio a 20-25 titoli è una mossa vincente.
 
 Da fare:
 Urgenti:
-- estebdere score a Bollingher
-- mettere lista azioni su file CSV che poi carico
 - le performance delle diverse strategia di Trading va paragonata sulla media e non solo sul valore finale.
 - il grafico dovrebbe partire da quando parte la strategia, e non i dati.
-- aggiungere possibilità di immettere ordini con data nella strategia BUY&Hold
+
 
 
 i test di simulazione li facciamo su 5 anni.

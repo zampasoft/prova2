@@ -15,5 +15,8 @@ cp -p ${SOURCE_DIR}/sim_trade/__init__.py ${TARGET_DIR}/sim_trade/
 mv ${TARGET_DIR}/sim_trade/myTransactions.csv ${TARGET_DIR}/sim_trade/myTransactions.csv.old
 cp -p ${SOURCE_DIR}/sim_trade/myTransactions.csv ${TARGET_DIR}/sim_trade/
 
+mv ${TARGET_DIR}/sim_trade/AssetsInScope.csv ${TARGET_DIR}/sim_trade/AssetsInScope.csv.old
+cp -p ${SOURCE_DIR}/sim_trade/AssetsInScope.csv ${TARGET_DIR}/sim_trade/
+
 echo "Done!"
 

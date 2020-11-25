@@ -20,7 +20,7 @@ BRE.MI,BREMBO,equity,MTA,EUR
 CERV.MI,CERVED GROUP,equity,MTA,EUR
 CPR.MI,CAMPARI,equity,MTA,EUR
 DIA.MI,DIASORIN,equity,MTA,EUR
-DLG.MI ,De'Longhi S.p.A. ,equity,MTA,EUR
+DLG.MI,De'Longhi S.p.A.,equity,MTA,EUR
 ENEL.MI,ENEL,equity,MTA,EUR
 ENI.MI,ENI,equity,MTA,EUR
 FBK.MI,FinecoBank Banca Fineco S.p.A.,equity,MTA,EUR
@@ -79,24 +79,24 @@ DBX,"Dropbox, Inc.",equity,NASDAQ,USD
 DOCU,DOCUSIGN,equity,NASDAQ,USD
 DXCM,"DexCom, Inc.",equity,NASDAQ,USD
 EQIX,EQUINIX REIT,equity,NASDAQ,USD
-ETSY ,"Etsy, Inc. ",equity,NASDAQ,USD
+ETSY,"Etsy, Inc.",equity,NASDAQ,USD
 FB,"Facebook, Inc.",equity,NASDAQ,USD
 GOOG,ALPHAB RG-C-NV,equity,NASDAQ,USD
 GOOGL,ALPHABET-A,equity,NASDAQ,USD
 GRPN,Groupon Inc.,equity,NASDAQ,USD
 ILMN,"Illumina, Inc.",equity,NASDAQ,USD
 JAZZ,Jazz Pharmaceuticals plc,equity,NASDAQ,USD
-JD ,"JD.com, Inc.",equity,NASDAQ,USD
+JD,"JD.com, Inc.",equity,NASDAQ,USD
 KO,The Coca-Cola Company,equity,NASDAQ,USD
 MRNA,"Moderna, Inc.",equity,NASDAQ,USD
 MSFT,MICROSOFT,equity,NASDAQ,USD
 NFLX,Netflix,equity,NASDAQ,USD
 NKLA,Nikola Corporation,equity,NASDAQ,USD
 NVDA,NVIDIA,equity,NASDAQ,USD
-PDD ,Pinduoduo Inc. ,equity,NASDAQ,USD
+PDD,Pinduoduo Inc.,equity,NASDAQ,USD
 PLTR,Palantir Technologies Inc.,equity,NASDAQ,USD
 PTON,Peloton Interactive Inc.,equity,NASDAQ,USD
-SBUX ,Starbucks Corporation ,equity,NASDAQ,USD
+SBUX,Starbucks Corporation,equity,NASDAQ,USD
 SIRI,Sirius XM Holdings Inc.,equity,NASDAQ,USD
 SVMK,SVMK Inc.,equity,NASDAQ,USD
 SWBI,Smith & Wesson Brands Inc.,equity,NASDAQ,USD

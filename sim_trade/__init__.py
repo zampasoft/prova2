@@ -7,8 +7,6 @@ import math
 import typing
 from typing import Dict
 from pandas.tseries.offsets import BDay
-
-# import arrow as ar
 import pandas as pd
 import requests_cache
 # nota bene, ho patchato l'ultima versione di pandas_datareader per fissare un errore su yahoo split
@@ -202,154 +200,29 @@ class Portfolio:
             self.assets["CHF"] = Asset(CURRENCY, "CHF", "CHFEUR=X", "FX", "CHF")
         else:
             raise ValueError('Default Currencies other than EUR not yet implemented')
-        # Aggiungo un ETC su Oro come elemento di diversificazione
-        self.assets["PHAU.MI"] = Asset(ETC, "GOLD/WISDOMTREE", "PHAU.MI", "MTA", "EUR")
-        # Titoli US da me selezionati
-        self.assets["DOCU"] = Asset(EQUITY, "DOCUSIGN", "DOCU", "NASDAQ", "USD")
-        self.assets["EQIX"] = Asset(EQUITY, "EQUINIX REIT", "EQIX", "NASDAQ", "USD")
-        self.assets["GOOG"] = Asset(EQUITY, "ALPHAB RG-C-NV", "GOOG", "NASDAQ", "USD")
-        self.assets["GOOGL"] = Asset(EQUITY, "ALPHABET-A", "GOOGL", "NASDAQ", "USD")
-        self.assets["MSFT"] = Asset(EQUITY, "MICROSOFT", "MSFT", "NASDAQ", "USD")
-        self.assets["NVDA"] = Asset(EQUITY, "NVIDIA", "NVDA", "NASDAQ", "USD")
-        self.assets["CRM"] = Asset(EQUITY, "SALESFORCE.COM", "CRM", "NYSE", "USD")
-        self.assets["IBM"] = Asset(EQUITY, "IBM", "IBM", "NYSE", "USD")
-        self.assets["NOW"] = Asset(EQUITY, "SERVICENOW", "NOW", "NYSbE", "USD")
-        self.assets["TWLO"] = Asset(EQUITY, "TWILIO-A", "TWLO", "NYSE", "USD")
-        self.assets["PEGA"] = Asset(EQUITY, "Pegasystems Inc.", "PEGA", "NYSE", "USD")
-        self.assets["WDAY"] = Asset(EQUITY, "Workday, Inc.", "WDAY", "NYSE", "USD")
-        self.assets["XLNX"] = Asset(EQUITY, "Xilinx, Inc.", "XLNX", "NYSE", "USD")
-        self.assets["SQ"] = Asset(EQUITY, "Square, Inc.", "SQ", "NYSE", "USD")
-        self.assets["VAR"] = Asset(EQUITY, "Varian Medical Systems, Inc.", "VAR", "NYSE", "USD")
-        self.assets["VRTX"] = Asset(EQUITY, "Vertex Pharmaceuticals Incorporated", "VRTX", "NYSE", "USD")
-        self.assets["TEAM"] = Asset(EQUITY, "Atlassian Corporation Plc", "TEAM", "NYSE", "USD")
-        self.assets["AMZN"] = Asset(EQUITY, "Amazon", "AMZN", "NASDAQ", "USD")
-        self.assets["NFLX"] = Asset(EQUITY, "Netflix", "NFLX", "NASDAQ", "USD")
-        self.assets["ZM"] = Asset(EQUITY, "Zoom", "ZM", "NASDAQ", "USD")
-        self.assets["DIS"] = Asset(EQUITY, "Disney", "DIS", "NYSE", "USD")
-        self.assets["DPZ"] = Asset(EQUITY, "Domino's Pizza", "DPZ", "NYSE", "USD")
-        self.assets["DXCM"] = Asset(EQUITY, "DexCom, Inc.", "DXCM", "NASDAQ", "USD")
-        self.assets["JAZZ"] = Asset(EQUITY, "Jazz Pharmaceuticals plc", "JAZZ", "NASDAQ", "USD")
-        self.assets["MED"] = Asset(EQUITY, "Medifast, Inc.", "MED", "NYSE", "USD")
-        self.assets["MRNA"] = Asset(EQUITY, "Moderna, Inc.", "MRNA", "NASDAQ", "USD")
-        self.assets["AAPL"] = Asset(EQUITY, "Apple Inc.", "AAPL", "NASDAQ", "USD")
-        self.assets["FB"] = Asset(EQUITY, "Facebook, Inc.", "FB", "NASDAQ", "USD")
-        self.assets["DBX"] = Asset(EQUITY, "Dropbox, Inc.", "DBX", "NASDAQ", "USD")
-        self.assets["AVGO"] = Asset(EQUITY, "Broadcom Inc.", "AVGO", "NASDAQ", "USD")
-        self.assets["WORK"] = Asset(EQUITY, "Slack Technologies, Inc.", "WORK", "NYSE", "USD")
-        self.assets["GPS"] = Asset(EQUITY, "The Gap, Inc.", "GPS", "NYSE", "USD")
-        self.assets["TWTR"] = Asset(EQUITY, "Twitter, Inc.", "TWTR", "NYSE", "USD")
-        self.assets["ADBE"] = Asset(EQUITY, "Adobe Inc.", "ADBE", "NASDAQ", "USD")
-        self.assets["SHOP"] = Asset(EQUITY, "Shopify Inc.", "SHOP", "NYSE", "USD")
-        self.assets["GRPN"] = Asset(EQUITY, "Groupon Inc.", "GRPN", "NASDAQ", "USD")
-        self.assets["SVMK"] = Asset(EQUITY, "SVMK Inc.", "SVMK", "NASDAQ", "USD")
-        self.assets["NET"] = Asset(EQUITY, "Cloudflare Inc.", "NET", "NYSE", "USD")
-        self.assets["FIT"] = Asset(EQUITY, "Fitbit Inc.", "FIT", "NYSE", "USD")
-        self.assets["IT"] = Asset(EQUITY, "Gartner Inc.", "IT", "NYSE", "USD")
-        self.assets["TSLA"] = Asset(EQUITY, "Tesla Inc.", "TSLA", "NASDAQ", "USD")
-        self.assets["SWBI"] = Asset(EQUITY, "Smith & Wesson Brands Inc.", "SWBI", "NASDAQ", "USD")
-        self.assets["ABT"] = Asset(EQUITY, "Abbott Laboratories", "ABT", "NYSE", "USD")
-        self.assets["NKLA"] = Asset(EQUITY, "Nikola Corporation", "NKLA", "NASDAQ", "USD")
-        self.assets["TDOC"] = Asset(EQUITY, "Teladoc", "TDOC", "NYSE", "USD")
-        self.assets["PINS"] = Asset(EQUITY, "Pinterest", "PINS", "NYSE", "USD")
-        self.assets["PTON"] = Asset(EQUITY, "Peloton Interactive Inc.", "PTON", "NASDAQ", "USD")
-        self.assets["SNOW"] = Asset(EQUITY, "Snowflake Inc.", "SNOW", "NYSE", "USD")
-        self.assets["U"] = Asset(EQUITY, "Unity Software Inc.", "U", "NYSE", "USD")
-        self.assets["ILMN"] = Asset(EQUITY, "Illumina, Inc.", "ILMN", "NASDAQ", "USD")
-        self.assets["ORCL"] = Asset(EQUITY, "Oracle Corporation", "ORCL", "NYSE", "USD")
-        self.assets["PLTR"] = Asset(EQUITY, "Palantir Technologies Inc.", "PLTR", "NASDAQ", "USD")
-        self.assets["ASAN"] = Asset(EQUITY, "Asana, Inc.", "ASAN", "NASDAQ", "USD")
-        self.assets["GES"] = Asset(EQUITY, "Guess', Inc.", "GES", "NYSE", "USD")
-        self.assets["COTY"] = Asset(EQUITY, "Coty Inc.", "COTY", "NYSE", "USD")
-        self.assets["SIRI"] = Asset(EQUITY, "Sirius XM Holdings Inc.", "SIRI", "NASDAQ", "USD")
-        self.assets["F"] = Asset(EQUITY, "Ford Motor Company", "F", "NYSE", "USD")
-        self.assets["PG"] = Asset(EQUITY, "The Procter & Gamble Company", "PG", "NYSE", "USD")
-        self.assets["KO"] = Asset(EQUITY, "The Coca-Cola Company", "KO", "NASDAQ", "USD")
-        self.assets["T"] = Asset(EQUITY, "AT&T Inc.", "T", "NASDAQ", "USD")
-        self.assets["DOW"] = Asset(EQUITY, "Dow Inc.", "DOW", "NYSE", "USD")
-        self.assets["GE"] = Asset(EQUITY, "General Electric Company", "GE", "NYSE", "USD")
-        self.assets["JNJ"] = Asset(EQUITY, "Johnson & Johnson", "JNJ", "NYSE", "USD")
-        self.assets["PFE"] = Asset(EQUITY, "Pfizer Inc.", "PFE", "NYSE", "USD")
-        self.assets["JPM"] = Asset(EQUITY, "JPMorgan Chase & Co.", "JPM", "NYSE", "USD")
-        self.assets["XOM"] = Asset(EQUITY, "Exxon Mobil Corporation", "XOM", "NYSE", "USD")
-        self.assets["CS"] = Asset(EQUITY, "The Goldman Sachs Group", "CS", "NYSE", "USD")
-        self.assets["MS"] = Asset(EQUITY, "Morgan Stanley", "MS", "NYSE", "USD")
-        self.assets["CVX"] = Asset(EQUITY, "Chevron Corporation", "CVX", "NYSE", "USD")
 
-        # Titolo CH da me selezionati
-        self.assets["ALC.SW"] = Asset(EQUITY, "ALCON N", "ALC.SW", "VIRTX", "CHF")
-        self.assets["NOVN.SW"] = Asset(EQUITY, "NOVARTIS N", "NOVN.SW", "VIRTX", "CHF")
-        self.assets["SOON.SW"] = Asset(EQUITY, "SONOVA HLDG N", "SOON.SW", "VIRTX", "CHF")
-        self.assets["NESN.SW"] = Asset(EQUITY, "Nestle S.A.", "NESN.SW", "VIRTX", "CHF")
-        self.assets["SREN.SW"] = Asset(EQUITY, "Swiss Re AG", "SREN.SW", "VIRTX", "CHF")
-        self.assets["ROG.SW"] = Asset(EQUITY, "Roche Holding AG", "ROG.SW", "VIRTX", "CHF")
-        self.assets["LONN.SW"] = Asset(EQUITY, "Lonza Group Ltd", "LONN.SW", "VIRTX", "CHF")
-        self.assets["GIVN.SW"] = Asset(EQUITY, "Givaudan SA", "GIVN.SW", "VIRTX", "CHF")
+        AssetsInScopeCSV = "./sim_trade/AssetsInScope.csv"
+        with open(AssetsInScopeCSV, newline='') as csvfile:
+            csvreader = csv.reader(csvfile, dialect='excel')
+            first_row = True
+            for row in csvreader:
+                if first_row:
+                    first_row = False
+                else:
+                    # we expect SYMBOL,Full Name,Asset Class,Market,Currency
+                    symbol = row[0]
+                    name = row[1]
+                    if row[2] == 'equity':
+                        asset_class = EQUITY
+                    elif row[2] == "ETC":
+                        asset_class = ETC
+                    else:
+                        logging.error(row[2] + " is an invalid Asset Class for " + row[2])
+                        raise Exception(row[2] + " is an invalid Asset Class for " + row[0])
+                    market = row[3]
+                    currency = row[4]
+                    self.assets[symbol] = Asset(asset_class, name, symbol, market, currency)
 
-        # Titoli GBP da me selezionati
-        self.assets["BA.L"] = Asset(EQUITY, "BAE SYSTEMS", "BA.L", "LSE", "GBP")
-        self.assets["BP.L"] = Asset(EQUITY, "BP", "BP.L", "LSE", "GBP")
-        self.assets["BT-A.L"] = Asset(EQUITY, "BT GROUP", "BT-A.L", "LSE", "GBP")
-        # self.assets["CDM.L"] = Asset(EQUITY, "Codemasters Group", "CDM.L", "LSE", "GBP")
-        self.assets["BRBY.L"] = Asset(EQUITY, "Burberry Group", "BRBY.L", "LSE", "GBP")
-        self.assets["ESNT.L"] = Asset(EQUITY, "ESSENTRA", "ESNT.L", "LSE", "GBP")
-        self.assets["GLEN.L"] = Asset(EQUITY, "GLENCORE", "GLEN.L", "LSE", "GBP")
-        self.assets["GSK.L"] = Asset(EQUITY, "GLAXOSMITHKLINE", "GSK.L", "LSE", "GBP")
-        self.assets["HSBA.L"] = Asset(EQUITY, "HSBC HLDG", "HSBA.L", "LSE", "GBP")
-        self.assets["KAZ.L"] = Asset(EQUITY, "KAZ MINERALS", "KAZ.L", "LSE", "GBP")
-        self.assets["LLOY.L"] = Asset(EQUITY, "LLOYDS BANKING G", "LLOY.L", "LSE", "GBP")
-        self.assets["MCRO.L"] = Asset(EQUITY, "MICRO FOCUS INTL", "MCRO.L", "LSE", "GBP")
-        self.assets["RSW.L"] = Asset(EQUITY, "RENISHAW", "RSW.L", "LSE", "GBP")
-        self.assets["RWI.L"] = Asset(EQUITY, "RENEWI", "RWI.L", "LSE", "GBP")
-        self.assets["ULVR.L"] = Asset(EQUITY, "UNILEVER", "ULVR.L", "LSE", "GBP")
-        self.assets["LGEN.L"] = Asset(EQUITY, "Legal & General Group Plc", "LGEN.L", "LSE", "GBP")
-        self.assets["LSE.L"] = Asset(EQUITY, "London Stock Exchange Group plc", "LSE.L", "LSE", "GBP")
-        self.assets["SSE.L"] = Asset(EQUITY, "SSE plc", "SSE.L", "LSE", "GBP")
-        self.assets["AV.L"] = Asset(EQUITY, "Aviva plc", "AV.L", "LSE", "GBP")
-        self.assets["TSCO.L"] = Asset(EQUITY, "Tesco PLC", "TSCO.L", "LSE", "GBP")
-        self.assets["MRW.L"] = Asset(EQUITY, "Wm Morrison Supermarkets PLC", "MRW.L", "LSE", "GBP")
-        self.assets["OCDO.L"] = Asset(EQUITY, "Ocado Group plc", "OCDO.L", "LSE", "GBP")
-        self.assets["DGE.L"] = Asset(EQUITY, "Diageo plc", "DGE.L", "LSE", "GBP")
-        self.assets["BARC.L"] = Asset(EQUITY, "Barclays PLC", "BARC.L", "LSE", "GBP")
-        self.assets["AZN.L"] = Asset(EQUITY, "AstraZeneca PLC", "AZN.L", "LSE", "GBP")
-
-        # Titoli EUR da me selezionati
-        self.assets["AMP.MI"] = Asset(EQUITY, "Amplifon", "AMP.MI", "MTA", "EUR")
-        self.assets["BRE.MI"] = Asset(EQUITY, "BREMBO", "BRE.MI", "MTA", "EUR")
-        self.assets["CPR.MI"] = Asset(EQUITY, "CAMPARI", "CPR.MI", "MTA", "EUR")
-        self.assets["G.MI"] = Asset(EQUITY, "Assicurazioni Generali", "G.MI", "MTA", "EUR")
-        self.assets["CERV.MI"] = Asset(EQUITY, "CERVED GROUP", "CERV.MI", "MTA", "EUR")
-        self.assets["DSY.PA"] = Asset(EQUITY, "Dassault Systèmes SE", "DSY.PA", "EQUIDUCT", "EUR")
-        self.assets["DIA.MI"] = Asset(EQUITY, "DIASORIN", "DIA.MI", "MTA", "EUR")
-        self.assets["ENEL.MI"] = Asset(EQUITY, "ENEL", "ENEL.MI", "MTA", "EUR")
-        self.assets["ENI.MI"] = Asset(EQUITY, "ENI", "ENI.MI", "MTA", "EUR")
-        self.assets["FCA.MI"] = Asset(EQUITY, "FCA", "FCA.MI", "MTA", "EUR")
-        self.assets["GEO.MI"] = Asset(EQUITY, "GEO", "GEO.MI", "MTA", "EUR")
-        self.assets["NEXI.MI"] = Asset(EQUITY, "Nexi S.p.A.", "NEXI.MI", "MTA", "EUR")
-        self.assets["STM.MI"] = Asset(EQUITY, "STMicroelectronics N.V.", "STM.MI", "MTA", "EUR")
-        self.assets["PST.MI"] = Asset(EQUITY, "Poste Italiane SpA", "PST.MI", "MTA", "EUR")
-        self.assets["KER.PA"] = Asset(EQUITY, "Kering SA", "KER.PA", "EQUIDUCT", "EUR")
-        self.assets["MONC.MI"] = Asset(EQUITY, "MONCLER", "MONC.MI", "MTA", "EUR")
-        self.assets["UCG.MI"] = Asset(EQUITY, "UNICREDIT", "UCG.MI", "MTA", "EUR")
-        self.assets["EL.PA"] = Asset(EQUITY, "EssilorLuxottica Societe anonyme", "EL.PA", "EQUIDUCT", "EUR")
-        self.assets["FME.DE"] = Asset(EQUITY, "FRESENIUS MEDICAL", "FME.DE", "EQUIDUCT", "EUR")
-        self.assets["VNA.DE"] = Asset(EQUITY, "VONOVIA", "VNA.DE", "XETRA", "EUR")
-        self.assets["MC.PA"] = Asset(EQUITY, "LVMH Moët Hennessy Louis Vuitton S.E.", "MC.PA", "EQUIDUCT", "EUR")
-        self.assets["VVD.F"] = Asset(EQUITY, "Veolia Environnement S.A.", "VVD.F", "EQUIDUCT", "EUR")
-        self.assets["ISP.MI"] = Asset(EQUITY, "Intesa Sanpaolo", "ISP.MI", "MTA", "EUR")
-        self.assets["MZB.MI"] = Asset(EQUITY, "Massimo Zanetti Beverage Group", "MZB.MI", "MTA", "EUR")
-        self.assets["PRT.MI"] = Asset(EQUITY, "Esprinet S.p.A.", "PRT.MI", "MTA", "EUR")
-        self.assets["SAP.DE"] = Asset(EQUITY, "SAP", "SAP.DE", "XETRA", "EUR")
-        self.assets["ADS.DE"] = Asset(EQUITY, "Adidas AG", "ADS.DE", "XETRA", "EUR")
-        self.assets["DPW.DE"] = Asset(EQUITY, "Deutsche Post AG", "DPW.DE", "XETRA", "EUR")
-        self.assets["SFL.MI"] = Asset(EQUITY, "Safilo Group S.p.A.", "SFL.MI", "MTA", "EUR")
-        self.assets["PIRC.MI"] = Asset(EQUITY, "Pirelli & C. S.p.A.", "PIRC.MI", "MTA", "EUR")
-        self.assets["FBK.MI"] = Asset(EQUITY, "FinecoBank Banca Fineco S.p.A.", "FBK.MI", "MTA", "EUR")
-        self.assets["BAS.DE"] = Asset(EQUITY, "BASF SE", "BAS.DE", "XETRA", "EUR")
-        self.assets["IP.MI"] = Asset(EQUITY, "Interpump Group S.p.A.", "IP.MI", "MTA", "EUR")
-        self.assets["SU.PA"] = Asset(EQUITY, "Schneider Electric S.E.", "SU.PA", "EQUIDUCT", "EUR")
-        self.assets["RI.PA"] = Asset(EQUITY, "Pernod Ricard SA", "RI.PA", "EQUIDUCT", "EUR")
-        self.assets["ILTY.MI"] = Asset(EQUITY, "Illimity Bank S.p.A.", "ILTY.MI", "MTA", "EUR")
-        self.assets["LDO.MI"] = Asset(EQUITY, "Leonardo S.p.A.", "LDO.MI", "MTA", "EUR")
 
     def calc_stats(self, days_short=20, days_long=150):
         # TODO: questo metodo dovrebbe stare a livello di Strategia... Però deve essere eseguito prima di sistemare i

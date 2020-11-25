@@ -1,0 +1,141 @@
+SYMBOL,Full Name,Asset Class,Market,Currency
+ALC.SW,ALCON N,equity,VIRTX,CHF
+GIVN.SW,Givaudan SA,equity,VIRTX,CHF
+LONN.SW,Lonza Group Ltd,equity,VIRTX,CHF
+NESN.SW,Nestle S.A.,equity,VIRTX,CHF
+NOVN.SW,NOVARTIS N,equity,VIRTX,CHF
+ROG.SW,Roche Holding AG,equity,VIRTX,CHF
+SOON.SW,SONOVA HLDG N,equity,VIRTX,CHF
+SREN.SW,Swiss Re AG,equity,VIRTX,CHF
+DSY.PA,Dassault Systèmes SE,equity,EQUIDUCT,EUR
+EL.PA,EssilorLuxottica Societe anonyme,equity,EQUIDUCT,EUR
+FME.DE,FRESENIUS MEDICAL,equity,EQUIDUCT,EUR
+KER.PA,Kering SA,equity,EQUIDUCT,EUR
+MC.PA,LVMH Moët Hennessy Louis Vuitton S.E.,equity,EQUIDUCT,EUR
+RI.PA,Pernod Ricard SA,equity,EQUIDUCT,EUR
+SU.PA,Schneider Electric S.E.,equity,EQUIDUCT,EUR
+VVD.F,Veolia Environnement S.A.,equity,EQUIDUCT,EUR
+AMP.MI,Amplifon,equity,MTA,EUR
+BRE.MI,BREMBO,equity,MTA,EUR
+CERV.MI,CERVED GROUP,equity,MTA,EUR
+CPR.MI,CAMPARI,equity,MTA,EUR
+DIA.MI,DIASORIN,equity,MTA,EUR
+ENEL.MI,ENEL,equity,MTA,EUR
+ENI.MI,ENI,equity,MTA,EUR
+FBK.MI,FinecoBank Banca Fineco S.p.A.,equity,MTA,EUR
+FCA.MI,FCA,equity,MTA,EUR
+G.MI,Assicurazioni Generali,equity,MTA,EUR
+GEO.MI,GEO,equity,MTA,EUR
+ILTY.MI,Illimity Bank S.p.A.,equity,MTA,EUR
+IP.MI,Interpump Group S.p.A.,equity,MTA,EUR
+ISP.MI,Intesa Sanpaolo,equity,MTA,EUR
+LDO.MI,Leonardo S.p.A.,equity,MTA,EUR
+MONC.MI,MONCLER,equity,MTA,EUR
+MZB.MI,Massimo Zanetti Beverage Group,equity,MTA,EUR
+NEXI.MI,Nexi S.p.A.,equity,MTA,EUR
+PHAU.MI,GOLD/WISDOMTREE,ETC,MTA,EUR
+PIRC.MI,Pirelli & C. S.p.A.,equity,MTA,EUR
+PRT.MI,Esprinet S.p.A.,equity,MTA,EUR
+PST.MI,Poste Italiane SpA,equity,MTA,EUR
+SFL.MI,Safilo Group S.p.A.,equity,MTA,EUR
+STM.MI,STMicroelectronics N.V.,equity,MTA,EUR
+UCG.MI,UNICREDIT,equity,MTA,EUR
+ADS.DE,Adidas AG,equity,XETRA,EUR
+BAS.DE,BASF SE,equity,XETRA,EUR
+DPW.DE,Deutsche Post AG,equity,XETRA,EUR
+SAP.DE,SAP,equity,XETRA,EUR
+VNA.DE,VONOVIA,equity,XETRA,EUR
+AV.L,Aviva plc,equity,LSE,GBP
+AZN.L,AstraZeneca PLC,equity,LSE,GBP
+BA.L,BAE SYSTEMS,equity,LSE,GBP
+BARC.L,Barclays PLC,equity,LSE,GBP
+BP.L,BP,equity,LSE,GBP
+BRBY.L,Burberry Group,equity,LSE,GBP
+BT-A.L,BT GROUP,equity,LSE,GBP
+DGE.L,Diageo plc,equity,LSE,GBP
+ESNT.L,ESSENTRA,equity,LSE,GBP
+GLEN.L,GLENCORE,equity,LSE,GBP
+GSK.L,GLAXOSMITHKLINE,equity,LSE,GBP
+HSBA.L,HSBC HLDG,equity,LSE,GBP
+KAZ.L,KAZ MINERALS,equity,LSE,GBP
+LGEN.L,Legal & General Group Plc,equity,LSE,GBP
+LLOY.L,LLOYDS BANKING G,equity,LSE,GBP
+LSE.L,London Stock Exchange Group plc,equity,LSE,GBP
+MCRO.L,MICRO FOCUS INTL,equity,LSE,GBP
+MRW.L,Wm Morrison Supermarkets PLC,equity,LSE,GBP
+OCDO.L,Ocado Group plc,equity,LSE,GBP
+RSW.L,RENISHAW,equity,LSE,GBP
+RWI.L,RENEWI,equity,LSE,GBP
+SSE.L,SSE plc,equity,LSE,GBP
+TSCO.L,Tesco PLC,equity,LSE,GBP
+ULVR.L,UNILEVER,equity,LSE,GBP
+AAPL,Apple Inc.,equity,NASDAQ,USD
+ADBE,Adobe Inc.,equity,NASDAQ,USD
+AMZN,Amazon,equity,NASDAQ,USD
+ASAN,"Asana, Inc.",equity,NASDAQ,USD
+AVGO,Broadcom Inc.,equity,NASDAQ,USD
+DBX,"Dropbox, Inc.",equity,NASDAQ,USD
+DOCU,DOCUSIGN,equity,NASDAQ,USD
+DXCM,"DexCom, Inc.",equity,NASDAQ,USD
+EQIX,EQUINIX REIT,equity,NASDAQ,USD
+FB,"Facebook, Inc.",equity,NASDAQ,USD
+GOOG,ALPHAB RG-C-NV,equity,NASDAQ,USD
+GOOGL,ALPHABET-A,equity,NASDAQ,USD
+GRPN,Groupon Inc.,equity,NASDAQ,USD
+ILMN,"Illumina, Inc.",equity,NASDAQ,USD
+JAZZ,Jazz Pharmaceuticals plc,equity,NASDAQ,USD
+KO,The Coca-Cola Company,equity,NASDAQ,USD
+MRNA,"Moderna, Inc.",equity,NASDAQ,USD
+MSFT,MICROSOFT,equity,NASDAQ,USD
+NFLX,Netflix,equity,NASDAQ,USD
+NKLA,Nikola Corporation,equity,NASDAQ,USD
+NVDA,NVIDIA,equity,NASDAQ,USD
+PLTR,Palantir Technologies Inc.,equity,NASDAQ,USD
+PTON,Peloton Interactive Inc.,equity,NASDAQ,USD
+SIRI,Sirius XM Holdings Inc.,equity,NASDAQ,USD
+SVMK,SVMK Inc.,equity,NASDAQ,USD
+SWBI,Smith & Wesson Brands Inc.,equity,NASDAQ,USD
+T,AT&T Inc.,equity,NASDAQ,USD
+TSLA,Tesla Inc.,equity,NASDAQ,USD
+ZM,Zoom,equity,NASDAQ,USD
+NOW,SERVICENOW,equity,NYSE,USD
+ABT,Abbott Laboratories,equity,NYSE,USD
+BLK,"BlackRock, Inc.",equity,NYSE,USD
+COTY,Coty Inc.,equity,NYSE,USD
+CRM,SALESFORCE.COM,equity,NYSE,USD
+CS,The Goldman Sachs Group,equity,NYSE,USD
+CVX,Chevron Corporation,equity,NYSE,USD
+DIS,Disney,equity,NYSE,USD
+DOW,Dow Inc.,equity,NYSE,USD
+DPZ,Domino's Pizza,equity,NYSE,USD
+F,Ford Motor Company,equity,NYSE,USD
+FIT,Fitbit Inc.,equity,NYSE,USD
+GE,General Electric Company,equity,NYSE,USD
+GES,"Guess', Inc.",equity,NYSE,USD
+GPS,"The Gap, Inc.",equity,NYSE,USD
+IBM,IBM,equity,NYSE,USD
+IT,Gartner Inc.,equity,NYSE,USD
+JNJ,Johnson & Johnson,equity,NYSE,USD
+JPM,JPMorgan Chase & Co.,equity,NYSE,USD
+MED,"Medifast, Inc.",equity,NYSE,USD
+MS,Morgan Stanley,equity,NYSE,USD
+NET,Cloudflare Inc.,equity,NYSE,USD
+ORCL,Oracle Corporation,equity,NYSE,USD
+PEGA,Pegasystems Inc.,equity,NYSE,USD
+PFE,Pfizer Inc.,equity,NYSE,USD
+PG,The Procter & Gamble Company,equity,NYSE,USD
+PINS,Pinterest,equity,NYSE,USD
+SHOP,Shopify Inc.,equity,NYSE,USD
+SNOW,Snowflake Inc.,equity,NYSE,USD
+SQ,"Square, Inc.",equity,NYSE,USD
+TDOC,Teladoc,equity,NYSE,USD
+TEAM,Atlassian Corporation Plc,equity,NYSE,USD
+TWLO,TWILIO-A,equity,NYSE,USD
+TWTR,"Twitter, Inc.",equity,NYSE,USD
+U,Unity Software Inc.,equity,NYSE,USD
+VAR,"Varian Medical Systems, Inc.",equity,NYSE,USD
+VRTX,Vertex Pharmaceuticals Incorporated,equity,NYSE,USD
+WDAY,"Workday, Inc.",equity,NYSE,USD
+WORK,"Slack Technologies, Inc.",equity,NYSE,USD
+XLNX,"Xilinx, Inc.",equity,NYSE,USD
+XOM,Exxon Mobil Corporation,equity,NYSE,USD

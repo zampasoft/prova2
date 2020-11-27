@@ -132,6 +132,9 @@ class Transaction:
         elif txt.verb == "BUY":
             # In caso di BUY, ordino ulteriormente in base allo "score" della transazione, siccome in questo caso
             # penalizzo le transazioni con score più alto faccio l'inverso
+            if math.isnan(txt.score) or txt.score < 1:
+                logging.info("txt score for " + str(txt) + " has been changed to 1")
+                txt.score = 1
             verbSort = 3 + int(100 / txt.score)
         else:
             raise
@@ -437,6 +440,9 @@ class BuyAndHoldTradingStrategy:
 
     # se ho segnali di BUY multipli, devo avere uno score relativo
     def scoreSignal(self, asset: Asset, day: BDay) -> int:
+        logging.debug("Calculating score for " + asset.symbol + " on " + str(day.date()))
+        logging.debug("std_short = " + str(asset.history.loc[day, 'std_short']))
+        logging.debug("Close = " + str(asset.history.loc[day, 'Close']))
         score = 100.0 * asset.history.loc[day, 'std_short'] / asset.history.loc[day, 'Close']
         return score
 

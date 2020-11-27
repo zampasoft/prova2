@@ -18,13 +18,7 @@ Apparentemente limitate il portagoglio a 20-25 titoli è una mossa vincente.
 
 Da fare:
 Urgenti:
-- Per paragonare le perfomance delle diverse strategie creo un Dataframe:
-
-+---------------------+-------------------+---------------+-------------------+-------------+-----------------+
-| Simulation Strategy | Average Net Value | Min Liquidity | Total Commissions | Total Taxes | Total Dividends |
-+---------------------+-------------------+---------------+-------------------+-------------+-----------------+
-| Inv. Boll. Bands/30 |      ......       |     .....     |      .......      |    .....    |     .....       |
-|                     |                   |               |                   |             |                 |
+- Stabilizzare il calcolo numerico
 
 Poi salvo il Dataframe come csv e lo stampo con tabulate
 le performance delle diverse strategia di Trading va paragonata sulla media e non solo sul valore finale.

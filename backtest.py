@@ -32,8 +32,8 @@ if __name__ == "__main__":
     end_date = datetime.date.today() + BDay(0)
     # end_date = datetime.date(2020, 4, 3)
     # First day
-    start_date = datetime.date(2016, 1, 12)
-    # start_date = datetime.date(2020, 2, 5)
+    # start_date = datetime.date(2016, 1, 12)
+    start_date = datetime.date(2020, 2, 5)
     initial_capital = 100000.0  # 100.000 EUR
     sell_all = False
 
@@ -139,6 +139,6 @@ if __name__ == "__main__":
         new_row = {'Simulation Strategy': simul.description, 'Average Net Value': simul.por_history['NetValue'].mean(), 'Min Liquidity': simul.por_history['Liquidity'].min(), 'TotalCommissions': simul.por_history.loc[end_date, 'TotalCommissions'], 'TotalDividens': simul.por_history.loc[end_date, 'TotalDividens'], 'TotalTaxes': simul.por_history.loc[end_date, 'TotalTaxes']}
         simul_outcomes = simul_outcomes.append(new_row, ignore_index=True)
     pd.set_option("display.max_rows", None, "display.max_columns", None)
-    print(simul_outcomes)
+    print(simul_outcomes.sort_values(by='Average Net Value', ascending=False))
     plt.show()
     print("\nEnded, please check log file.\n")

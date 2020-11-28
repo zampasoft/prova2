@@ -31,10 +31,10 @@ if __name__ == "__main__":
     # First day
     # start_date = datetime.date(2016, 1, 12)
     start_date = datetime.date(2020, 2, 5)
-    long_stats=150
-    short_stats=20
+    long_stats = 150
+    short_stats = 20
     initial_capital = 100000.0  # 100.000 EUR
-    sell_all = False
+    sell_all = True
 
 
     filename = "./data/saved.mkts.data." + str(start_date) + '-' + str(end_date.date())

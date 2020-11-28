@@ -56,6 +56,7 @@ class AssetClass:
 # I create the asset classes I want in my Portfolio for now
 EQUITY = AssetClass("equity", 0.005, 0)
 ETC = AssetClass("ETC", 0.005, 0)
+ETF = AssetClass("ETF", 0.01, 0.01) #non ho ancora implementato il calcolo delle fee annuali di gestione.
 CURRENCY = AssetClass("currency", 0.001, 0)
 
 
@@ -219,6 +220,8 @@ class Portfolio:
                         asset_class = EQUITY
                     elif row[2] == "ETC":
                         asset_class = ETC
+                    elif row[2] == "ETF":
+                        asset_class = ETF
                     else:
                         logging.error(row[2] + " is an invalid Asset Class for " + row[2])
                         raise Exception(row[2] + " is an invalid Asset Class for " + row[0])

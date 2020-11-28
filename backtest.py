@@ -25,15 +25,14 @@ if __name__ == "__main__":
     logging.info("*      NEW START : " + str(datetime.datetime.now()) + "        *")
     logging.info("******************************************************")
 
-    # print DataFrame wide
-    pd.set_option('display.width', 1000)
-
     # Last day
     end_date = datetime.date.today() + BDay(0)
     # end_date = datetime.date(2020, 4, 3)
     # First day
     # start_date = datetime.date(2016, 1, 12)
     start_date = datetime.date(2020, 2, 5)
+    long_stats=150
+    short_stats=20
     initial_capital = 100000.0  # 100.000 EUR
     sell_all = False
 
@@ -59,7 +58,7 @@ if __name__ == "__main__":
         # adesso dovrei aver recuperato tutti i dati...
         # Devo sistemare i gap nelle date perché non voglio continuare a controllare se un indice esiste o meno...
         print("\tCalculating Basic Stats")
-        myPortfolio.calc_stats(days_short=20, days_long=150)
+        myPortfolio.calc_stats(days_short=short_stats, days_long=long_stats)
         print("\tFixing Data")
         myPortfolio.fix_history_data()
         # mi salvo il calcolo per velocizzare i miei tests
@@ -134,9 +133,9 @@ if __name__ == "__main__":
     print("\nSimulations Outcome:\n")
     for simul in simulations:
         assert isinstance(simul, sim_trade.Portfolio), "Coding error... check Simulations list"
-        simul.por_history['NetValue'].plot(kind='line', label=simul.description, legend=True)
+        simul.por_history.loc[start_date + BDay(long_stats):, 'NetValue'].plot(kind='line', label=simul.description, legend=True)
         # simul.por_history['TotalTaxes'].plot(kind='line', label=simul.description, legend=True)
-        new_row = {'Simulation Strategy': simul.description, 'Average Net Value': simul.por_history['NetValue'].mean(), 'Min Liquidity': simul.por_history['Liquidity'].min(), 'TotalCommissions': simul.por_history.loc[end_date, 'TotalCommissions'], 'TotalDividens': simul.por_history.loc[end_date, 'TotalDividens'], 'TotalTaxes': simul.por_history.loc[end_date, 'TotalTaxes']}
+        new_row = {'Simulation Strategy': simul.description, 'Average Net Value': simul.por_history.loc[start_date + BDay(long_stats):, 'NetValue'].mean(), 'Min Liquidity': simul.por_history['Liquidity'].mean(), 'TotalCommissions': simul.por_history.loc[end_date, 'TotalCommissions'], 'TotalDividens': simul.por_history.loc[end_date, 'TotalDividens'], 'TotalTaxes': simul.por_history.loc[end_date, 'TotalTaxes']}
         simul_outcomes = simul_outcomes.append(new_row, ignore_index=True)
     pd.set_option("display.max_rows", None, "display.max_columns", None)
     print(simul_outcomes.sort_values(by='Average Net Value', ascending=False))

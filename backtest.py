@@ -135,9 +135,9 @@ if __name__ == "__main__":
         assert isinstance(simul, sim_trade.Portfolio), "Coding error... check Simulations list"
         simul.por_history.loc[start_date + BDay(long_stats):, 'NetValue'].plot(kind='line', label=simul.description, legend=True)
         # simul.por_history['TotalTaxes'].plot(kind='line', label=simul.description, legend=True)
-        new_row = {'Simulation Strategy': simul.description, 'Average Net Value': simul.por_history.loc[start_date + BDay(long_stats):, 'NetValue'].mean(), 'Min Liquidity': simul.por_history['Liquidity'].mean(), 'TotalCommissions': simul.por_history.loc[end_date, 'TotalCommissions'], 'TotalDividens': simul.por_history.loc[end_date, 'TotalDividens'], 'TotalTaxes': simul.por_history.loc[end_date, 'TotalTaxes']}
+        new_row = {'Simulation Strategy': simul.description, 'Average Net Value': simul.por_history.loc[start_date + BDay(long_stats):, 'NetValue'].mean(), 'Min Liquidity': simul.por_history.loc[start_date + BDay(long_stats):, 'Liquidity'].min(), 'TotalCommissions': simul.por_history.loc[end_date, 'TotalCommissions'], 'TotalDividens': simul.por_history.loc[end_date, 'TotalDividens'], 'TotalTaxes': simul.por_history.loc[end_date, 'TotalTaxes']}
         simul_outcomes = simul_outcomes.append(new_row, ignore_index=True)
-    pd.set_option("display.max_rows", None, "display.max_columns", None)
+    pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", 1000)
     print(simul_outcomes.sort_values(by='Average Net Value', ascending=False))
     plt.show()
     print("\nEnded, please check log file.\n")

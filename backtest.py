@@ -93,7 +93,7 @@ if __name__ == "__main__":
     timestamp = datetime.datetime.now()
     logging.info("\nExecuting trades")
     print("\tSimulating trading")
-    final_port = my_trading_strategy.runTradingSimulation(max_orders=30)
+    final_port = my_trading_strategy.runTradingSimulation(max_orders=26)
     logging.info("Trades completed in " + str(datetime.datetime.now() - timestamp))
 
     print("\n" + final_port.description + " Executed Tx: ")

@@ -402,6 +402,17 @@ class BuyAndHoldTradingStrategy:
         # voglio ricevere una TradingStrategy che contenga le regole da applicare
         # restiruisco un nuovo Portafoglio elaborato con le regole
 
+    def sell_all(self):
+        # l'ultimo giorno vendo tutto.
+        for key, asset in sorted(self.outcome.assets.items()):
+            if asset.assetType.assetType != "currency":
+                logging.info("\tRequesting SELL for " + str(key) + " on " + str(self.outcome.end_date))
+                dd = datetime.datetime.combine(self.outcome.end_date, datetime.time.min)
+                score = self.scoreSignal(asset, dd)
+                dailyPendTx = self.outcome.pendingTransactions[dd]
+                dailyPendTx.append(Transaction("SELL", asset, dd, 0, 0.0, self.description, score=score))
+
+
     # TODO: questo metodo dovrebbe essere multi-thread.
     def calc_suggested_transactions(self, sell_all=True, **kwparams):
         # Strategia base "BUY & HOLD"
@@ -428,16 +439,9 @@ class BuyAndHoldTradingStrategy:
                         wish_list.remove(asset.symbol)
                         break
             print(".", end="", flush=True)
+        if sell_all:
             # l'ultimo giorno vendo tutto.
-            if sell_all:
-                # l'ultimo giorno vendo tutto.
-                if asset.assetType.assetType != "currency":
-                    logging.info("\tRequesting SELL for " + str(key) + " on " + str(self.outcome.end_date))
-                    dailyPendTx = self.outcome.pendingTransactions[
-                        datetime.datetime.combine(self.outcome.end_date, datetime.time.min)]
-                    dailyPendTx.append(
-                        Transaction("SELL", asset, datetime.datetime.combine(self.outcome.end_date, datetime.time.min),
-                                    0, 0.0, self.description))
+            self.sell_all()
         print(" ")
         return self.outcome.pendingTransactions
 
@@ -445,8 +449,8 @@ class BuyAndHoldTradingStrategy:
     def scoreSignal(self, asset: Asset, day: BDay) -> int:
         logging.debug("Calculating score for " + asset.symbol + " on " + str(day.date()))
         logging.debug("std_short = " + str(asset.history.loc[day, 'std_short']))
-        logging.debug("Close = " + str(asset.history.loc[day, 'Close']))
-        score = 100.0 * asset.history.loc[day, 'std_short'] / asset.history.loc[day, 'Close']
+        logging.debug("sma_long = " + str(asset.history.loc[day, 'sma_long']))
+        score = 100.0 * asset.history.loc[day, 'std_short'] / asset.history.loc[day, 'sma_long']
         return score
 
     # Creo il metodo TradingSimulation che deve iterare dentro un range di date, eseguire gli ordini e aggiornare i valori
@@ -695,16 +699,9 @@ class InvBollbandsStrategy(BuyAndHoldTradingStrategy):
             # BUY_points.plot(kind='scatter', ax=ax, x='Date', y='Quotation', color="green", alpha=0.5)
             # SELL_points.plot(kind='scatter', ax=ax, x='Date', y='Quotation', color="red", alpha=0.5)
             # plt.show()
-            if sell_all:
-                # l'ultimo giorno vendo tutto.
-                if asset.assetType.assetType != "currency":
-                    logging.info("\tRequesting SELL for " + str(key) + " on " + str(self.outcome.end_date))
-                    score = self.scoreSignal(asset, dd)
-                    dailyPendTx = self.outcome.pendingTransactions[
-                        datetime.datetime.combine(self.outcome.end_date, datetime.time.min)]
-                    dailyPendTx.append(
-                        Transaction("SELL", asset, datetime.datetime.combine(self.outcome.end_date, datetime.time.min),
-                                    0, 0.0, self.description, score=score))
+        if sell_all:
+            # l'ultimo giorno vendo tutto.
+            self.sell_all()
         print(" ")
         return self.outcome.pendingTransactions
 
@@ -785,12 +782,9 @@ class BollbandsStrategy(BuyAndHoldTradingStrategy):
             # BUY_points.plot(kind='scatter', ax=ax, x='Date', y='Quotation', color="green", alpha=0.5)
             # SELL_points.plot(kind='scatter', ax=ax, x='Date', y='Quotation', color="red", alpha=0.5)
             # plt.show()
-            if sell_all:
-                # l'ultimo giorno vendo tutto.
-                if asset.assetType.assetType != "currency":
-                    logging.info("\tRequesting SELL for " + str(key) + " on " + str(self.outcome.end_date))
-                    dailyPendTx = self.outcome.pendingTransactions[self.outcome.end_date]
-                    dailyPendTx.append(Transaction("SELL", asset, self.outcome.end_date, 0, 0.0, self.description))
+        if sell_all:
+            # l'ultimo giorno vendo tutto.
+            self.sell_all()
         print(" ")
         return self.outcome.pendingTransactions
 
@@ -851,13 +845,5 @@ class CustomStrategy(BuyAndHoldTradingStrategy):
             # plt.show()
             if sell_all:
                 # l'ultimo giorno vendo tutto.
-                for key, asset in sorted(self.outcome.assets.items()):
-                    if asset.assetType.assetType != "currency":
-                        logging.info("\tRequesting SELL for " + str(key) + " on " + str(self.outcome.end_date))
-                        score = self.scoreSignal(asset, dd)
-                        dailyPendTx = self.outcome.pendingTransactions[datetime.datetime.combine(self.outcome.end_date, datetime.time.min)]
-                        dailyPendTx.append(Transaction("SELL", asset, datetime.datetime.combine(self.outcome.end_date, datetime.time.min), 0, 0.0, self.description, score=score))
+                self.sell_all()
         return self.outcome.pendingTransactions
-
-
-

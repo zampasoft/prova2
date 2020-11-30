@@ -280,10 +280,10 @@ class Portfolio:
                         if last_row['Close'] < (last_row['sma_short'] * 0.02):
                             logging.info("Found Outlier: managing as GBP/GBp error for " + asset.symbol + " on " + str(
                                 dd.date()))
-                            last_row['Close'] = last_row['Close'] * 100 # TODO: SettingWithCopyWarning assegnazione ambigua, da modificare
+                            asset.history.loc[dd, 'Close'] = last_row['Close'] * 100
                             # di solito se è sbagliato il close lo è anche l'Open
                             if last_row['Open'] < last_row['sma_short'] * 0.02:
-                                last_row['Open'] = last_row['Open'] * 100 # TODO: SettingWithCopyWarning assegnazione ambigua, da modificare
+                                asset.history.loc[dd, 'Open'] = last_row['Open'] * 100
                 except KeyError as e:
                     # non esiste l'indice
                     logging.debug("\tMissing Index: " + str(dd.date()) + " in Asset " + str(asset.symbol))

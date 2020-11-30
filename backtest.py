@@ -30,7 +30,7 @@ if __name__ == "__main__":
     # end_date = datetime.date(2020, 4, 3)
     # First day
     # start_date = datetime.date(2016, 1, 12)
-    start_date = datetime.date(2020, 2, 5)
+    start_date = datetime.date(2020, 11, 3) + BDay(0)
     long_stats = 150
     short_stats = 20
     initial_capital = 100000.0  # 100.000 EUR
@@ -47,7 +47,7 @@ if __name__ == "__main__":
         file_handle.close()
     except FileNotFoundError:
         # Create and Initialise myPortfolio
-        myPortfolio = sim_trade.Portfolio(start_date, end_date, initial_capital)
+        myPortfolio = sim_trade.Portfolio(start_date, end_date, initial_capital, days_short=short_stats, days_long=long_stats)
         print("\tInit Portfolio")
         myPortfolio.loadAssetList()
         timestamp = datetime.datetime.now()
@@ -58,7 +58,7 @@ if __name__ == "__main__":
         # adesso dovrei aver recuperato tutti i dati...
         # Devo sistemare i gap nelle date perché non voglio continuare a controllare se un indice esiste o meno...
         print("\tCalculating Basic Stats")
-        myPortfolio.calc_stats(days_short=short_stats, days_long=long_stats)
+        myPortfolio.calc_stats()
         print("\tFixing Data")
         myPortfolio.fix_history_data()
         # mi salvo il calcolo per velocizzare i miei tests
@@ -67,15 +67,12 @@ if __name__ == "__main__":
         pickle.dump(myPortfolio, file_handle)
         file_handle.close()
     # devo definire una strategia di Trading
-    # my_trading_strategy = sim_trade.BuyAndHoldTradingStrategy(myPortfolio)
-    my_trading_strategy = sim_trade.InvBollbandsStrategy(myPortfolio)
-    # my_trading_strategy = sim_trade.ComplexStrategy(myPortfolio)
-    # my_trading_strategy = sim_trade.BollbandsStrategy(myPortfolio)
-    print("\tCalculating Signals for " + my_trading_strategy.description)
+    top_strategy = sim_trade.InvBollbandsStrategy(myPortfolio)
+    print("\tCalculating Signals for " + top_strategy.description)
     # calcolo i segnali BUY e SELL
     timestamp = datetime.datetime.now()
     logging.info("\nCalculating BUY/SELL Signals")
-    my_strategy_signals = my_trading_strategy.calc_suggested_transactions(sell_all=sell_all, initial_buy=True, w_short=3.0, w_long=1.0)
+    my_strategy_signals = top_strategy.calc_suggested_transactions(sell_all=sell_all, initial_buy=True, w_short=3.0, w_long=1.0)
     logging.info("Signals calculated in " + str(datetime.datetime.now() - timestamp))
     # Printing raw Signals
     print("Calculation Outcome:")
@@ -93,11 +90,11 @@ if __name__ == "__main__":
     timestamp = datetime.datetime.now()
     logging.info("\nExecuting trades")
     print("\tSimulating trading")
-    final_port = my_trading_strategy.runTradingSimulation(max_orders=26)
+    top_port = top_strategy.runTradingSimulation(max_orders=30)
     logging.info("Trades completed in " + str(datetime.datetime.now() - timestamp))
 
-    print("\n" + final_port.description + " Executed Tx: ")
-    for t in final_port.executedTransactions:
+    print("\n" + top_port.description + " Executed Tx: ")
+    for t in top_port.executedTransactions:
         if t.verb == "BUY" or t.verb == "SELL":
             print(" Tx: " + str(t))
 
@@ -115,27 +112,27 @@ if __name__ == "__main__":
             print(" Tx: " + str(t))
 
     # calculating second benchmark
-    # bounded_strat = sim_trade.BollbandsStrategy(myPortfolio)
-    # bounded_strat = sim_trade.InvBollbandsStrategy(myPortfolio)
-    bounded_strat = sim_trade.CustomStrategy(myPortfolio)
-    print("\nCalculating " + bounded_strat.description)
-    bounded_signals = bounded_strat.calc_suggested_transactions(sell_all=sell_all, initial_buy=True)
-    bounded_port = bounded_strat.runTradingSimulation(max_orders=26)
-    print("\n" + bounded_port.description + " Executed Tx: ")
-    for t in bounded_port.executedTransactions:
+    # my_strategy = sim_trade.BollbandsStrategy(myPortfolio)
+    # my_strategy = sim_trade.InvBollbandsStrategy(myPortfolio)
+    my_strategy = sim_trade.CustomStrategy(myPortfolio)
+    print("\nCalculating " + my_strategy.description)
+    my_signals = my_strategy.calc_suggested_transactions(sell_all=sell_all, initial_buy=True)
+    my_port = my_strategy.runTradingSimulation(max_orders=26)
+    print("\n" + my_port.description + " Executed Tx: ")
+    for t in my_port.executedTransactions:
         if t.verb == "BUY" or t.verb == "SELL":
             print(" Tx: " + str(t))
     # TODO: bisognerebbe stampare una tabella che confronti gli esiti finali, medi e minimi delle tre strategie
 
-    simulations = [final_port, bounded_port, base_port]
+    simulations = [top_port, my_port, base_port]
     simul_outcomes = pd.DataFrame(None, columns=['Simulation Strategy', 'Average Net Value', 'Min Liquidity', 'TotalCommissions', 'TotalDividens',
                                        'TotalTaxes'])
     print("\nSimulations Outcome:\n")
     for simul in simulations:
         assert isinstance(simul, sim_trade.Portfolio), "Coding error... check Simulations list"
-        simul.por_history.loc[start_date + BDay(long_stats):, 'NetValue'].plot(kind='line', label=simul.description, legend=True)
+        simul.por_history.loc[start_date:, 'NetValue'].plot(kind='line', label=simul.description, legend=True)
         # simul.por_history['TotalTaxes'].plot(kind='line', label=simul.description, legend=True)
-        new_row = {'Simulation Strategy': simul.description, 'Average Net Value': simul.por_history.loc[start_date + BDay(long_stats):, 'NetValue'].mean(), 'Min Liquidity': simul.por_history.loc[start_date + BDay(long_stats):, 'Liquidity'].min(), 'TotalCommissions': simul.por_history.loc[end_date, 'TotalCommissions'], 'TotalDividens': simul.por_history.loc[end_date, 'TotalDividens'], 'TotalTaxes': simul.por_history.loc[end_date, 'TotalTaxes']}
+        new_row = {'Simulation Strategy': simul.description, 'Average Net Value': simul.por_history.loc[start_date:, 'NetValue'].mean(), 'Min Liquidity': simul.por_history.loc[start_date:, 'Liquidity'].min(), 'TotalCommissions': simul.por_history.loc[end_date, 'TotalCommissions'], 'TotalDividens': simul.por_history.loc[end_date, 'TotalDividens'], 'TotalTaxes': simul.por_history.loc[end_date, 'TotalTaxes']}
         simul_outcomes = simul_outcomes.append(new_row, ignore_index=True)
     pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", 1000)
     print(simul_outcomes.sort_values(by='Average Net Value', ascending=False))

@@ -17,21 +17,15 @@ e verificare che tutti i dataframe abbiano un numero simile di oggetti.
 Apparentemente limitate il portagoglio a 20-25 titoli è una mossa vincente.
 
 Da fare:
-Urgenti:
-- Stabilizzare il calcolo numerico
+> Ripulire codice e fare refactoring dei metodi RequestTx
+> start date dovrebbe essere l'effettiva data di start delle transazioni, quindi quando recupero le quotazioni faccio start date - (days_long + days_short).
+> I dividendi comincio a calcolarli da start_date
+> Aggiungere calcolo delle tasse per ogni simbolo, così vediamo quanti sono quelli che hanno contributi positivi.
 
-Poi salvo il Dataframe come csv e lo stampo con tabulate
-le performance delle diverse strategia di Trading va paragonata sulla media e non solo sul valore finale.
-- il grafico dovrebbe partire da quando parte la strategia, e non i dati -> meglio ancora le strategie dovrebbero restituire dei portafogli che iniziano dopo X giorni
-
-
-
-i test di simulazione li facciamo su 5 anni.
+i test di simulazione li facciamo su 3 anni.
 Il calcolo dei segnali su 12 mesi.
 
-Il portagoglio iniziale va rinominato in "Markets" perché di fatto ha lo scopo di raccogliere i dati dei mercati
-per tutti i titoli da monitorati.
-Aggiungere calcolo delle tasse per ogni simbolo, così vediamo quanti sono quelli che hanno contributi positivi.
+
 
 
 TRENDING vs BOUNDED

@@ -179,7 +179,8 @@ class Portfolio:
         # self.total_commissions = total_commissions
         logging.debug("fill_history_gaps for Portfolio[_SELF_] e Transactions")
         last_row = self.por_history.loc[datetime.datetime.combine(self.start_date, datetime.time.min)]
-        for dd in pd.date_range(start=start_date, end=end_date, freq='B'):
+        for dd in pd.date_range(start=start_date-BDay(1), end=end_date, freq='B'):
+            # TODO: capire se ha senso settare last row con start_date e poi partire da start_date -1
             self.pendingTransactions[dd] = []
             try:
                 last_row = self.por_history.loc[dd]
@@ -269,7 +270,7 @@ class Portfolio:
                 logging.error("There are duplicates in the history for " + asset.symbol)
                 # remove duplicates, keep first
                 asset.history = asset.history[~asset.history.index.duplicated(keep='first')]
-            for dd in pd.date_range(start=self.start_date, end=self.end_date, freq='B'):
+            for dd in pd.date_range(start=self.start_date-BDay(5), end=self.end_date, freq='B'):
                 try:
                     last_row = asset.history.loc[dd, :]
                     # ogni tanto le quotazioni inglesi fanno casino tra pence e pound.
@@ -279,10 +280,10 @@ class Portfolio:
                         if last_row['Close'] < (last_row['sma_short'] * 0.02):
                             logging.info("Found Outlier: managing as GBP/GBp error for " + asset.symbol + " on " + str(
                                 dd.date()))
-                            last_row['Close'] = last_row['Close'] * 100
+                            last_row['Close'] = last_row['Close'] * 100 # TODO: SettingWithCopyWarning assegnazione ambigua, da modificare
                             # di solito se è sbagliato il close lo è anche l'Open
                             if last_row['Open'] < last_row['sma_short'] * 0.02:
-                                last_row['Open'] = last_row['Open'] * 100
+                                last_row['Open'] = last_row['Open'] * 100 # TODO: SettingWithCopyWarning assegnazione ambigua, da modificare
                 except KeyError as e:
                     # non esiste l'indice
                     logging.debug("\tMissing Index: " + str(dd.date()) + " in Asset " + str(asset.symbol))

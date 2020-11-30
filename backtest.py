@@ -30,11 +30,11 @@ if __name__ == "__main__":
     # end_date = datetime.date(2020, 4, 3)
     # First day
     # start_date = datetime.date(2016, 1, 12)
-    start_date = datetime.date(2020, 11, 3) + BDay(0)
+    start_date = datetime.date(2020, 10, 27) + BDay(0)
     long_stats = 150
     short_stats = 20
     initial_capital = 100000.0  # 100.000 EUR
-    sell_all = True
+    sell_all = False
 
 
     filename = "./data/saved.mkts.data." + str(start_date) + '-' + str(end_date.date())
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     timestamp = datetime.datetime.now()
     logging.info("\nExecuting trades")
     print("\tSimulating trading")
-    top_port = top_strategy.runTradingSimulation(max_orders=30)
+    top_port = top_strategy.runTradingSimulation(max_orders=26)
     logging.info("Trades completed in " + str(datetime.datetime.now() - timestamp))
 
     print("\n" + top_port.description + " Executed Tx: ")

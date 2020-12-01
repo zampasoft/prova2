@@ -329,11 +329,14 @@ class Portfolio:
                 # TODO: aggiungere NerWorth anche su singolo asset, per permettere regole di bilanciamento del portafoglio
                 asset.history.loc[date, 'NetWorth'] = line['OwnedAmount'] * (line['Close'] * curr_conv + asset.assetType.tax_rate * (
                             line['AverageBuyPrice'] - line['Close'] * curr_conv))
-                tot_value = tot_value + line['NetWorth']
+                tot_value = tot_value + asset.history.loc[date, 'NetWorth']
                 # FIXME: con questa formula, in caso di perdita, lo zainetto fiscale mi fa aumentare leggermente il valore
                 # manca la SELL commission, ma incide poco sul senso del numero
-        logging.debug("calcolato tot_value per giorno: " + str(date))
-        self.por_history.loc[date, 'NetValue'] = self.por_history.loc[date, 'Liquidity'] + tot_value  # da finire
+        logging.debug("calcolato tot_value: " + str(tot_value) + " per giorno: " + str(date))
+        liquidity = self.por_history.loc[date, 'Liquidity']
+        logging.debug("Liquidità: " + str(liquidity))
+        logging.debug("Net Value Port: " + str(tot_value + liquidity))
+        self.por_history.loc[date, 'NetValue'] = liquidity + tot_value  # da finire
 
     def loadQuotations(self, cache_file='cache'):
         # setto una cache per i pandas_datareader

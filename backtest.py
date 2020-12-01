@@ -30,14 +30,14 @@ if __name__ == "__main__":
     # end_date = datetime.date(2020, 4, 3)
     # First day
     # start_date = datetime.date(2016, 1, 12)
-    start_date = datetime.date(2020, 10, 27) + BDay(0)
+    start_date = datetime.date(2020, 10, 28) + BDay(0)
     long_stats = 150
     short_stats = 20
     initial_capital = 100000.0  # 100.000 EUR
-    sell_all = False
+    sell_all = True
 
 
-    filename = "./data/saved.mkts.data." + str(start_date) + '-' + str(end_date.date())
+    filename = "./data/saved.mkts.data." + str(start_date.date()) + '-' + str(end_date.date())
     try:
         # se esiste questo file, lo carico e risparmio qualche minuto
         file_handle = open(filename, "rb")

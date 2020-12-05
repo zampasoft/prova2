@@ -29,12 +29,12 @@ if __name__ == "__main__":
     end_date = datetime.date.today() + BDay(0)
     # end_date = datetime.date(2020, 4, 3)
     # First day
-    # start_date = datetime.date(2016, 1, 12)
+    # start_date = datetime.date(2017, 1, 12) + BDay(0)
     start_date = datetime.date(2020, 10, 28) + BDay(0)
     long_stats = 150
     short_stats = 20
     initial_capital = 100000.0  # 100.000 EUR
-    sell_all = True
+    sell_all = False
 
 
     filename = "./data/saved.mkts.data." + str(start_date.date()) + '-' + str(end_date.date())
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     timestamp = datetime.datetime.now()
     logging.info("\nExecuting trades")
     print("\tSimulating trading")
-    top_port = top_strategy.runTradingSimulation(max_orders=26)
+    top_port = top_strategy.runTradingSimulation(max_orders=25)
     logging.info("Trades completed in " + str(datetime.datetime.now() - timestamp))
 
     print("\n" + top_port.description + " Executed Tx: ")
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     # base_strat = sim_trade.BollbandsStrategy(myPortfolio)
     print("\nCalculating " + base_strat.description)
     base_signals = base_strat.calc_suggested_transactions(sell_all=sell_all, initial_buy=True)
-    base_port = base_strat.runTradingSimulation(max_orders=26)
+    base_port = base_strat.runTradingSimulation(max_orders=24.5)
     # base_port.por_history['NetValue'].plot(kind='line', label=base_port.description, legend=True)
     print("\n" + base_port.description + " Executed Tx: ")
     for t in base_port.executedTransactions:
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     my_strategy = sim_trade.CustomStrategy(myPortfolio)
     print("\nCalculating " + my_strategy.description)
     my_signals = my_strategy.calc_suggested_transactions(sell_all=sell_all, initial_buy=True)
-    my_port = my_strategy.runTradingSimulation(max_orders=26)
+    my_port = my_strategy.runTradingSimulation(max_orders=25)
     print("\n" + my_port.description + " Executed Tx: ")
     for t in my_port.executedTransactions:
         if t.verb == "BUY" or t.verb == "SELL":
@@ -125,14 +125,14 @@ if __name__ == "__main__":
     # TODO: bisognerebbe stampare una tabella che confronti gli esiti finali, medi e minimi delle tre strategie
 
     simulations = [top_port, my_port, base_port]
-    simul_outcomes = pd.DataFrame(None, columns=['Simulation Strategy', 'Average Net Value', 'Min Liquidity', 'TotalCommissions', 'TotalDividens',
+    simul_outcomes = pd.DataFrame(None, columns=['Simulation Strategy', 'Average Net Value', 'Average Liquidity', 'TotalCommissions', 'TotalDividens',
                                        'TotalTaxes'])
     print("\nSimulations Outcome:\n")
     for simul in simulations:
         assert isinstance(simul, sim_trade.Portfolio), "Coding error... check Simulations list"
         simul.por_history.loc[start_date:, 'NetValue'].plot(kind='line', label=simul.description, legend=True)
         # simul.por_history['TotalTaxes'].plot(kind='line', label=simul.description, legend=True)
-        new_row = {'Simulation Strategy': simul.description, 'Average Net Value': simul.por_history.loc[start_date:, 'NetValue'].mean(), 'Min Liquidity': simul.por_history.loc[start_date:, 'Liquidity'].min(), 'TotalCommissions': simul.por_history.loc[end_date, 'TotalCommissions'], 'TotalDividens': simul.por_history.loc[end_date, 'TotalDividens'], 'TotalTaxes': simul.por_history.loc[end_date, 'TotalTaxes']}
+        new_row = {'Simulation Strategy': simul.description, 'Average Net Value': simul.por_history.loc[start_date:, 'NetValue'].mean(), 'Average Liquidity': simul.por_history.loc[start_date:, 'Liquidity'].mean(), 'TotalCommissions': simul.por_history.loc[end_date, 'TotalCommissions'], 'TotalDividens': simul.por_history.loc[end_date, 'TotalDividens'], 'TotalTaxes': simul.por_history.loc[end_date, 'TotalTaxes']}
         simul_outcomes = simul_outcomes.append(new_row, ignore_index=True)
     pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", 1000)
     print(simul_outcomes.sort_values(by='Average Net Value', ascending=False))

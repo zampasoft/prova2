@@ -6,13 +6,14 @@ from pandas_datareader import data as pdr
 import pandas as pd
 
 end_date = datetime.date.today() + BDay(0)
-symbols = ["UCG.MI", "LDO.MI", "NEXI.MI", "DOCU", "COTY", "TWLO", "GES", "TEAM", "MED", "NFLX", "BRBY.L", "AMZN", "GRPN", "ETSY", "GOOGL", "NOW", "MSFT", "DIS", "HSBA.L", "G.MI", "EL.PA", "CERV.MI", "ESNT.L", "VVD.F"]
+symbols = ["UCG.MI", "LDO.MI", "NEXI.MI", "DOCU", "COTY", "TWLO", "GES", "TEAM", "MED", "NFLX", "BRBY.L", "AMZN", "GRPN", "ETSY", "GOOGL", "NOW", "MSFT", "DIS", "HSBA.L", "G.MI", "EL.PA", "CERV.MI", "ESNT.L", "VVD.F", "CVX", "MCRO.L"]
 
 outcomes = pd.DataFrame(None, columns=['Symbol', 'slope'])
+samples = 60
 
 for sym in symbols:
     # print("Processing " + sym)
-    data = pdr.DataReader(sym, "yahoo", end_date - BDay(20), end_date)
+    data = pdr.DataReader(sym, "yahoo", end_date - BDay(samples), end_date)
     # print(data)
     x = np.array(range(len(data['Close']))).reshape((-1, 1))
     # print(x)
@@ -22,7 +23,7 @@ for sym in symbols:
     # r_sq = model.score(x, y)
     # print('coefficient of determination:', r_sq)
     # print('intercept:', model.intercept_)
-    slope = model.coef_
+    slope = model.coef_ * 100 / model.intercept_
     outcomes = outcomes.append({'Symbol': sym, 'slope': slope}, ignore_index=True)
     # print('slope for ' + sym +':', model.coef_)
     # y_pred = model.predict(x)

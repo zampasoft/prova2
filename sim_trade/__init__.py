@@ -449,6 +449,8 @@ class BuyAndHoldTradingStrategy:
         logging.debug("Calculating score for " + asset.symbol + " on " + str(day.date()))
         logging.debug("std_short = " + str(asset.history.loc[day, 'std_short']))
         logging.debug("sma_long = " + str(asset.history.loc[day, 'sma_long']))
+        # il fatto di mischiare grandezze statistiche short e long non è un errore.
+        # sul campione analizzato era la funzione score con i migliori risultati
         score = 100.0 * asset.history.loc[day, 'std_short'] / asset.history.loc[day, 'sma_long']
         return score
 

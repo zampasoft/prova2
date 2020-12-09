@@ -6,16 +6,20 @@ from pandas.tseries.offsets import BDay
 from pandas_datareader import data as pdr
 import pandas as pd
 import matplotlib.pyplot as plt
+import requests_cache
 
 end_date = datetime.date.today() + BDay(0)
-symbols = ["UCG.MI", "LDO.MI", "NEXI.MI", "DOCU", "COTY", "TWLO", "GES", "TEAM", "MED", "NFLX", "BRBY.L", "AMZN", "GRPN", "ETSY", "GOOGL", "NOW", "MSFT", "DIS", "HSBA.L", "G.MI", "EL.PA", "CERV.MI", "ESNT.L", "VVD.F", "CVX", "MCRO.L"]
+symbols = ["BA", "AAL", "UCG.MI", "LDO.MI", "DOCU", "COTY", "TWLO", "GES", "TEAM", "MED", "NFLX", "BRBY.L", "AMZN", "GRPN", "ETSY", "GOOGL", "NOW", "MSFT", "DIS", "HSBA.L", "G.MI", "EL.PA", "CERV.MI", "ESNT.L", "VVD.F", "CVX", "MCRO.L"]
 
-outcomes = pd.DataFrame(None, columns=['Symbol', 'slope', 'X^2'])
-samples = 60
+expire_after = datetime.timedelta(days=3)
+session = requests_cache.CachedSession(cache_name='../data/cache2.sqlite', backend='sqlite', expire_after=expire_after)
+
+outcomes = pd.DataFrame(None, columns=['Symbol', 'slope', 'XSQ'])
+samples = 20
 
 for sym in symbols:
     # print("Processing " + sym)
-    data = pdr.DataReader(sym, "yahoo", end_date - BDay(samples), end_date)
+    data = pdr.DataReader(sym, "yahoo", end_date - BDay(samples), end_date, session=session)
     # print(data)
     x = np.array(range(len(data['Close']))).reshape((-1, 1))
     # print(x)
@@ -38,19 +42,21 @@ for sym in symbols:
     # print('intercept:', poly_model.intercept_)
     # print('coefficients:', poly_model.coef_)
     x2 = poly_model.coef_[1]
-    outcomes = outcomes.append({'Symbol': sym, 'slope': slope, 'X^2': x2}, ignore_index=True)
+    outcomes = outcomes.append({'Symbol': sym, 'slope': slope, 'XSQ': x2}, ignore_index=True)
     # print('slope for ' + sym +':', model.coef_)
     # y_pred = model.predict(x)
     # print('predicted response:', y_pred, sep='\n')
-print(outcomes.sort_values(by='slope', ascending=False))
+print(outcomes.sort_values(by='XSQ', ascending=False))
+print()
 
 # Plot Twilio
-symbol='NFLX'
+symbol = str(outcomes[outcomes.XSQ == outcomes.XSQ.min()]['Symbol'].iloc[0])
+print(symbol)
 data = pdr.DataReader(symbol, "yahoo", end_date - BDay(samples), end_date)
 x = np.array(range(len(data['Close']))).reshape((-1, 1))
 y = list(data['Close'])
 model = LinearRegression().fit(x, y)
-model_degree = 5
+model_degree = 3
 x_ = PolynomialFeatures(degree=model_degree, include_bias=False).fit_transform(x)
 poly_model = LinearRegression().fit(x_, y)
 

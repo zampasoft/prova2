@@ -26,7 +26,7 @@ if __name__ == "__main__":
     logging.info("******************************************************")
 
     # Last day
-    end_date = datetime.date.today() + BDay(0)
+    end_date = datetime.date.today() + BDay(1)
     # end_date = datetime.date(2020, 4, 3)
     # First day
     # start_date = datetime.date(2017, 1, 12) + BDay(0)
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     timestamp = datetime.datetime.now()
     logging.info("\nExecuting trades")
     print("\tSimulating trading")
-    top_port = top_strategy.runTradingSimulation(max_orders=26)
+    top_port = top_strategy.runTradingSimulation(max_orders=25)
     logging.info("Trades completed in " + str(datetime.datetime.now() - timestamp))
 
     print("\n" + top_port.description + " Executed Tx: ")
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     my_strategy = sim_trade.CustomStrategy(myPortfolio)
     print("\nCalculating " + my_strategy.description)
     my_signals = my_strategy.calc_suggested_transactions(sell_all=sell_all, initial_buy=True)
-    my_port = my_strategy.runTradingSimulation(max_orders=26)
+    my_port = my_strategy.runTradingSimulation(max_orders=25.5)
     print("\n" + my_port.description + " Executed Tx: ")
     for t in my_port.executedTransactions:
         if t.verb == "BUY" or t.verb == "SELL":

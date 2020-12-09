@@ -7,6 +7,7 @@ NOVN.SW,NOVARTIS N,equity,VIRTX,CHF
 ROG.SW,Roche Holding AG,equity,VIRTX,CHF
 SOON.SW,SONOVA HLDG N,equity,VIRTX,CHF
 SREN.SW,Swiss Re AG,equity,VIRTX,CHF
+AF.PA,Air France-KLM SA,equity,EQUIDUCT,EUR
 DSY.PA,Dassault Systèmes SE,equity,EQUIDUCT,EUR
 EL.PA,EssilorLuxottica Societe anonyme,equity,EQUIDUCT,EUR
 FME.DE,FRESENIUS MEDICAL,equity,EQUIDUCT,EUR
@@ -44,6 +45,7 @@ UCG.MI,UNICREDIT,equity,MTA,EUR
 ADS.DE,Adidas AG,equity,XETRA,EUR
 BAS.DE,BASF SE,equity,XETRA,EUR
 DPW.DE,Deutsche Post AG,equity,XETRA,EUR
+LHA.DE,Deutsche Lufthansa AG,equity,XETRA,EUR
 SAP.DE,SAP,equity,XETRA,EUR
 VNA.DE,VONOVIA,equity,XETRA,EUR
 AV.L,Aviva plc,equity,LSE,GBP
@@ -55,6 +57,7 @@ BRBY.L,Burberry Group,equity,LSE,GBP
 BT-A.L,BT GROUP,equity,LSE,GBP
 DGE.L,Diageo plc,equity,LSE,GBP
 ESNT.L,ESSENTRA,equity,LSE,GBP
+EZJ.L,easyJet plc,equity,LSE,GBP
 GLEN.L,GLENCORE,equity,LSE,GBP
 GSK.L,GLAXOSMITHKLINE,equity,LSE,GBP
 HSBA.L,HSBC HLDG,equity,LSE,GBP
@@ -70,13 +73,14 @@ RWI.L,RENEWI,equity,LSE,GBP
 SSE.L,SSE plc,equity,LSE,GBP
 TSCO.L,Tesco PLC,equity,LSE,GBP
 ULVR.L,UNILEVER,equity,LSE,GBP
+AAL,American Airlines Group Inc.,equity,NASDAQ,USD
 AAPL,Apple Inc.,equity,NASDAQ,USD
 ADBE,Adobe Inc.,equity,NASDAQ,USD
 AMZN,Amazon,equity,NASDAQ,USD
 ASAN,"Asana, Inc.",equity,NASDAQ,USD
 AVGO,Broadcom Inc.,equity,NASDAQ,USD
 DBX,"Dropbox, Inc.",equity,NASDAQ,USD
-DIOD,"Diodes Incorporated",equity,NASDAQ,USD
+DIOD,Diodes Incorporated,equity,NASDAQ,USD
 DOCU,DOCUSIGN,equity,NASDAQ,USD
 DXCM,"DexCom, Inc.",equity,NASDAQ,USD
 EQIX,EQUINIX REIT,equity,NASDAQ,USD
@@ -105,6 +109,7 @@ T,AT&T Inc.,equity,NASDAQ,USD
 TSLA,Tesla Inc.,equity,NASDAQ,USD
 ZM,Zoom,equity,NASDAQ,USD
 ABT,Abbott Laboratories,equity,NYSE,USD
+BA,The Boeing Company,equity,NYSE,USD
 BLK,"BlackRock, Inc.",equity,NYSE,USD
 CLX,The Clorox Company ,equity,NYSE,USD
 COTY,Coty Inc.,equity,NYSE,USD

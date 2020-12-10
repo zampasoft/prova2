@@ -472,7 +472,7 @@ class BuyAndHoldTradingStrategy:
         # TODO: validare se first_trading_day può essere uguale a start_date, per farlo devo capire meglio cosa faccio con prev day più sotto
         # inizializzo un paio di variabili che utilizzo per stampre un'idea di progress bar
         count = 0
-        mod = len(self.outcome.por_history) - 1
+        mod = len(self.outcome.por_history) - 2
         # inizio a fare il vero trading
         for dd in pd.date_range(start=first_trading_day, end=self.outcome.end_date, freq='B'):
             logging.debug("\tProcessing Trading Day " + str(dd.date()))

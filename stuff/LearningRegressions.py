@@ -49,9 +49,10 @@ for sym in symbols:
 print(outcomes.sort_values(by='XSQ', ascending=False))
 print()
 
-# Plot Twilio
+# Plot stock whith lowest XSQ
 symbol = str(outcomes[outcomes.XSQ == outcomes.XSQ.min()]['Symbol'].iloc[0])
-print(symbol)
+# symbol = 'NFLX'
+print("Plotting: " + symbol)
 data = pdr.DataReader(symbol, "yahoo", end_date - BDay(samples), end_date)
 x = np.array(range(len(data['Close']))).reshape((-1, 1))
 y = list(data['Close'])

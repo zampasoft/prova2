@@ -651,9 +651,7 @@ class InvBollbandsStrategy(BuyAndHoldTradingStrategy):
                                     end=(self.outcome.end_date - BDay(1)), freq='B'):
                 # mi assicuro che esistano quotazioni per l'asset, che non sia una valuta e che la varianza sia
                 # significativa, altrimenti siamo in una fase di spostamento laterale
-                if asset.history.loc[dd, 'Close'] > 0.0 and asset.assetType.assetType != "currency" and \
-                        asset.history.loc[dd, 'std_short'] > 0.03 * asset.history.loc[dd, 'sma_short']:
-
+                if asset.history.loc[dd, 'Close'] > 0.0 and asset.assetType.assetType != "currency":
                     prev_day = dd - BDay(1)
                     boll_up_old = asset.history.loc[prev_day, 'sma_long'] + boll_multi * asset.history.loc[
                         prev_day, 'std_long']
@@ -665,11 +663,11 @@ class InvBollbandsStrategy(BuyAndHoldTradingStrategy):
                     boll_down = asset.history.loc[dd, 'sma_long'] - boll_multi * asset.history.loc[dd, 'std_long']
                     sma_long = asset.history.loc[dd, 'sma_long']
                     sma_long_old = asset.history.loc[prev_day, 'sma_long']
+                    score = self.scoreSignal(asset, dd)
 
-                    if quot > boll_up and quot_old < boll_up_old:
+                    if score > 3.0 and quot >= boll_up and quot_old <= boll_up_old:
                         # BUY
                         reason = "TRENDING UP"
-                        score = self.scoreSignal(asset, dd)
                         logging.debug("\t" + reason + ": Requesting BUY for " + str(key) + " on " + str(
                             dd.date() + BDay(1)) + "\tquotation: " + str(
                             asset.history.loc[dd, 'Close']) + "\tscore: " + str(score))
@@ -680,10 +678,9 @@ class InvBollbandsStrategy(BuyAndHoldTradingStrategy):
                                         reason, score=score))
                         days_buy.append(dd.date())
                         quot_buy.append(quot)
-                    elif quot < boll_down and quot_old > boll_down_old:
+                    elif quot <= boll_down and quot_old >= boll_down_old:
                         # SELL
                         reason = "TRENDING DOWN"
-                        score = self.scoreSignal(asset, dd)
                         logging.debug("\t" + reason + ": Requesting SELL for " + str(key) + " on " + str(
                             dd.date() + BDay(1)) + "\tquotation: " + str(
                             asset.history.loc[dd, 'Close']) + "\tscore: " + str(score))
@@ -736,9 +733,7 @@ class BollbandsStrategy(BuyAndHoldTradingStrategy):
                                     end=(self.outcome.end_date - BDay(1)), freq='B'):
                 # mi assicuro che esistano quotazioni per l'asset, che non sia una valuta e che la varianza sia
                 # significativa, altrimenti siamo in una fase di spostamento laterale
-                if asset.history.loc[dd, 'Close'] > 0.0 and asset.assetType.assetType != "currency" and \
-                        asset.history.loc[dd, 'std_short'] > 0.03 * asset.history.loc[dd, 'sma_short']:
-
+                if asset.history.loc[dd, 'Close'] > 0.0 and asset.assetType.assetType != "currency":
                     prev_day = dd.date() - BDay(1)
                     boll_up_old = asset.history.loc[prev_day, 'sma_long'] + boll_multi * asset.history.loc[
                         prev_day, 'std_long']

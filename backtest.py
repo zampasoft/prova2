@@ -27,10 +27,10 @@ if __name__ == "__main__":
 
     # Last day
     end_date = datetime.date.today() + BDay(1)
-    # end_date = datetime.date(2020, 4, 3)
+    # end_date = datetime.date(2019, 6, 28) + BDay(0)
     # First day
-    # start_date = datetime.date(2017, 1, 12) + BDay(0)
-    start_date = datetime.date(2020, 10, 28) + BDay(0)
+    start_date = datetime.date(2017, 1, 12) + BDay(0)
+    # start_date = datetime.date(2020, 10, 28) + BDay(0)
     long_stats = 150
     short_stats = 20
     initial_capital = 100000.0  # 100.000 EUR
@@ -125,14 +125,14 @@ if __name__ == "__main__":
     # TODO: bisognerebbe stampare una tabella che confronti gli esiti finali, medi e minimi delle tre strategie
 
     simulations = [top_port, my_port, base_port]
-    simul_outcomes = pd.DataFrame(None, columns=['Simulation Strategy', 'Average Net Value', 'Average Liquidity', 'TotalCommissions', 'TotalDividens',
+    simul_outcomes = pd.DataFrame(None, columns=['Simulation Strategy', 'Average Net Value', 'Final Liquidity', 'TotalCommissions', 'TotalDividens',
                                        'TotalTaxes'])
     print("\nSimulations Outcome:\n")
     for simul in simulations:
         assert isinstance(simul, sim_trade.Portfolio), "Coding error... check Simulations list"
         simul.por_history.loc[start_date:, 'NetValue'].plot(kind='line', label=simul.description, legend=True)
         # simul.por_history['TotalTaxes'].plot(kind='line', label=simul.description, legend=True)
-        new_row = {'Simulation Strategy': simul.description, 'Average Net Value': simul.por_history.loc[start_date:, 'NetValue'].mean(), 'Average Liquidity': simul.por_history.loc[start_date:, 'Liquidity'].mean(), 'TotalCommissions': simul.por_history.loc[end_date, 'TotalCommissions'], 'TotalDividens': simul.por_history.loc[end_date, 'TotalDividens'], 'TotalTaxes': simul.por_history.loc[end_date, 'TotalTaxes']}
+        new_row = {'Simulation Strategy': simul.description, 'Average Net Value': simul.por_history.loc[start_date:, 'NetValue'].mean(), 'Final Liquidity': simul.por_history.loc[end_date, 'Liquidity'], 'TotalCommissions': simul.por_history.loc[end_date, 'TotalCommissions'], 'TotalDividens': simul.por_history.loc[end_date, 'TotalDividens'], 'TotalTaxes': simul.por_history.loc[end_date, 'TotalTaxes']}
         simul_outcomes = simul_outcomes.append(new_row, ignore_index=True)
     pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", 1000)
     print(simul_outcomes.sort_values(by='Average Net Value', ascending=False))

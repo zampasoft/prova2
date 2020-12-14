@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 import requests_cache
 import csv
 
-# end_date = datetime.date.today() + BDay(0)
-end_date = datetime.date(2019, 10, 31) + BDay(0)
+end_date = datetime.date.today() + BDay(0)
+# end_date = datetime.date(2019, 10, 31) + BDay(0)
 symbols = []
 # symbols = ["COTY", "NKLA", "TSLA", "MRNA", "BT-A.L", "SFL.MI", "BA", "AAL", "UCG.MI", "LDO.MI", "DOCU", "TWLO", "GES", "TEAM", "NFLX", "BRBY.L", "AMZN", "GRPN", "ETSY", "GOOGL", "NOW", "MSFT", "DIS", "HSBA.L", "G.MI", "EL.PA", "CERV.MI", "ESNT.L", "VVD.F", "CVX", "MCRO.L"]
 AssetsInScopeCSV = "../sim_trade/AssetsInScope.csv"
@@ -30,7 +30,7 @@ session = requests_cache.CachedSession(cache_name='../data/cache2.sqlite', backe
 
 outcomes = pd.DataFrame(None, columns=['Symbol', 'slope', 'XSQ'])
 # per capire se un titolo ha iniziato a crescere guado 20 campioni, per capire se il massimo è superato 60?
-samples = 250
+samples = 60
 
 for sym in symbols:
     print("Loading " + sym, end="", flush=True)

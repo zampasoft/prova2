@@ -35,6 +35,7 @@ LDO.MI,Leonardo S.p.A.,equity,MTA,EUR
 MONC.MI,MONCLER,equity,MTA,EUR
 MZB.MI,Massimo Zanetti Beverage Group,equity,MTA,EUR
 NEXI.MI,Nexi S.p.A.,equity,MTA,EUR
+OVS.MI,OVS S.p.A.,equity,MTA,EUR
 PHAU.MI,GOLD/WISDOMTREE,ETC,MTA,EUR
 PIRC.MI,Pirelli & C. S.p.A.,equity,MTA,EUR
 PRT.MI,Esprinet S.p.A.,equity,MTA,EUR
@@ -48,6 +49,7 @@ DPW.DE,Deutsche Post AG,equity,XETRA,EUR
 LHA.DE,Deutsche Lufthansa AG,equity,XETRA,EUR
 SAP.DE,SAP,equity,XETRA,EUR
 VNA.DE,VONOVIA,equity,XETRA,EUR
+VOW3.DE,Volkswagen AG,equity,XETRA,EUR
 AV.L,Aviva plc,equity,LSE,GBP
 AZN.L,AstraZeneca PLC,equity,LSE,GBP
 BA.L,BAE SYSTEMS,equity,LSE,GBP
@@ -78,9 +80,12 @@ AAPL,Apple Inc.,equity,NASDAQ,USD
 ABNB,Airbnb,equity,NASDAQ,USD
 ADBE,Adobe Inc.,equity,NASDAQ,USD
 AMD,Advanced Micro Devices,equity,NASDAQ,USD
+AMRS,Amyris,equity,NASDAQ,USD
 AMZN,Amazon,equity,NASDAQ,USD
 ASAN,"Asana, Inc.",equity,NASDAQ,USD
 AVGO,Broadcom Inc.,equity,NASDAQ,USD
+BIIB,Biogen,equity,NASDAQ,USD
+BYND,Beyond Meat,equity,NASDAQ,USD
 CRWD,CrowdStrike Holdings,equity,NASDAQ,USD
 DBX,"Dropbox, Inc.",equity,NASDAQ,USD
 DIOD,Diodes Incorporated,equity,NASDAQ,USD
@@ -100,6 +105,7 @@ MRNA,"Moderna, Inc.",equity,NASDAQ,USD
 MSFT,MICROSOFT,equity,NASDAQ,USD
 NFLX,Netflix,equity,NASDAQ,USD
 NKLA,Nikola Corporation,equity,NASDAQ,USD
+NTRA,Natera,equity,NASDAQ,USD
 NVDA,NVIDIA,equity,NASDAQ,USD
 PDD,Pinduoduo Inc.,equity,NASDAQ,USD
 PLTR,Palantir Technologies Inc.,equity,NASDAQ,USD
@@ -122,17 +128,21 @@ CVX,Chevron Corporation,equity,NYSE,USD
 DIS,Disney,equity,NYSE,USD
 DOW,Dow Inc.,equity,NYSE,USD
 DPZ,Domino's Pizza,equity,NYSE,USD
+ELAN,Elanco Animal Health Incorporated,equity,NYSE,USD
 F,Ford Motor Company,equity,NYSE,USD
 FIT,Fitbit Inc.,equity,NYSE,USD
 GE,General Electric Company,equity,NYSE,USD
 GES,"Guess', Inc.",equity,NYSE,USD
 GPS,"The Gap, Inc.",equity,NYSE,USD
+GRUB,GrubHub,equity,NYSE,USD
 IBM,IBM,equity,NYSE,USD
 IT,Gartner Inc.,equity,NYSE,USD
 JNJ,Johnson & Johnson,equity,NYSE,USD
 JPM,JPMorgan Chase & Co.,equity,NYSE,USD
+LSF,Laird Superfood,equity,NYSE,USD
 MED,"Medifast, Inc.",equity,NYSE,USD
 MS,Morgan Stanley,equity,NYSE,USD
+NEE,"NextEra Energy, Inc.",equity,NYSE,USD
 NET,Cloudflare Inc.,equity,NYSE,USD
 NIO,NIO Limited,equity,NYSE,USD
 NOW,SERVICENOW,equity,NYSE,USD

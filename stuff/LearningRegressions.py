@@ -12,7 +12,6 @@ import csv
 end_date = datetime.date.today() + BDay(0)
 # end_date = datetime.date(2019, 10, 31) + BDay(0)
 symbols = []
-# symbols = ["COTY", "NKLA", "TSLA", "MRNA", "BT-A.L", "SFL.MI", "BA", "AAL", "UCG.MI", "LDO.MI", "DOCU", "TWLO", "GES", "TEAM", "NFLX", "BRBY.L", "AMZN", "GRPN", "ETSY", "GOOGL", "NOW", "MSFT", "DIS", "HSBA.L", "G.MI", "EL.PA", "CERV.MI", "ESNT.L", "VVD.F", "CVX", "MCRO.L"]
 AssetsInScopeCSV = "../sim_trade/AssetsInScope.csv"
 with open(AssetsInScopeCSV, newline='') as csvfile:
     csvreader = csv.reader(csvfile, dialect='excel')
@@ -23,17 +22,30 @@ with open(AssetsInScopeCSV, newline='') as csvfile:
         else:
             symbols.append(row[0])
 
-print(symbols)
+# reassign symbols if you want to analyse a subset of stocks
+# symbols = ["ILTY.MI", "AAL", "UCG.MI", "LDO.MI", "DOCU", "TWLO", "GES", "NOW", "TEAM", "NFLX", "BRBY.L", "AMZN", "GRPN", "ETSY", "GOOGL", "NOW", "MSFT", "DIS", "HSBA.L", "G.MI", "EL.PA", "CERV.MI", "ESNT.L", "VVD.F", "CVX", "MCRO.L"]
 
 expire_after = datetime.timedelta(days=3)
 session = requests_cache.CachedSession(cache_name='../data/cache2.sqlite', backend='sqlite', expire_after=expire_after)
 
 outcomes = pd.DataFrame(None, columns=['Symbol', 'slope', 'XSQ'])
 # per capire se un titolo ha iniziato a crescere guado 20 campioni, per capire se il massimo è superato 60?
-samples = 60
+samples = 20
+
+#print details
+print("Number of samples: " + str(samples))
+print("Sort by: XSQ")
+print("Tickers to analyse: " + str(len(symbols)) + "\n")
+
+processed = []
 
 for sym in symbols:
     print("Loading " + sym, end="", flush=True)
+    if sym in processed:
+        print("...is DUPLICATED")
+        continue
+    else:
+        processed.append(sym)
     try:
         data = pdr.DataReader(sym, "yahoo", end_date - BDay(samples), end_date, session=session)
     except:
@@ -67,13 +79,13 @@ for sym in symbols:
     # y_pred = model.predict(x)
     # print('predicted response:', y_pred, sep='\n')
 pd.set_option('display.max_rows', None)
-print(outcomes.sort_values(by='slope', ascending=False))
+print(outcomes.sort_values(by='XSQ', ascending=False))
 print()
 
 # Plot stock whith lowest XSQ
-# symbol = str(outcomes[outcomes.slope == outcomes.slope.min()]['Symbol'].iloc[0])
+symbol = str(outcomes[outcomes.XSQ == outcomes.XSQ.min()]['Symbol'].iloc[0])
 # symbol = str(outcomes[outcomes.slope == outcomes.slope.max()]['Symbol'].iloc[0])
-symbol = 'LSE.L'
+# symbol = 'SVMK'
 print("Plotting: " + symbol)
 data = pdr.DataReader(symbol, "yahoo", end_date - BDay(samples), end_date)
 x = np.array(range(len(data['Close']))).reshape((-1, 1))
@@ -82,6 +94,7 @@ model = LinearRegression().fit(x, y)
 model_degree = 3
 x_ = PolynomialFeatures(degree=model_degree, include_bias=False).fit_transform(x)
 poly_model = LinearRegression().fit(x_, y)
+#print(poly_model.coef_)
 
 plt.scatter(x, y, edgecolor='b', s=20, label="Samples")
 plt.plot(x, model.predict(x), label="Degree 1")

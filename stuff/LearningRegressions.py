@@ -24,7 +24,7 @@ with open(AssetsInScopeCSV, newline='') as csvfile:
             symbols.append(row[0])
 
 # reassign symbols if you want to analyse a subset of stocks
-# symbols = ["ILTY.MI", "AAL", "UCG.MI", "LDO.MI", "DOCU", "TWLO", "GES", "NOW", "TEAM", "NFLX", "BRBY.L", "AMZN", "GRPN", "ETSY", "GOOGL", "MSFT", "DIS", "HSBA.L", "AMRS", "EL.PA", "CERV.MI", "ESNT.L", "VVD.F", "CVX", "MCRO.L"]
+symbols = ["ILTY.MI", "AAL", "UCG.MI", "LDO.MI", "DOCU", "TWLO", "GES", "NOW", "TEAM", "NFLX", "BRBY.L", "AMZN", "GRPN", "ETSY", "GOOGL", "MSFT", "DIS", "HSBA.L", "AMRS", "EL.PA", "CERV.MI", "ESNT.L", "VVD.F", "CVX", "MCRO.L"]
 
 expire_after = datetime.timedelta(days=3)
 session = requests_cache.CachedSession(cache_name='../data/cache2', backend='sqlite', expire_after=expire_after)
@@ -86,7 +86,7 @@ print()
 # Plot stock whith lowest XSQ
 symbol = str(outcomes[outcomes.XSQ == outcomes.XSQ.min()]['Symbol'].iloc[0])
 # symbol = str(outcomes[outcomes.slope == outcomes.slope.min()]['Symbol'].iloc[0])
-# symbol = 'SVMK'
+symbol = 'GOOGL'
 print("Plotting: " + symbol)
 data = pdr.DataReader(symbol, "yahoo", end_date - BDay(samples), end_date)
 x = np.array(range(len(data['Close']))).reshape((-1, 1))

@@ -275,15 +275,19 @@ class Portfolio:
                     last_row = asset.history.loc[dd, :]
                     # ogni tanto le quotazioni inglesi fanno casino tra pence e pound.
                     # se il valore esiste, ma rappresenta un errore, allora lo sostituisco con la media a 20 gg
-                    if asset.currency == "GBP" and not math.isnan(last_row['sma_short']):
-                        # se il valore è inferiore al 2% della media corta, probabilmente hanno invertito GBP e GBp
-                        if last_row['Close'] < (last_row['sma_short'] * 0.02):
-                            logging.info("Found Outlier: managing as GBP/GBp error for " + asset.symbol + " on " + str(
-                                dd.date()))
-                            asset.history.loc[dd, 'Close'] = last_row['Close'] * 100.0
+                    if math.isnan(last_row['sma_short']) == False:
+                        new_value = (asset.history.loc[dd - BDay(1), 'Close'] + asset.history.loc[
+                            dd + BDay(1), 'Close']) / 2
+                        # se il valore è inferiore al 2% della media corta, oppure se il valore è più del doppio tratto la riga come un errore e sostituisco i valori con la media breve
+                        if last_row['Close'] < (last_row['sma_short'] * 0.02) or last_row['Close'] > (last_row['sma_short'] * 3):
+                            logging.info("Found Outlier on CLOSE: replacing value " + str(last_row['Close']) + " with " + str(new_value) + " for " + asset.symbol + " on " + str(dd.date()))
+                            asset.history.loc[dd, 'Close'] = new_value
                             # di solito se è sbagliato il close lo è anche l'Open
-                            if last_row['Open'] < last_row['sma_short'] * 0.02:
-                                asset.history.loc[dd, 'Open'] = last_row['Open'] * 100.0
+                        if last_row['Open'] < last_row['sma_short'] * 0.02 or last_row['Open'] > (last_row['sma_short'] * 3):
+                            logging.info(
+                                "Found Outlier on OPEN: replacing value " + str(last_row['Open']) + " with " + str(
+                                    new_value) + " for " + asset.symbol + " on " + str(dd.date()))
+                            asset.history.loc[dd, 'Open'] = new_value
                 except KeyError as e:
                     # non esiste l'indice
                     logging.debug("\tMissing Index: " + str(dd.date()) + " in Asset " + str(asset.symbol))

@@ -29,8 +29,8 @@ if __name__ == "__main__":
     end_date = datetime.date.today() + BDay(1)
     # end_date = datetime.date(2019, 6, 28) + BDay(0)
     # First day
-    # start_date = datetime.date(2017, 1, 12) + BDay(0)
-    start_date = datetime.date(2020, 10, 28) + BDay(0)
+    start_date = datetime.date(2016, 1, 12) + BDay(0)
+    # start_date = datetime.date(2020, 10, 28) + BDay(0)
     long_stats = 150
     short_stats = 20
     initial_capital = 100000.0  # 100.000 EUR

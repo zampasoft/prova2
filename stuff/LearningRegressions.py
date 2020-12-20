@@ -8,6 +8,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import requests_cache
 import csv
+from multiprocessing.dummy import Pool as ThreadPool
 
 end_date = datetime.date.today() + BDay(0)
 # end_date = datetime.date(2019, 10, 31) + BDay(0)
@@ -23,14 +24,14 @@ with open(AssetsInScopeCSV, newline='') as csvfile:
             symbols.append(row[0])
 
 # reassign symbols if you want to analyse a subset of stocks
-# symbols = ["ILTY.MI", "AAL", "UCG.MI", "LDO.MI", "DOCU", "TWLO", "GES", "NOW", "TEAM", "NFLX", "BRBY.L", "AMZN", "GRPN", "ETSY", "GOOGL", "NOW", "MSFT", "DIS", "HSBA.L", "G.MI", "EL.PA", "CERV.MI", "ESNT.L", "VVD.F", "CVX", "MCRO.L"]
+# symbols = ["ILTY.MI", "AAL", "UCG.MI", "LDO.MI", "DOCU", "TWLO", "GES", "NOW", "TEAM", "NFLX", "BRBY.L", "AMZN", "GRPN", "ETSY", "GOOGL", "MSFT", "DIS", "HSBA.L", "AMRS", "EL.PA", "CERV.MI", "ESNT.L", "VVD.F", "CVX", "MCRO.L"]
 
 expire_after = datetime.timedelta(days=3)
-session = requests_cache.CachedSession(cache_name='../data/cache2.sqlite', backend='sqlite', expire_after=expire_after)
+session = requests_cache.CachedSession(cache_name='../data/cache2', backend='sqlite', expire_after=expire_after)
 
 outcomes = pd.DataFrame(None, columns=['Symbol', 'slope', 'XSQ'])
 # per capire se un titolo ha iniziato a crescere guado 20 campioni, per capire se il massimo è superato 60?
-samples = 20
+samples = 60
 
 #print details
 print("Number of samples: " + str(samples))
@@ -84,7 +85,7 @@ print()
 
 # Plot stock whith lowest XSQ
 symbol = str(outcomes[outcomes.XSQ == outcomes.XSQ.min()]['Symbol'].iloc[0])
-# symbol = str(outcomes[outcomes.slope == outcomes.slope.max()]['Symbol'].iloc[0])
+# symbol = str(outcomes[outcomes.slope == outcomes.slope.min()]['Symbol'].iloc[0])
 # symbol = 'SVMK'
 print("Plotting: " + symbol)
 data = pdr.DataReader(symbol, "yahoo", end_date - BDay(samples), end_date)

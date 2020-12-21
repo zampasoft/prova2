@@ -9,14 +9,16 @@ import matplotlib.pyplot as plt
 import requests_cache
 import csv
 from multiprocessing.dummy import Pool as ThreadPool
+import logging
 
 
 def download_quotations(symbol):
     global end_date
-    global samples
+    global start_date
     global session
     try:
-        data = pdr.DataReader(symbol, "yahoo", end_date - BDay(samples), end_date, session=session)
+        data = pdr.DataReader(symbol, "yahoo", start_date - BDay(170), end_date, session=session)
+        data2 = pdr.DataReader(symbol, "yahoo", start_date, end_date, session=session)
         print("Retrieved: " + symbol)
     except Exception as e:
         print("Quotations for: " + symbol + "could not be retrieved because of " + str(e))
@@ -25,7 +27,9 @@ def download_quotations(symbol):
 
 
 if __name__ == "__main__":
-    end_date = datetime.date.today() + BDay(0)
+    # logging.basicConfig(level=logging.DEBUG)
+    end_date = datetime.date.today() + BDay(1)
+    start_date = datetime.date(2020, 10, 28) + BDay(0)
     # end_date = datetime.date(2019, 10, 31) + BDay(0)
     symbols = []
     AssetsInScopeCSV = "../sim_trade/AssetsInScope.csv"
@@ -43,7 +47,7 @@ if __name__ == "__main__":
     # "GRPN", "ETSY", "GOOGL", "MSFT", "DIS", "HSBA.L", "AMRS", "EL.PA", "CERV.MI", "ESNT.L", "VVD.F", "CVX", "MCRO.L"]
 
     expire_after = datetime.timedelta(days=3)
-    session = requests_cache.CachedSession(cache_name='../data/cache2', backend='sqlite', expire_after=expire_after)
+    session = requests_cache.CachedSession(cache_name='../data/cache', backend='sqlite', expire_after=expire_after)
 
     outcomes = pd.DataFrame(None, columns=['Symbol', 'slope', 'XSQ'])
     # per capire se un titolo ha iniziato a crescere guado 20 campioni, per capire se il massimo è superato 60?

@@ -370,6 +370,7 @@ class Portfolio:
                         # devo iterare tra i dividendi e creare degli ordini speciali che devo processare alla fine.
                         # Portfolio[value.currency].historic_transactions
                         logging.info("\tGetting " + str(key) + " dividends")
+                        # TODO: usare stesse date usate per quotazione e poi filtrate il risultato da una certa data in poi
                         temp = pdr.DataReader(value.symbol, "yahoo-actions", self.start_date, self.end_date,
                                               session=session)
                         for index, row in temp.iterrows():

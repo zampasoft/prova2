@@ -1,5 +1,12 @@
 miei appunti:
 
+Cose da fare:
+- quando recupero i dividendi, devo usare le stesse date di quando recupero le quotazioni, altrimenti faccio 2
+richieste HTTP diverse (come si vede dal log)
+- inoltre da alcuni test, pare che si possa facilmente implementare un recupero multi-threading
+(vedi esempio LearningRegressions)
+
+
 Come usare il programma:
 il primo lancio della giornata: 
 spostarsi nella directory: cd /home/nemofox/PycharmProjects/BackTesting

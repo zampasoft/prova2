@@ -10,96 +10,117 @@ import requests_cache
 import csv
 from multiprocessing.dummy import Pool as ThreadPool
 
-end_date = datetime.date.today() + BDay(0)
-# end_date = datetime.date(2019, 10, 31) + BDay(0)
-symbols = []
-AssetsInScopeCSV = "../sim_trade/AssetsInScope.csv"
-with open(AssetsInScopeCSV, newline='') as csvfile:
-    csvreader = csv.reader(csvfile, dialect='excel')
-    first_row = True
-    for row in csvreader:
-        if first_row:
-            first_row = False
-        else:
-            symbols.append(row[0])
 
-# reassign symbols if you want to analyse a subset of stocks
-symbols = ["ILTY.MI", "AAL", "UCG.MI", "LDO.MI", "DOCU", "TWLO", "GES", "NOW", "TEAM", "NFLX", "BRBY.L", "AMZN", "GRPN", "ETSY", "GOOGL", "MSFT", "DIS", "HSBA.L", "AMRS", "EL.PA", "CERV.MI", "ESNT.L", "VVD.F", "CVX", "MCRO.L"]
-
-expire_after = datetime.timedelta(days=3)
-session = requests_cache.CachedSession(cache_name='../data/cache2', backend='sqlite', expire_after=expire_after)
-
-outcomes = pd.DataFrame(None, columns=['Symbol', 'slope', 'XSQ'])
-# per capire se un titolo ha iniziato a crescere guado 20 campioni, per capire se il massimo è superato 60?
-samples = 60
-
-#print details
-print("Number of samples: " + str(samples))
-print("Sort by: XSQ")
-print("Tickers to analyse: " + str(len(symbols)) + "\n")
-
-processed = []
-
-for sym in symbols:
-    print("Loading " + sym, end="", flush=True)
-    if sym in processed:
-        print("...is DUPLICATED")
-        continue
-    else:
-        processed.append(sym)
+def download_quotations(symbol):
+    global end_date
+    global samples
+    global session
     try:
-        data = pdr.DataReader(sym, "yahoo", end_date - BDay(samples), end_date, session=session)
-    except:
-        print("...Failed")
-        continue
-    print("...OK")
-    # print(data)
+        data = pdr.DataReader(symbol, "yahoo", end_date - BDay(samples), end_date, session=session)
+        print("Retrieved: " + symbol)
+    except Exception as e:
+        print("Quotations for: " + symbol + "could not be retrieved because of " + str(e))
+        data = None
+    return [symbol, data]
+
+
+if __name__ == "__main__":
+    end_date = datetime.date.today() + BDay(0)
+    # end_date = datetime.date(2019, 10, 31) + BDay(0)
+    symbols = []
+    AssetsInScopeCSV = "../sim_trade/AssetsInScope.csv"
+    with open(AssetsInScopeCSV, newline='') as csvfile:
+        csvreader = csv.reader(csvfile, dialect='excel')
+        first_row = True
+        for row in csvreader:
+            if first_row:
+                first_row = False
+            else:
+                symbols.append(row[0])
+
+    # reassign symbols if you want to analyse a subset of stocks
+    # symbols = ["ILTY.MI", "AAL", "UCG.MI", "LDO.MI", "DOCU", "TWLO", "GES", "NOW", "TEAM", "NFLX", "BRBY.L", "AMZN",
+    # "GRPN", "ETSY", "GOOGL", "MSFT", "DIS", "HSBA.L", "AMRS", "EL.PA", "CERV.MI", "ESNT.L", "VVD.F", "CVX", "MCRO.L"]
+
+    expire_after = datetime.timedelta(days=3)
+    session = requests_cache.CachedSession(cache_name='../data/cache2', backend='sqlite', expire_after=expire_after)
+
+    outcomes = pd.DataFrame(None, columns=['Symbol', 'slope', 'XSQ'])
+    # per capire se un titolo ha iniziato a crescere guado 20 campioni, per capire se il massimo è superato 60?
+    samples = 60
+
+    # print details
+    print("Number of samples: " + str(samples))
+    print("Sort by: XSQ")
+    print("Tickers to analyse: " + str(len(symbols)) + "\n")
+    print("Checking for duplicates:")
+    symbols_no_duplicates = []
+    for sym in symbols:
+        if sym in symbols_no_duplicates:
+            print(sym + " is DUPLICATED")
+            continue
+        else:
+            symbols_no_duplicates.append(sym)
+
+    # recupero le quotazioni in multiThread
+    start_timestamp = datetime.datetime.now()
+    print("Start Download Quotations")
+    pool = ThreadPool(20)
+    results = pool.map(download_quotations, symbols_no_duplicates)
+    end_timestamp = datetime.datetime.now()
+    print("Elapsed: " + str(end_timestamp - start_timestamp))
+    # print(results)
+    print(str(len(results)) + " quotations retrieved")
+
+    for sym, data in results:
+        # print(data)
+        x = np.array(range(len(data['Close']))).reshape((-1, 1))
+        # print(x)
+        y = list(data['Close'])
+        # print(y)
+        model = LinearRegression().fit(x, y)
+        # r_sq = model.score(x, y)
+        # print('coefficient of determination:', r_sq)
+        # print('intercept:', model.intercept_)
+        slope = model.coef_[0] * 100 / model.intercept_
+        # now looking at a second degree polynomail regression
+        # create e new Input with x and x^2
+        x_ = PolynomialFeatures(degree=2, include_bias=False).fit_transform(x)
+        # print(y)
+        y1 = np.array(y) * (100 / model.intercept_)
+        # print(y1)
+        poly_model = LinearRegression().fit(x_, y1)
+        # r_sq = poly_model.score(x_, y)
+        # print('coefficient of determination:', r_sq)
+        # print('intercept:', poly_model.intercept_)
+        # print('coefficients:', poly_model.coef_)
+        x2 = poly_model.coef_[1]
+        outcomes = outcomes.append({'Symbol': sym, 'slope': slope, 'XSQ': x2}, ignore_index=True)
+        # print('slope for ' + sym +':', model.coef_)
+        # y_pred = model.predict(x)
+        # print('predicted response:', y_pred, sep='\n')
+
+    pd.set_option('display.max_rows', None)
+    print(outcomes.sort_values(by='XSQ', ascending=False))
+    print()
+
+    # Plot stock whith lowest XSQ
+    symbol = str(outcomes[outcomes.XSQ == outcomes.XSQ.min()]['Symbol'].iloc[0])
+    # symbol = str(outcomes[outcomes.slope == outcomes.slope.min()]['Symbol'].iloc[0])
+    # symbol = 'GOOGL'
+    print("Plotting: " + symbol)
+    data = pdr.DataReader(symbol, "yahoo", end_date - BDay(samples), end_date)
     x = np.array(range(len(data['Close']))).reshape((-1, 1))
-    # print(x)
     y = list(data['Close'])
-    # print(y)
     model = LinearRegression().fit(x, y)
-    # r_sq = model.score(x, y)
-    # print('coefficient of determination:', r_sq)
-    # print('intercept:', model.intercept_)
-    slope = model.coef_[0] * 100 / model.intercept_
-    # now looking at a second degree polynomail regression
-    # create e new Input with x and x^2
-    x_ = PolynomialFeatures(degree=2, include_bias=False).fit_transform(x)
-    # print(y)
-    y1 = np.array(y)*(100/model.intercept_)
-    # print(y1)
-    poly_model = LinearRegression().fit(x_, y1)
-    # r_sq = poly_model.score(x_, y)
-    # print('coefficient of determination:', r_sq)
-    # print('intercept:', poly_model.intercept_)
-    # print('coefficients:', poly_model.coef_)
-    x2 = poly_model.coef_[1]
-    outcomes = outcomes.append({'Symbol': sym, 'slope': slope, 'XSQ': x2}, ignore_index=True)
-    # print('slope for ' + sym +':', model.coef_)
-    # y_pred = model.predict(x)
-    # print('predicted response:', y_pred, sep='\n')
-pd.set_option('display.max_rows', None)
-print(outcomes.sort_values(by='XSQ', ascending=False))
-print()
+    model_degree = 3
+    x_ = PolynomialFeatures(degree=model_degree, include_bias=False).fit_transform(x)
+    poly_model = LinearRegression().fit(x_, y)
+    # print(poly_model.coef_)
 
-# Plot stock whith lowest XSQ
-symbol = str(outcomes[outcomes.XSQ == outcomes.XSQ.min()]['Symbol'].iloc[0])
-# symbol = str(outcomes[outcomes.slope == outcomes.slope.min()]['Symbol'].iloc[0])
-symbol = 'GOOGL'
-print("Plotting: " + symbol)
-data = pdr.DataReader(symbol, "yahoo", end_date - BDay(samples), end_date)
-x = np.array(range(len(data['Close']))).reshape((-1, 1))
-y = list(data['Close'])
-model = LinearRegression().fit(x, y)
-model_degree = 3
-x_ = PolynomialFeatures(degree=model_degree, include_bias=False).fit_transform(x)
-poly_model = LinearRegression().fit(x_, y)
-#print(poly_model.coef_)
-
-plt.scatter(x, y, edgecolor='b', s=20, label="Samples")
-plt.plot(x, model.predict(x), label="Degree 1")
-plt.plot(x, poly_model.predict(x_), label="Degree " + str(model_degree))
-plt.legend(loc="best")
-plt.title(symbol)
-plt.show()
+    plt.scatter(x, y, edgecolor='b', s=20, label="Samples")
+    plt.plot(x, model.predict(x), label="Degree 1")
+    plt.plot(x, poly_model.predict(x_), label="Degree " + str(model_degree))
+    plt.legend(loc="best")
+    plt.title(symbol)
+    plt.show()

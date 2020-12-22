@@ -1,4 +1,3 @@
-# ver 1.0
 import copy as cp
 import csv
 import datetime
@@ -11,8 +10,50 @@ import pandas as pd
 import requests_cache
 # nota bene, ho patchato l'ultima versione di pandas_datareader per fissare un errore su yahoo split
 from pandas_datareader import data as pdr
+from multiprocessing.dummy import Pool as ThreadPool
+
+"""
+This is my sim_trade library. It provides the Portfolio and Trading Strategies objects to run Trading Simulations
+"""
 
 __version__ = '1.1'
+
+# defining function for multi-threading.
+def download_quotations(array):
+    # we expect asset, start_date, end_date
+    asset = array[0]
+    initial_data_day = array[1]
+    end_date = array[2]
+    session = array[3]
+    # Insert some Assertions to make sure we get the right parameters
+    assert isinstance(asset, Asset)
+    assert isinstance(session, requests_cache.CachedSession)
+    assert isinstance(initial_data_day, datetime.date)
+    assert isinstance(end_date, datetime.date)
+
+    print(".", end="", flush=True)
+    logging.info("Now retrieving quotations for:\t" + str(asset.symbol) + "\t" + str(asset))
+    # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento recupero
+    # le quotazioni storiche
+    asset.history = pdr.DataReader(asset.symbol, "yahoo", initial_data_day, end_date, session=session)
+    logging.debug("number of objects retrieved: " + str(asset.history.size) + " for " + asset.symbol)
+    # Creo un empty DataFrame per contenere eventuali Dividendi
+    dividends = pd.DataFrame()
+    if asset.assetType.hasDividends():
+        logging.debug("\t" + str(asset.symbol) + " has dividends")
+        try:
+            # i dividendi generano transazioni sulle valute
+            # devo iterare tra i dividendi e creare degli ordini speciali che devo processare alla fine.
+            # Portfolio[value.currency].historic_transactions
+            logging.info("\tGetting " + str(asset.symbol) + " dividends")
+            # Nota Bene: usare stesse date usate per quotazione e poi filtrate il risultato da una certa data in poi per sfruttare la cache
+            dividends = pdr.DataReader(asset.symbol, "yahoo-actions", initial_data_day, end_date, session=session)
+        except Exception as e:
+            logging.error("Failed to get dividends for " + str(asset.name) + "(" + str(asset) + ")")
+            logging.exception("Unexpected error:" + str(e))
+            # per il momento mi blocco, in futuro potrei pensare di riprovare un paio di volte.
+            exit(-1)
+    return [asset, dividends]
 
 
 # Defining Basic Classes
@@ -195,9 +236,6 @@ class Portfolio:
                 exit(-1)
 
     def loadAssetList(self):
-        # TODO: questa funzione sarebbe da parametrizzare su un CSV File o simile. La parte delle valute dovrebbe
-        #  essere parametrica rispetto alla valuta di default. Per adesso considero titoli in 4 valute ma normalizzo
-        #  tutto su EUR in future evoluzioni valuerò se rendere la valuta interna parametrica
         if self.defCurrency == "EUR":
             self.assets["USD"] = Asset(CURRENCY, "USD", "USDEUR=X", "FX", "USD")
             self.assets["GBP"] = Asset(CURRENCY, "GBP", "GBPEUR=X", "FX", "GBP")
@@ -206,6 +244,7 @@ class Portfolio:
             raise ValueError('Default Currencies other than EUR not yet implemented')
 
         AssetsInScopeCSV = "./sim_trade/AssetsInScope.csv"
+        # TODO: segnalare se simbolo è duplicato in CSV
         with open(AssetsInScopeCSV, newline='') as csvfile:
             csvreader = csv.reader(csvfile, dialect='excel')
             first_row = True
@@ -349,37 +388,21 @@ class Portfolio:
         # TODO: dovrei rendere la location e la durata della cache parametriche
         expire_after = datetime.timedelta(days=3)
         session = requests_cache.CachedSession(cache_name=cache_file, backend='sqlite', expire_after=expire_after,
-                                               allowable_codes=(200,), fast_save=True)
+                                             allowable_codes=(200,), fast_save=True)
         # get Quotations & Dividends for all Assets in myPortfolio
+        initial_data_day = self.start_date - BDay(self.days_long + self.days_short)
+        # Since this is I/O bound performance can be imporved by using Multi_threading.
+        # create an array of inputs for the ThreadPool
+        MP_Inputs = []
         for key, value in sorted(self.assets.items()):
-            print(".", end="", flush=True)
-            assert isinstance(value, Asset)
-            logging.info("Now retrieving quotations for:\t" + str(key) + "\t" + str(value))
-            if str(key) != str(value.symbol):
-                logging.warning("warning: " + str(key) + " NOT equal to " + str(value.symbol))
-            # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento recupero
-            # le quotazioni storiche
-            if str(key) != self.defCurrency:
-                value.history = pdr.DataReader(value.symbol, "yahoo", self.start_date - BDay(self.days_long + self.days_short), self.end_date,
-                                               session=session)
-                logging.debug("number of objects retrieved: " + str(value.history.size) + " for " + value.symbol)
-                if value.assetType.hasDividends():
-                    logging.debug("\t" + str(key) + " has dividends")
-                    try:
-                        # i dividendi generano transazioni sulle valute
-                        # devo iterare tra i dividendi e creare degli ordini speciali che devo processare alla fine.
-                        # Portfolio[value.currency].historic_transactions
-                        logging.info("\tGetting " + str(key) + " dividends")
-                        # TODO: usare stesse date usate per quotazione e poi filtrate il risultato da una certa data in poi
-                        temp = pdr.DataReader(value.symbol, "yahoo-actions", self.start_date, self.end_date,
-                                              session=session)
-                        for index, row in temp.iterrows():
-                            self.pendingTransactions[index].append(
-                                Transaction(row["action"], value, index, 0, row["value"]))
-                    except Exception as e:
-                        logging.error("Failed to get dividends for " + str(value.name) + "(" + str(key) + ")")
-                        logging.exception("Unexpected error:" + str(e))
-                        exit(-1)
+            MP_Inputs.append([value, initial_data_day, self.end_date, session])
+        pool = ThreadPool(20)
+        results = pool.map(download_quotations, MP_Inputs)
+        # Se tutto ha funzionato bene, a questo punto, le varie asset.history sono popolate e in più ho un array da processare per i dividendi.
+        for asset, actions in results:
+            for dd, sym_div in actions.iterrows():
+                if dd > self.start_date:
+                    self.pendingTransactions[dd].append(Transaction(sym_div["action"], asset, dd, 0, sym_div["value"]))
         print(" ")
 
     def printReport(self):

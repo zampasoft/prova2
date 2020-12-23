@@ -46,8 +46,7 @@ if __name__ == "__main__":
                 symbols.append(row[0])
 
     # reassign symbols if you want to analyse a subset of stocks
-    # symbols = ["ILTY.MI", "AAL", "UCG.MI", "LDO.MI", "DOCU", "TWLO", "GES", "NOW", "TEAM", "NFLX", "BRBY.L", "AMZN",
-    # "GRPN", "ETSY", "GOOGL", "MSFT", "DIS", "HSBA.L", "AMRS", "EL.PA", "CERV.MI", "ESNT.L", "VVD.F", "CVX", "MCRO.L"]
+    symbols = ["ILTY.MI", "AAL", "UCG.MI", "LDO.MI", "DOCU", "TWLO", "GES", "NOW", "TEAM", "NFLX", "BRBY.L", "AMZN", "GRPN", "ETSY", "GOOGL", "MSFT", "DIS", "HSBA.L", "AMRS", "EL.PA", "CERV.MI", "ESNT.L", "VVD.F", "CVX", "MCRO.L"]
 
     expire_after = datetime.timedelta(days=3)
     session = requests_cache.CachedSession(cache_name='../data/cache', backend='sqlite', expire_after=expire_after)
@@ -69,7 +68,7 @@ if __name__ == "__main__":
 
     # recupero le quotazioni in multiThread
     start_timestamp = datetime.datetime.now()
-    print("Start Download Quotations")
+    print("\nStart Downloading Quotations")
     pool = ThreadPool(20)
     results = pool.map(download_quotations, symbols_no_duplicates)
     end_timestamp = datetime.datetime.now()
@@ -87,12 +86,13 @@ if __name__ == "__main__":
         # r_sq = model.score(x, y)
         # print('coefficient of determination:', r_sq)
         # print('intercept:', model.intercept_)
-        slope = model.coef_[0] * 100 / model.intercept_
+        slope = model.coef_[0] * 100 / y[0]
         # now looking at a second degree polynomail regression
         # create e new Input with x and x^2
         x_ = PolynomialFeatures(degree=2, include_bias=False).fit_transform(x)
         # print(y)
-        y1 = np.array(y) * (100 / model.intercept_)
+        # sto assumendo che model.intercept_ sia positivo...
+        y1 = np.array(y) * (100 / y[0])
         # print(y1)
         poly_model = LinearRegression().fit(x_, y1)
         # r_sq = poly_model.score(x_, y)
@@ -106,15 +106,15 @@ if __name__ == "__main__":
         # print('predicted response:', y_pred, sep='\n')
 
     pd.set_option('display.max_rows', None)
-    print(outcomes.sort_values(by='XSQ', ascending=False))
+    print(outcomes.sort_values(by='slope', ascending=False))
     print()
 
     # Plot stock whith lowest XSQ
-    symbol = str(outcomes[outcomes.XSQ == outcomes.XSQ.min()]['Symbol'].iloc[0])
-    # symbol = str(outcomes[outcomes.slope == outcomes.slope.min()]['Symbol'].iloc[0])
-    # symbol = 'GOOGL'
+    # symbol = str(outcomes[outcomes.XSQ == outcomes.XSQ.min()]['Symbol'].iloc[0])
+    symbol = str(outcomes[outcomes.slope == outcomes.slope.min()]['Symbol'].iloc[0])
+    # symbol = 'GLEN.L'
     print("Plotting: " + symbol)
-    data = pdr.DataReader(symbol, "yahoo", end_date - BDay(samples), end_date)
+    data = pdr.DataReader(symbol, "yahoo", start_date, end_date)
     x = np.array(range(len(data['Close']))).reshape((-1, 1))
     y = list(data['Close'])
     model = LinearRegression().fit(x, y)

@@ -103,6 +103,7 @@ JD,"JD.com, Inc.",equity,NASDAQ,USD
 KO,The Coca-Cola Company,equity,NASDAQ,USD
 MRNA,"Moderna, Inc.",equity,NASDAQ,USD
 MSFT,MICROSOFT,equity,NASDAQ,USD
+MYGN,"Myriad Genetics, Inc.",equity,NASDAQ,USD
 NFLX,Netflix,equity,NASDAQ,USD
 NKLA,Nikola Corporation,equity,NASDAQ,USD
 NTRA,Natera,equity,NASDAQ,USD
@@ -117,6 +118,8 @@ SWBI,Smith & Wesson Brands Inc.,equity,NASDAQ,USD
 T,AT&T Inc.,equity,NASDAQ,USD
 TSLA,Tesla Inc.,equity,NASDAQ,USD
 ZM,Zoom,equity,NASDAQ,USD
+PLUG,Plug Power Inc.,equity,NASDAQ-CM,USD
+FCEL,"FuelCell Energy, Inc.",equity,NASDAQ-GM,USD
 ABT,Abbott Laboratories,equity,NYSE,USD
 BA,The Boeing Company,equity,NYSE,USD
 BLK,"BlackRock, Inc.",equity,NYSE,USD
@@ -125,6 +128,7 @@ COTY,Coty Inc.,equity,NYSE,USD
 CRM,SALESFORCE.COM,equity,NYSE,USD
 CS,The Goldman Sachs Group,equity,NYSE,USD
 CVX,Chevron Corporation,equity,NYSE,USD
+DDD,3D Systems Corporation,equity,NYSE,USD
 DIS,Disney,equity,NYSE,USD
 DOW,Dow Inc.,equity,NYSE,USD
 DPZ,Domino's Pizza,equity,NYSE,USD
@@ -139,6 +143,8 @@ IBM,IBM,equity,NYSE,USD
 IT,Gartner Inc.,equity,NYSE,USD
 JNJ,Johnson & Johnson,equity,NYSE,USD
 JPM,JPMorgan Chase & Co.,equity,NYSE,USD
+LLY,Eli Lilly and Company,equity,NYSE,USD
+LMT,Lockheed Martin Corporation,equity,NYSE,USD
 LSF,Laird Superfood,equity,NYSE,USD
 MED,"Medifast, Inc.",equity,NYSE,USD
 MS,Morgan Stanley,equity,NYSE,USD
@@ -147,10 +153,12 @@ NET,Cloudflare Inc.,equity,NYSE,USD
 NIO,NIO Limited,equity,NYSE,USD
 NOW,SERVICENOW,equity,NYSE,USD
 ORCL,Oracle Corporation,equity,NYSE,USD
+PANW,"Palo Alto Networks, Inc.",equity,NYSE,USD
 PEGA,Pegasystems Inc.,equity,NYSE,USD
 PFE,Pfizer Inc.,equity,NYSE,USD
 PG,The Procter & Gamble Company,equity,NYSE,USD
 PINS,Pinterest,equity,NYSE,USD
+QS,QuantumScape Corporation,equity,NYSE,USD
 SHOP,Shopify Inc.,equity,NYSE,USD
 SNOW,Snowflake Inc.,equity,NYSE,USD
 SQ,"Square, Inc.",equity,NYSE,USD
@@ -166,5 +174,3 @@ WORK,"Slack Technologies, Inc.",equity,NYSE,USD
 XLNX,"Xilinx, Inc.",equity,NYSE,USD
 XOM,Exxon Mobil Corporation,equity,NYSE,USD
 KARS,KraneShares Electric Vehicles and Future Mobility Index ETF,ETF,NYSEArca,USD
-QS,QuantumScape Corporation,equity,NYSE,USD
-PANW,"Palo Alto Networks, Inc.",equity,NYSE,USD

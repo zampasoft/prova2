@@ -27,7 +27,7 @@ def download_quotations(symbol):
 
 if __name__ == "__main__":
     # per capire se un titolo ha iniziato a crescere guado 20 campioni, per capire se il massimo è superato 60?
-    samples = 60
+    samples = 20
     # logging.basicConfig(level=logging.DEBUG)
     # end_date = datetime.date.today() + BDay(1)
     end_date = datetime.date.today() + BDay(0)
@@ -46,7 +46,7 @@ if __name__ == "__main__":
                 symbols.append(row[0])
 
     # reassign symbols if you want to analyse a subset of stocks
-    symbols = ["ILTY.MI", "AAL", "UCG.MI", "LDO.MI", "DOCU", "TWLO", "GES", "NOW", "TEAM", "NFLX", "BRBY.L", "AMZN", "GRPN", "ETSY", "GOOGL", "MSFT", "DIS", "HSBA.L", "AMRS", "EL.PA", "CERV.MI", "ESNT.L", "VVD.F", "CVX", "MCRO.L"]
+    # symbols = ["ILTY.MI", "AAL", "UCG.MI", "LDO.MI", "DOCU", "TWLO", "GES", "NOW", "TEAM", "NFLX", "BRBY.L", "AMZN", "GRPN", "ETSY", "GOOGL", "MSFT", "DIS", "HSBA.L", "AMRS", "EL.PA", "CERV.MI", "ESNT.L", "VVD.F", "CVX", "MCRO.L"]
 
     expire_after = datetime.timedelta(days=3)
     session = requests_cache.CachedSession(cache_name='../data/cache', backend='sqlite', expire_after=expire_after)
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     symbol = str(outcomes[outcomes.slope == outcomes.slope.min()]['Symbol'].iloc[0])
     # symbol = 'GLEN.L'
     print("Plotting: " + symbol)
-    data = pdr.DataReader(symbol, "yahoo", start_date, end_date)
+    data = pdr.DataReader(symbol, "yahoo", start_date, end_date, session=session)
     x = np.array(range(len(data['Close']))).reshape((-1, 1))
     y = list(data['Close'])
     model = LinearRegression().fit(x, y)

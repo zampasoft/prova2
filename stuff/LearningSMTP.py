@@ -82,11 +82,9 @@ msg.attach(part2)
 # Try to send the message.
 try:
     server = smtplib.SMTP(HOST, PORT)
-    server.set_debuglevel(1)
+    # server.set_debuglevel(1)
     server.ehlo()
-    print("ABC")
     server.starttls()
-    print("CDC")
     # smtplib docs recommend calling ehlo() before & after starttls()
     server.ehlo()
     server.login(USERNAME_SMTP, PASSWORD_SMTP)

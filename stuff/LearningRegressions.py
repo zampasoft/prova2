@@ -112,7 +112,7 @@ if __name__ == "__main__":
     # Plot stock whith lowest XSQ
     # symbol = str(outcomes[outcomes.XSQ == outcomes.XSQ.min()]['Symbol'].iloc[0])
     symbol = str(outcomes[outcomes.slope == outcomes.slope.min()]['Symbol'].iloc[0])
-    # symbol = 'GLEN.L'
+    symbol = 'AMRS'
     print("Plotting: " + symbol)
     data = pdr.DataReader(symbol, "yahoo", start_date, end_date, session=session)
     x = np.array(range(len(data['Close']))).reshape((-1, 1))

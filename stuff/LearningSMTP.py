@@ -60,6 +60,9 @@ BODY_HTML = """<html>
     <a href='https://www.python.org/'>Python</a>
     <a href='https://docs.python.org/3/library/smtplib.html'>
     smtplib</a> library.</p>
+   <p>line A</p>
+   <p>line B</p>
+   <p> two lines: <br> first line <br> second line </p>
 </body>
 </html>"""
 

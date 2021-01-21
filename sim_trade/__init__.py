@@ -388,7 +388,7 @@ class Portfolio:
         # TODO: dovrei rendere la location e la durata della cache parametriche
         expire_after = datetime.timedelta(days=3)
         session = requests_cache.CachedSession(cache_name=cache_file, backend='sqlite', expire_after=expire_after,
-                                             allowable_codes=(200,), fast_save=True)
+                                             allowable_codes=(200,), fast_save=False)
         # get Quotations & Dividends for all Assets in myPortfolio
         initial_data_day = self.start_date - BDay(self.days_long + self.days_short)
         # Since this is I/O bound performance can be imporved by using Multi_threading.

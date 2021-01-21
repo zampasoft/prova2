@@ -86,7 +86,7 @@ if __name__ == "__main__":
     print("\nSignalled Tx: ")
     for dd in pd.date_range(start=start_date, end=end_date, freq='B'):
         for t in my_strategy_signals[dd]:
-            if t.verb == "BUY" or t.verb == "SELL":
+            if (t.verb == "BUY" or t.verb == "SELL") and t.when > end_date - BDay(5):
                 print(" Tx: " + str(t))
 
     if signalsOnly:
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     # processo tutte le transazioni pending e vedo cosa succede
     timestamp = datetime.datetime.now()
     logging.info("\nExecuting trades")
-    print("\tSimulating trading")
+    print("\n\tSimulating trading")
     top_port = top_strategy.runTradingSimulation(max_orders=25)
     logging.info("Trades completed in " + str(datetime.datetime.now() - timestamp))
 

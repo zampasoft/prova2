@@ -9,11 +9,79 @@ It relies on the sim_trade library
 import datetime
 import logging
 import os
+import sys
+import smtplib
+import email.utils
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
 import pandas as pd
 import sim_trade
 import matplotlib.pyplot as plt
 import pickle
 from pandas.tseries.offsets import BDay
+
+def sendMail(Signalled_tx, Regressions, image_path):
+    SENDER = 'noreply@nodomain.com'
+    SENDERNAME = 'noreply'
+    RECIPIENT = 'zampasoft@hotmail.com'
+    USERNAME_SMTP = 'ocid1.user.oc1..aaaaaaaar2rnkot6dywkfe3cq6vzz4xkzgwx4vi242gxxxkelcpjpphmnxka@ocid1.tenancy.oc1..aaaaaaaaj3t5zo3drea6j5iag2hxl4nrthjuuyybrw4wdcwsmag7kwjnqmgq.3x.com'
+    PASSWORD_SMTP = 'VJDbwvo41$NtYvHs(c{C'
+    HOST = "smtp.email.eu-amsterdam-1.oci.oraclecloud.com"
+    PORT = 587
+
+    # The subject line of the email.
+    SUBJECT = 'Trading Signals'
+
+    # The email body for recipients with non-HTML email clients.
+    BODY_TEXT = Signalled_tx
+
+    # The HTML body of the email.
+    BODY_HTML = "<html> <head> </head> <body> <h1>Trading Signals</h1> <p>" + Signalled_tx.replace("\n","<br>") + '</p> <p><img src="cid:image1" alt="img"></p></body> </html>'
+
+    # Create message container - the correct MIME type is multipart/alternative.
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = SUBJECT
+    msg['From'] = email.utils.formataddr((SENDERNAME, SENDER))
+    msg['To'] = RECIPIENT
+    msg.preamble = 'Multi-part message in MIME format.'
+
+    # Record the MIME types of both parts - text/plain and text/html.
+    part1 = MIMEText(BODY_TEXT, 'plain')
+    part2 = MIMEText(BODY_HTML, 'html')
+
+    # Attach Image
+    fp = open(image_path, 'rb')  # Read image
+    msgImage = MIMEImage(fp.read())
+    fp.close()
+
+    # Attach parts into message container.
+    # According to RFC 2046, the last part of a multipart message, in this case
+    # the HTML message, is best and preferred.
+    msg.attach(part1)
+    msg.attach(part2)
+
+    # Define the image's ID as referenced above
+    msgImage.add_header('Content-ID', '<image1>')
+    msgImage.add_header('Content-Disposition', 'attachment', filename=os.path.basename(image_path))
+    msg.attach(msgImage)
+
+    # Try to send the message.
+    try:
+        server = smtplib.SMTP(HOST, PORT)
+        # server.set_debuglevel(1)
+        server.ehlo()
+        server.starttls()
+        # smtplib docs recommend calling ehlo() before & after starttls()
+        server.ehlo()
+        server.login(USERNAME_SMTP, PASSWORD_SMTP)
+        server.sendmail(SENDER, RECIPIENT, msg.as_string())
+        server.close()
+    # Display an error message if something goes wrong.
+    except Exception as e:
+        print("Error: ", e)
+    else:
+        print("Email successfully sent!")
 
 
 if __name__ == "__main__":
@@ -83,11 +151,13 @@ if __name__ == "__main__":
     logging.info("Signals calculated in " + str(datetime.datetime.now() - timestamp))
     # Printing raw Signals
     print("Calculation Outcome:")
-    print("\nSignalled Tx: ")
+    print()
+    Signalled_tx = "\nSignalled Tx:\n"
     for dd in pd.date_range(start=start_date, end=end_date, freq='B'):
         for t in my_strategy_signals[dd]:
-            if (t.verb == "BUY" or t.verb == "SELL") and t.when > end_date - BDay(5):
-                print(" Tx: " + str(t))
+            if t.when > end_date - BDay(5) and (t.verb == "BUY" or t.verb == "SELL"):
+                Signalled_tx = Signalled_tx + " Tx: " + str(t) + "\n"
+    print(Signalled_tx)
 
     if signalsOnly:
         # se voglio solo i segnali posso finire qui
@@ -143,5 +213,20 @@ if __name__ == "__main__":
         simul_outcomes = simul_outcomes.append(new_row, ignore_index=True)
     pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", 1000)
     print(simul_outcomes.sort_values(by='Average Net Value', ascending=False))
-    plt.show()
+
+    # Calculating regressions for currently owned shares
+    Regressions = "\nWip\n"
+
+    if sys.stdout.isatty():
+        # we are running this from an actual terminal
+        plt.show()
+    else:
+        # You're being piped or redirected
+        # should save a gif of the image
+        print("\nNo tty, saving image")
+        image_path="./data/simulation.png"
+        plt.savefig(image_path)
+        # Email outcomes
+        sendMail(Signalled_tx, Regressions, image_path)
+
     print("\nEnded, please check log file.\n")

@@ -3,8 +3,8 @@ miei appunti:
 Cose da fare:
 - quando recupero i dividendi, devo usare le stesse date di quando recupero le quotazioni, altrimenti faccio 2
 richieste HTTP diverse (come si vede dal log)
-- inoltre da alcuni test, pare che si possa facilmente implementare un recupero multi-threading
-(vedi esempio LearningRegressions)
+- aggiungere per la classe Asset la possibilità di calcolare slope percentuale e regressione di secondo grado.
+- alla fine, per il mio portafoglio voglio calcolare slore e curvatura.
 
 
 Come usare il programma:

@@ -100,19 +100,21 @@ if __name__ == "__main__":
         # print('intercept:', poly_model.intercept_)
         # print('coefficients:', poly_model.coef_)
         x2 = poly_model.coef_[1]
+        ## x2 = poly_model.coef_
         outcomes = outcomes.append({'Symbol': sym, 'slope': slope, 'XSQ': x2}, ignore_index=True)
         # print('slope for ' + sym +':', model.coef_)
         # y_pred = model.predict(x)
         # print('predicted response:', y_pred, sep='\n')
 
     pd.set_option('display.max_rows', None)
+    print("\n")
     print(outcomes.sort_values(by='slope', ascending=False))
     print()
 
     # Plot stock whith lowest XSQ
     # symbol = str(outcomes[outcomes.XSQ == outcomes.XSQ.min()]['Symbol'].iloc[0])
     symbol = str(outcomes[outcomes.slope == outcomes.slope.min()]['Symbol'].iloc[0])
-    symbol = 'AMRS'
+    symbol = 'F'
     print("Plotting: " + symbol)
     data = pdr.DataReader(symbol, "yahoo", start_date, end_date, session=session)
     x = np.array(range(len(data['Close']))).reshape((-1, 1))

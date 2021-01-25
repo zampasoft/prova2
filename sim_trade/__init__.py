@@ -318,13 +318,18 @@ class Portfolio:
 
                         # se il valore è inferiore al 2% della media corta, oppure se il valore è più del doppio tratto la riga come un errore e sostituisco i valori con la media breve
                         if last_row['Close'] < (last_row['sma_short'] * 0.02) or last_row['Close'] > (last_row['sma_short'] * 3):
-                            new_value = (asset.history.loc[dd - BDay(1), 'Close'] + asset.history.loc[dd + BDay(1), 'Close']) / 2
+                            if last_row['Close'] < (last_row['sma_short'] * 0.02):
+                                new_value = last_row['Close'] * 100
+                            else:
+                                new_value = last_row['Close'] / 100
                             logging.info("Found Outlier on CLOSE: replacing value " + str(last_row['Close']) + " with " + str(new_value) + " for " + asset.symbol + " on " + str(dd.date()))
                             asset.history.loc[dd, 'Close'] = new_value
                             # di solito se è sbagliato il close lo è anche l'Open
                         if last_row['Open'] < last_row['sma_short'] * 0.02 or last_row['Open'] > (last_row['sma_short'] * 3):
-                            new_value = (asset.history.loc[dd - BDay(1), 'Open'] + asset.history.loc[
-                                dd + BDay(1), 'Open']) / 2
+                            if last_row['Open'] < (last_row['sma_short'] * 0.02):
+                                new_value = last_row['Open'] * 100
+                            else:
+                                new_value = last_row['Open'] / 100
                             logging.info(
                                 "Found Outlier on OPEN: replacing value " + str(last_row['Open']) + " with " + str(
                                     new_value) + " for " + asset.symbol + " on " + str(dd.date()))

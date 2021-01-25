@@ -4,7 +4,9 @@ Cose da fare:
 - quando recupero i dividendi, devo usare le stesse date di quando recupero le quotazioni, altrimenti faccio 2
 richieste HTTP diverse (come si vede dal log)
 - aggiungere per la classe Asset la possibilità di calcolare slope percentuale e regressione di secondo grado.
-- alla fine, per il mio portafoglio voglio calcolare slore e curvatura.
+- alla fine, per il mio portafoglio voglio calcolare slope e curvatura.
+- faccio un metodo a livello di portafolgio con due parametri: numero di giorni e parziale o totale.
+- il meotodo ritorna un Dataframe che può essere facilmente trasformato in tabella o in HTML
 
 
 Come usare il programma:

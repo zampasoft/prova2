@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 import pickle
 from pandas.tseries.offsets import BDay
 
-def sendMail(Signalled_tx, Regressions, image_path):
+def sendMail(Signalled_tx : str, Regressions : pd.DataFrame, image_path : str):
     SENDER = 'noreply@nodomain.com'
     SENDERNAME = 'noreply'
     RECIPIENT = 'zampasoft@hotmail.com'

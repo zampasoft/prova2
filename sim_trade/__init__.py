@@ -118,6 +118,10 @@ class Asset:
         # return self.symbol + "\t" + self.name + "\t" + str(self.quantity) + "\t" + str(self.assetType)
         return self.name + "\t" + str(self.assetType)
 
+    def get_stats(self, nr_days : int):
+        # TODO: completare il metodo con i vari check e slope/XSQ sul numero di gg
+        return pd.DataFrame({'Currently Owned': True, 'Within BBands': True, 'slope pct': 1, 'XSQ pct': 1})
+
 
 # Una transazione può avere degli stati: pending, executed, failed
 # Deve avere un verbo: BUY, SELL, DIVIDEND

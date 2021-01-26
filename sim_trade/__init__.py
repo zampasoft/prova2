@@ -11,6 +11,9 @@ import requests_cache
 # nota bene, ho patchato l'ultima versione di pandas_datareader per fissare un errore su yahoo split
 from pandas_datareader import data as pdr
 from multiprocessing.dummy import Pool as ThreadPool
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
 
 """
 This is my sim_trade library. It provides the Portfolio and Trading Strategies objects to run Trading Simulations
@@ -118,9 +121,42 @@ class Asset:
         # return self.symbol + "\t" + self.name + "\t" + str(self.quantity) + "\t" + str(self.assetType)
         return self.name + "\t" + str(self.assetType)
 
+    def curr_owned(self):
+        owned = False
+        try:
+            if self.history.iloc[-1]['OwnedAmount'] > 0:
+                owned = True
+        except Exception as e:
+            # just log
+            logging.debug(self.symbol + ": history not yet filled")
+        return owned
+
     def get_stats(self, nr_days : int):
         # TODO: completare il metodo con i vari check e slope/XSQ sul numero di gg
-        return pd.DataFrame({'Currently Owned': True, 'Within BBands': True, 'slope pct': 1, 'XSQ pct': 1})
+        owned = self.curr_owned()
+        WBB = False
+        slope_pct = 0.0
+        XSQ_pct = 0.0
+        last_row = self.history.iloc[-1]
+        logging.info("For " + self.symbol + " Close is " + str(last_row['Close']) + " upper limit is " + str(
+            last_row['sma_long'] + last_row['std_long']) + " lower limit is " + str(
+            last_row['sma_long'] - last_row['std_long']))
+        if last_row['Close'] < last_row['sma_long'] + last_row['std_long'] and last_row['Close'] > last_row['sma_long'] - last_row['std_long']:
+            # TODO: di fatto sto assumendo che la banda sia amplia 1 std_long. Questa cosa è poco pulita, bisognerebbe collegare questo metodo alla strategia di Trading...
+            WBB = True
+        row_data = list(self.history.sort_values(by='Date').iloc[-1*nr_days:]['Close'])
+        ## print(self.symbol)
+        ## print(row_data)
+        ## print(self.history.sort_values(by='Date').iloc[-1*nr_days:]['Close'])
+        # normalise data
+        x = np.array(range(len(row_data))).reshape((-1, 1))
+        y = np.array(row_data) * (100 / row_data[0])
+        model = LinearRegression().fit(x, y)
+        slope_pct = model.coef_[0]
+        x_ = PolynomialFeatures(degree=2, include_bias=False).fit_transform(x)
+        poly_model = LinearRegression().fit(x_, y)
+        xsq = poly_model.coef_[1]
+        return pd.DataFrame({'Symbol' : [self.symbol], 'Currently_Owned': [owned], 'Within_BBands': [WBB], 'slope_pct': [slope_pct], 'XSQ_pct': [xsq]})
 
 
 # Una transazione può avere degli stati: pending, executed, failed
@@ -418,6 +454,21 @@ class Portfolio:
         print("Portafoglio: " + str(self.description))
         # print("Initial Value:\n" + str(self.por_history.loc[self.start_date]))
         print("Final Value:\n" + str(self.por_history.loc[datetime.datetime.combine(self.end_date, datetime.time.min)]))
+
+    def get_assets_stats(self, nr_days : int, owned_only = True):
+        """
+        retrieves starts for Assets in Portfolio
+
+        :param nr_days: Number of days to be considered for stats
+        :param owned_only: calculate stats only for Assets owned at end of simulation
+        :return: returns a Dataframe with several stats for Assets
+        """
+        stats = pd.DataFrame(None, columns=['Symbol', 'Currently_Owned', 'Within_BBands', 'slope_pct', 'XSQ_pct'])
+        for sym, asset in sorted(self.assets.items()):
+            if (owned_only and asset.curr_owned()) or not owned_only:
+                # calc stats
+                stats = stats.append(asset.get_stats(nr_days), ignore_index=True)
+        return stats
 
 
 # Creo la Classe TradingStrategy

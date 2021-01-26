@@ -46,7 +46,7 @@ if __name__ == "__main__":
                 symbols.append(row[0])
 
     # reassign symbols if you want to analyse a subset of stocks
-    # symbols = ["ILTY.MI", "AAL", "UCG.MI", "LDO.MI", "DOCU", "TWLO", "GES", "NOW", "TEAM", "NFLX", "BRBY.L", "AMZN", "GRPN", "ETSY", "GOOGL", "MSFT", "DIS", "HSBA.L", "AMRS", "EL.PA", "CERV.MI", "ESNT.L", "VVD.F", "CVX", "MCRO.L"]
+    symbols = ["ILTY.MI", "AAL", "UCG.MI", "LDO.MI", "DOCU", "TWLO", "GES", "NOW", "TEAM", "NFLX", "BRBY.L", "AMZN", "GRPN", "ETSY", "GOOGL", "MSFT", "DIS", "HSBA.L", "AMRS", "EL.PA", "CERV.MI", "ESNT.L", "VVD.F", "CVX", "MCRO.L"]
 
     expire_after = datetime.timedelta(days=3)
     session = requests_cache.CachedSession(cache_name='../data/cache', backend='sqlite', expire_after=expire_after)
@@ -77,6 +77,7 @@ if __name__ == "__main__":
     print(str(len(results)) + " quotations retrieved")
 
     for sym, data in results:
+        # print(sym)
         # print(data)
         x = np.array(range(len(data['Close']))).reshape((-1, 1))
         # print(x)
@@ -114,7 +115,7 @@ if __name__ == "__main__":
     # Plot stock whith lowest XSQ
     # symbol = str(outcomes[outcomes.XSQ == outcomes.XSQ.min()]['Symbol'].iloc[0])
     symbol = str(outcomes[outcomes.slope == outcomes.slope.min()]['Symbol'].iloc[0])
-    symbol = 'F'
+    symbol = 'AMRS'
     print("Plotting: " + symbol)
     data = pdr.DataReader(symbol, "yahoo", start_date, end_date, session=session)
     x = np.array(range(len(data['Close']))).reshape((-1, 1))

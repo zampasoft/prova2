@@ -34,10 +34,11 @@ def sendMail(Signalled_tx : str, Regressions : pd.DataFrame, image_path : str):
     SUBJECT = 'Trading Signals'
 
     # The email body for recipients with non-HTML email clients.
-    BODY_TEXT = Signalled_tx
+    pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", 1000)
+    BODY_TEXT = Signalled_tx + "\n\n" + Regressions.to_string(index=False);
 
     # The HTML body of the email.
-    BODY_HTML = "<html> <head> </head> <body> <h1>Trading Signals</h1> <p>" + Signalled_tx.replace("\n","<br>") + '</p> <p><img src="cid:image1" alt="img"></p></body> </html>'
+    BODY_HTML = "<html> <head> </head> <body> <h1>Trading Signals</h1> <p>" + Regressions.to_html(index=False) + '</p> <p>' + Signalled_tx.replace("\n","<br>") + '</p> <p><img src="cid:image1" alt="img"></p></body> </html>'
 
     # Create message container - the correct MIME type is multipart/alternative.
     msg = MIMEMultipart('alternative')
@@ -215,7 +216,9 @@ if __name__ == "__main__":
     print(simul_outcomes.sort_values(by='Average Net Value', ascending=False))
 
     # Calculating regressions for currently owned shares
-    Regressions = "\nWip\n"
+    Regressions = my_port.get_assets_stats(20).sort_values(by='XSQ_pct')
+    print()
+    print(Regressions)
 
     if sys.stdout.isatty():
         # we are running this from an actual terminal

@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 import pickle
 from pandas.tseries.offsets import BDay
 
+
 def sendMail(Signalled_tx : str, Regressions : pd.DataFrame, image_path : str):
     SENDER = 'noreply@nodomain.com'
     SENDERNAME = 'noreply'
@@ -35,7 +36,7 @@ def sendMail(Signalled_tx : str, Regressions : pd.DataFrame, image_path : str):
 
     # The email body for recipients with non-HTML email clients.
     pd.set_option("display.max_rows", None, "display.max_columns", None, "display.width", 1000)
-    BODY_TEXT = Signalled_tx + "\n\n" + Regressions.to_string(index=False);
+    BODY_TEXT = Signalled_tx + "\n\n" + Regressions.to_string(index=False)
 
     # The HTML body of the email.
     BODY_HTML = "<html> <head> </head> <body> <h1>Trading Signals</h1> <p>" + Regressions.to_html(index=False) + '</p> <p>' + Signalled_tx.replace("\n","<br>") + '</p> <p><img src="cid:image1" alt="img"></p></body> </html>'

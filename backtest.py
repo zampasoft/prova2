@@ -216,7 +216,7 @@ if __name__ == "__main__":
     print(simul_outcomes.sort_values(by='Average Net Value', ascending=False))
 
     # Calculating regressions for currently owned shares
-    Regressions = my_port.get_assets_stats(20).sort_values(by='XSQ_pct')
+    Regressions = my_port.get_assets_stats(end_date, 20).sort_values(by='XSQ_pct')
     print()
     print(Regressions)
 

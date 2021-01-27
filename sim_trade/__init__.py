@@ -121,30 +121,30 @@ class Asset:
         # return self.symbol + "\t" + self.name + "\t" + str(self.quantity) + "\t" + str(self.assetType)
         return self.name + "\t" + str(self.assetType)
 
-    def curr_owned(self):
+    def curr_owned(self, when):
         owned = False
         try:
-            if self.history.iloc[-1]['OwnedAmount'] > 0:
+            if self.history.loc[when]['OwnedAmount'] > 0:
                 owned = True
         except Exception as e:
             # just log
             logging.debug(self.symbol + ": history not yet filled")
         return owned
 
-    def get_stats(self, nr_days : int):
+    def get_stats(self, when, nr_days : int):
         # TODO: completare il metodo con i vari check e slope/XSQ sul numero di gg
-        owned = self.curr_owned()
+        owned = self.curr_owned(when)
         WBB = False
         slope_pct = 0.0
         XSQ_pct = 0.0
-        last_row = self.history.iloc[-1]
+        last_row = self.history.loc[when]
         logging.info("For " + self.symbol + " Close is " + str(last_row['Close']) + " upper limit is " + str(
             last_row['sma_long'] + last_row['std_long']) + " lower limit is " + str(
             last_row['sma_long'] - last_row['std_long']))
         if last_row['Close'] < last_row['sma_long'] + last_row['std_long'] and last_row['Close'] > last_row['sma_long'] - last_row['std_long']:
             # TODO: di fatto sto assumendo che la banda sia amplia 1 std_long. Questa cosa è poco pulita, bisognerebbe collegare questo metodo alla strategia di Trading...
             WBB = True
-        row_data = list(self.history.sort_values(by='Date').iloc[-1*nr_days:]['Close'])
+        row_data = list(self.history.loc[when - BDay(nr_days+1):]['Close'])
         ## print(self.symbol)
         ## print(row_data)
         ## print(self.history.sort_values(by='Date').iloc[-1*nr_days:]['Close'])
@@ -455,7 +455,7 @@ class Portfolio:
         # print("Initial Value:\n" + str(self.por_history.loc[self.start_date]))
         print("Final Value:\n" + str(self.por_history.loc[datetime.datetime.combine(self.end_date, datetime.time.min)]))
 
-    def get_assets_stats(self, nr_days : int, owned_only = True):
+    def get_assets_stats(self, when, nr_days : int, owned_only = True):
         """
         retrieves starts for Assets in Portfolio
 
@@ -465,9 +465,9 @@ class Portfolio:
         """
         stats = pd.DataFrame(None, columns=['Symbol', 'Currently_Owned', 'Within_BBands', 'slope_pct', 'XSQ_pct'])
         for sym, asset in sorted(self.assets.items()):
-            if (owned_only and asset.curr_owned()) or not owned_only:
+            if (owned_only and asset.curr_owned(when)) or not owned_only:
                 # calc stats
-                stats = stats.append(asset.get_stats(nr_days), ignore_index=True)
+                stats = stats.append(asset.get_stats(when, nr_days), ignore_index=True)
         return stats
 
 

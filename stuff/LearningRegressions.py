@@ -47,7 +47,7 @@ if __name__ == "__main__":
                 symbols.append(row[0])
 
     # reassign symbols if you want to analyse a subset of stocks
-    symbols = ["ILTY.MI", "AAL", "UCG.MI", "LDO.MI", "DOCU", "TWLO", "GES", "NOW", "TEAM", "NFLX", "BRBY.L", "AMZN", "GRPN", "ETSY", "GOOGL", "MSFT", "DIS", "HSBA.L", "AMRS", "EL.PA", "CERV.MI", "ESNT.L", "VVD.F", "CVX", "MCRO.L"]
+    # symbols = ["ILTY.MI", "AAL", "UCG.MI", "LDO.MI", "DOCU", "TWLO", "GES", "NOW", "TEAM", "NFLX", "BRBY.L", "AMZN", "GRPN", "ETSY", "GOOGL", "MSFT", "DIS", "HSBA.L", "AMRS", "EL.PA", "CERV.MI", "ESNT.L", "VVD.F", "CVX", "MCRO.L"]
 
     expire_after = datetime.timedelta(days=3)
     session = requests_cache.CachedSession(cache_name='../data/cache', backend='sqlite', expire_after=expire_after)
@@ -78,31 +78,35 @@ if __name__ == "__main__":
     print(str(len(results)) + " quotations retrieved")
 
     for sym, data in results:
-        # print(sym)
-        # print(data)
-        x = np.array(range(len(data['Close']))).reshape((-1, 1))
-        # print(x)
-        y = list(data['Close'])
-        # print(y)
-        model = LinearRegression().fit(x, y)
-        # r_sq = model.score(x, y)
-        # print('coefficient of determination:', r_sq)
-        # print('intercept:', model.intercept_)
-        slope = model.coef_[0] * 100 / y[0]
-        # now looking at a second degree polynomail regression
-        # create e new Input with x and x^2
-        x_ = PolynomialFeatures(degree=2, include_bias=False).fit_transform(x)
-        # print(y)
-        # sto assumendo che model.intercept_ sia positivo...
-        y1 = np.array(y) * (100 / y[0])
-        # print(y1)
-        poly_model = LinearRegression().fit(x_, y1)
-        # r_sq = poly_model.score(x_, y)
-        # print('coefficient of determination:', r_sq)
-        # print('intercept:', poly_model.intercept_)
-        # print('coefficients:', poly_model.coef_)
-        x2 = poly_model.coef_[1]
-        ## x2 = poly_model.coef_
+        if len(data['Close']) > samples / 2:
+            # print(sym)
+            # print(data)
+            x = np.array(range(len(data['Close']))).reshape((-1, 1))
+            # print(x)
+            y = list(data['Close'])
+            # print(y)
+            model = LinearRegression().fit(x, y)
+            # r_sq = model.score(x, y)
+            # print('coefficient of determination:', r_sq)
+            # print('intercept:', model.intercept_)
+            slope = model.coef_[0] * 100 / y[0]
+            # now looking at a second degree polynomail regression
+            # create e new Input with x and x^2
+            x_ = PolynomialFeatures(degree=2, include_bias=False).fit_transform(x)
+            # print(y)
+            # sto assumendo che model.intercept_ sia positivo...
+            y1 = np.array(y) * (100 / y[0])
+            # print(y1)
+            poly_model = LinearRegression().fit(x_, y1)
+            # r_sq = poly_model.score(x_, y)
+            # print('coefficient of determination:', r_sq)
+            # print('intercept:', poly_model.intercept_)
+            # print('coefficients:', poly_model.coef_)
+            x2 = poly_model.coef_[1]
+            ## x2 = poly_model.coef_
+        else:
+            slope = 0.0
+            x2 = 0.0
         outcomes = outcomes.append({'Symbol': sym, 'slope': slope, 'XSQ': x2}, ignore_index=True)
         # print('slope for ' + sym +':', model.coef_)
         # y_pred = model.predict(x)
@@ -110,12 +114,12 @@ if __name__ == "__main__":
 
     pd.set_option('display.max_rows', None)
     print("\n")
-    print(outcomes.sort_values(by='slope', ascending=False))
+    print(outcomes.sort_values(by='XSQ', ascending=False))
     print()
 
     # Plot stock whith lowest XSQ
-    # symbol = str(outcomes[outcomes.XSQ == outcomes.XSQ.min()]['Symbol'].iloc[0])
-    symbol = str(outcomes[outcomes.slope == outcomes.slope.min()]['Symbol'].iloc[0])
+    symbol = str(outcomes[outcomes.XSQ == outcomes.XSQ.min()]['Symbol'].iloc[0])
+    # symbol = str(outcomes[outcomes.slope == outcomes.slope.min()]['Symbol'].iloc[0])
     # symbol = 'AMRS'
     print("Plotting: " + symbol)
     data = pdr.DataReader(symbol, "yahoo", start_date, end_date, session=session)

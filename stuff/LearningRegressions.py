@@ -18,6 +18,8 @@ def download_quotations(symbol):
     # global session
     try:
         data = pdr.DataReader(symbol, "yahoo", start_date, end_date, session=session)
+        # print(symbol)
+        # print(data['Close'])
         print("Retrieved: " + symbol)
     except Exception as e:
         print("Quotations for: " + symbol + " could not be retrieved because of " + str(e))

@@ -100,7 +100,7 @@ class AssetClass:
 # I create the asset classes I want in my Portfolio for now
 EQUITY = AssetClass("equity", 0.005, 0)
 ETC = AssetClass("ETC", 0.005, 0)
-ETF = AssetClass("ETF", 0.01, 0.01) #non ho ancora implementato il calcolo delle fee annuali di gestione.
+ETF = AssetClass("ETF", 0.01, 0.01)  # non ho ancora implementato il calcolo delle fee annuali di gestione.
 CURRENCY = AssetClass("currency", 0.001, 0)
 
 
@@ -131,7 +131,7 @@ class Asset:
             logging.debug(self.symbol + ": history not yet filled")
         return owned
 
-    def get_stats(self, when, nr_days : int):
+    def get_stats(self, when, nr_days: int):
         # TODO: completare il metodo con i vari check e slope/XSQ sul numero di gg
         owned = self.curr_owned(when)
         WBB = False
@@ -141,22 +141,28 @@ class Asset:
         logging.info("For " + self.symbol + " Close is " + str(last_row['Close']) + " upper limit is " + str(
             last_row['sma_long'] + last_row['std_long']) + " lower limit is " + str(
             last_row['sma_long'] - last_row['std_long']))
-        if last_row['Close'] < last_row['sma_long'] + last_row['std_long'] and last_row['Close'] > last_row['sma_long'] - last_row['std_long']:
-            # TODO: di fatto sto assumendo che la banda sia amplia 1 std_long. Questa cosa è poco pulita, bisognerebbe collegare questo metodo alla strategia di Trading...
-            WBB = True
-        row_data = list(self.history.loc[when - BDay(nr_days+1):]['Close'])
-        ## print(self.symbol)
-        ## print(row_data)
-        ## print(self.history.sort_values(by='Date').iloc[-1*nr_days:]['Close'])
-        # normalise data
-        x = np.array(range(len(row_data))).reshape((-1, 1))
-        y = np.array(row_data) * (100 / row_data[0])
-        model = LinearRegression().fit(x, y)
-        slope_pct = model.coef_[0]
-        x_ = PolynomialFeatures(degree=2, include_bias=False).fit_transform(x)
-        poly_model = LinearRegression().fit(x_, y)
-        xsq = poly_model.coef_[1]
-        return pd.DataFrame({'Symbol' : [self.symbol], 'Currently_Owned': [owned], 'Within_BBands': [WBB], 'slope_pct': [slope_pct], 'XSQ_pct': [xsq]})
+        if math.isnan(last_row['sma_long']):
+            # questo titolo è troppo giovane, hon ha senso controllarne le statistiche
+            slope_pct = 0.0
+            xsq = 0.0
+        else:
+            if last_row['sma_long'] + last_row['std_long'] > last_row['Close'] > last_row['sma_long'] - last_row['std_long']:
+                # TODO: di fatto sto assumendo che la banda sia amplia 1 std_long. Questa cosa è poco pulita, bisognerebbe collegare questo metodo alla strategia di Trading...
+                WBB = True
+            row_data = list(self.history.loc[when - BDay(nr_days + 1):]['Close'])
+            # print(self.symbol)
+            # print(self.history.loc[when - BDay(nr_days + 1): when - BDay(1), 'Close'])
+            # normalise data
+            x = np.array(range(len(row_data))).reshape((-1, 1))
+            y = np.array(row_data) * (100 / row_data[0])
+            model = LinearRegression().fit(x, y)
+            slope_pct = model.coef_[0]
+            x_ = PolynomialFeatures(degree=2, include_bias=False).fit_transform(x)
+            poly_model = LinearRegression().fit(x_, y)
+            xsq = poly_model.coef_[1]
+        return pd.DataFrame(
+            {'Symbol': [self.symbol], 'Currently_Owned': [owned], 'Within_BBands': [WBB], 'slope_pct': [slope_pct],
+             'XSQ_pct': [xsq]})
 
 
 # Una transazione può avere degli stati: pending, executed, failed
@@ -195,7 +201,8 @@ class Transaction:
         self.score = score
 
     def __str__(self):
-        return str(self.when.date()) + " : " + self.verb + "\t" + self.asset.symbol + "\t" + str(self.value) + " " + str(self.quantity) + " " + self.state + "\tscore: " + str(self.score)
+        return str(self.when.date()) + " : " + self.verb + "\t" + self.asset.symbol + "\t" + str(
+            self.value) + " " + str(self.quantity) + " " + self.state + "\tscore: " + str(self.score)
 
     # credo un metodo statico che userò per ordinare gli array di trabsazioni
     @staticmethod
@@ -233,7 +240,8 @@ class Transaction:
 class Portfolio:
     pendingTransactions: Dict[datetime.date, typing.List[Transaction]]
 
-    def __init__(self, start_date: datetime.date, end_date: datetime.date, initial_capital: float = 0.0, days_short = 20, days_long = 150, description="Default Portfolio"):
+    def __init__(self, start_date: datetime.date, end_date: datetime.date, initial_capital: float = 0.0, days_short=20,
+                 days_long=150, description="Default Portfolio"):
         self.assets = dict()
         # elenco di asset acceduti via simbolo. un giorno capirò se abbia senso una struttura dati diversa
         self.defCurrency = "EUR"
@@ -260,7 +268,7 @@ class Portfolio:
         # self.total_commissions = total_commissions
         logging.debug("fill_history_gaps for Portfolio[_SELF_] e Transactions")
         last_row = self.por_history.loc[datetime.datetime.combine(self.start_date, datetime.time.min)]
-        for dd in pd.date_range(start=start_date-BDay(1), end=end_date, freq='B'):
+        for dd in pd.date_range(start=start_date - BDay(1), end=end_date, freq='B'):
             # TODO: capire se ha senso settare last row con start_date e poi partire da start_date -1
             self.pendingTransactions[dd] = []
             try:
@@ -308,7 +316,6 @@ class Portfolio:
                     currency = row[4]
                     self.assets[symbol] = Asset(asset_class, name, symbol, market, currency)
 
-
     def calc_stats(self):
         # TODO: questo metodo dovrebbe stare a livello di Strategia... Però deve essere eseguito prima di sistemare i
         #  gaps, quindi per il momento lo lascio a livello di portafoglio
@@ -349,7 +356,7 @@ class Portfolio:
                 logging.error("There are duplicates in the history for " + asset.symbol)
                 # remove duplicates, keep first
                 asset.history = asset.history[~asset.history.index.duplicated(keep='first')]
-            for dd in pd.date_range(start=self.start_date-BDay(5), end=self.end_date, freq='B'):
+            for dd in pd.date_range(start=self.start_date - BDay(5), end=self.end_date, freq='B'):
                 try:
                     last_row = asset.history.loc[dd, :]
                     # ogni tanto le quotazioni inglesi fanno casino tra pence e pound.
@@ -357,15 +364,19 @@ class Portfolio:
                     if math.isnan(last_row['sma_short']) == False:
 
                         # se il valore è inferiore al 2% della media corta, oppure se il valore è più del doppio tratto la riga come un errore e sostituisco i valori con la media breve
-                        if last_row['Close'] < (last_row['sma_short'] * 0.02) or last_row['Close'] > (last_row['sma_short'] * 3):
+                        if last_row['Close'] < (last_row['sma_short'] * 0.02) or last_row['Close'] > (
+                                last_row['sma_short'] * 3):
                             if last_row['Close'] < (last_row['sma_short'] * 0.02):
                                 new_value = last_row['Close'] * 100
                             else:
                                 new_value = last_row['Close'] / 100
-                            logging.info("Found Outlier on CLOSE: replacing value " + str(last_row['Close']) + " with " + str(new_value) + " for " + asset.symbol + " on " + str(dd.date()))
+                            logging.info(
+                                "Found Outlier on CLOSE: replacing value " + str(last_row['Close']) + " with " + str(
+                                    new_value) + " for " + asset.symbol + " on " + str(dd.date()))
                             asset.history.loc[dd, 'Close'] = new_value
                             # di solito se è sbagliato il close lo è anche l'Open
-                        if last_row['Open'] < last_row['sma_short'] * 0.02 or last_row['Open'] > (last_row['sma_short'] * 3):
+                        if last_row['Open'] < last_row['sma_short'] * 0.02 or last_row['Open'] > (
+                                last_row['sma_short'] * 3):
                             if last_row['Open'] < (last_row['sma_short'] * 0.02):
                                 new_value = last_row['Open'] * 100
                             else:
@@ -392,6 +403,8 @@ class Portfolio:
             asset.history['NetWorth'] = 0.0  # in DEF CURR
             asset.history['TotTaxes'] = 0.0  # in DEF CURR
             asset.history['TotCommissions'] = 0.0  # in DEF CURR
+            # come ultimo atto, riordino il DataFrame per data
+            asset.history = asset.history.sort_values(by='Date')
         print(" ")
 
     def port_net_value(self, date: datetime.datetime):
@@ -417,8 +430,9 @@ class Portfolio:
                 logging.debug("Currency Conversion: " + str(curr_conv))
                 logging.debug("current quotation: " + str(line['Close']))
                 # TODO: aggiungere NerWorth anche su singolo asset, per permettere regole di bilanciamento del portafoglio
-                asset.history.loc[date, 'NetWorth'] = line['OwnedAmount'] * (line['Close'] * curr_conv + asset.assetType.tax_rate * (
-                            line['AverageBuyPrice'] - line['Close'] * curr_conv))
+                asset.history.loc[date, 'NetWorth'] = line['OwnedAmount'] * (
+                        line['Close'] * curr_conv + asset.assetType.tax_rate * (
+                        line['AverageBuyPrice'] - line['Close'] * curr_conv))
                 tot_value = tot_value + asset.history.loc[date, 'NetWorth']
                 # FIXME: con questa formula, in caso di perdita, lo zainetto fiscale mi fa aumentare leggermente il valore
                 # manca la SELL commission, ma incide poco sul senso del numero
@@ -433,7 +447,7 @@ class Portfolio:
         # TODO: dovrei rendere la location e la durata della cache parametriche
         expire_after = datetime.timedelta(days=3)
         session = requests_cache.CachedSession(cache_name=cache_file, backend='sqlite', expire_after=expire_after,
-                                             allowable_codes=(200,), fast_save=False)
+                                               allowable_codes=(200,), fast_save=False)
         # get Quotations & Dividends for all Assets in myPortfolio
         initial_data_day = self.start_date - BDay(self.days_long + self.days_short)
         # Since this is I/O bound performance can be imporved by using Multi_threading.
@@ -455,7 +469,7 @@ class Portfolio:
         # print("Initial Value:\n" + str(self.por_history.loc[self.start_date]))
         print("Final Value:\n" + str(self.por_history.loc[datetime.datetime.combine(self.end_date, datetime.time.min)]))
 
-    def get_assets_stats(self, when, nr_days : int, owned_only = True):
+    def get_assets_stats(self, when, nr_days: int, owned_only=True):
         """
         retrieves starts for Assets in Portfolio
 
@@ -502,7 +516,6 @@ class BuyAndHoldTradingStrategy:
                 dailyPendTx = self.outcome.pendingTransactions[dd]
                 dailyPendTx.append(Transaction("SELL", asset, dd, 0, 0.0, self.description, score=score))
 
-
     # TODO: questo metodo dovrebbe essere multi-thread.
     def calc_suggested_transactions(self, sell_all=True, **kwparams):
         # Strategia base "BUY & HOLD"
@@ -516,10 +529,11 @@ class BuyAndHoldTradingStrategy:
             # per tutti gli asset, tranne il portafoglio stesso e la valuta di riferimento genero dei segnali di BUY o
             # SELL. Nella strategia BUY & HOLD, se il valore di un asset è 0 allora genero un BUY
             if asset.symbol in wish_list:
-                for dd in pd.date_range(start=self.outcome.start_date, end=(self.outcome.end_date - BDay(1)), freq='W-WED'):
+                for dd in pd.date_range(start=self.outcome.start_date, end=(self.outcome.end_date - BDay(1)),
+                                        freq='W-WED'):
                     if asset.history.loc[dd, 'Close'] > 0.0 and asset.assetType.assetType != "currency":
                         score = self.scoreSignal(asset, dd)
-                        logging.debug("\tRequesting BUY for " + str(key) + " on " + str(dd.date() + BDay(1))+
+                        logging.debug("\tRequesting BUY for " + str(key) + " on " + str(dd.date() + BDay(1)) +
                                       "\tquotation: " + str(asset.history.loc[dd, 'Close']) + "\tscore: " + str(score))
                         logging.debug("assetType: " + str(asset.assetType))
                         dailyPendTx = self.outcome.pendingTransactions[dd + BDay(1)]
@@ -546,7 +560,10 @@ class BuyAndHoldTradingStrategy:
 
     # Creo il metodo TradingSimulation che deve iterare dentro un range di date, eseguire gli ordini e aggiornare i valori
     def runTradingSimulation(self, max_orders=25.0):
-        logging.debug("Processing portfolio \'{0}\' start_date = {1} end_date = {2}".format(self.outcome.description, str(self.outcome.start_date), str(self.outcome.end_date)))
+        logging.debug("Processing portfolio \'{0}\' start_date = {1} end_date = {2}".format(self.outcome.description,
+                                                                                            str(
+                                                                                                self.outcome.start_date),
+                                                                                            str(self.outcome.end_date)))
         self.BUY_ORDER_VALUE = self.outcome.initial_capital / max_orders
         # max_orders = rappresenta una stima del numero massimo di ordini eseguiti in un BUY & HOLD.
         # con strategie più complesse, è una indicazione spannometrica del numero di titoli massimo nel portafoglio
@@ -643,9 +660,9 @@ class BuyAndHoldTradingStrategy:
                 # modifico average buy price
                 asset.history.loc[t.when, 'AverageBuyPrice'] = (asset.history.loc[t.when, 'OwnedAmount'] *
                                                                 asset.history.loc[t.when,
-                                                                    'AverageBuyPrice'] + asset_price) / (
-                                                                           asset.history.loc[t.when,
-                                                                               'OwnedAmount'] + quantity)
+                                                                                  'AverageBuyPrice'] + asset_price) / (
+                                                                       asset.history.loc[t.when,
+                                                                                         'OwnedAmount'] + quantity)
                 # aumento quantità posseduta
                 asset.history.loc[t.when, 'OwnedAmount'] += quantity
                 t.state = "executed"
@@ -918,7 +935,7 @@ class CustomStrategy(BuyAndHoldTradingStrategy):
                         dailyPendTx = self.outcome.pendingTransactions[dd]
                         dailyPendTx.append(Transaction("SELL", asset, dd, 0, 0.0, reason))
                     else:
-                        #unexpected, log error and raise exception
+                        # unexpected, log error and raise exception
                         logging.error(verb + " : is not a valid VERB")
                         raise Exception(verb + " : is not a valid VERB")
             # BUY_points = pd.DataFrame({'Date': days_buy, 'Quotation': quot_buy})

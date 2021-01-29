@@ -221,8 +221,8 @@ class Transaction:
         elif txt.verb == "BUY":
             # In caso di BUY, ordino ulteriormente in base allo "score" della transazione, siccome in questo caso
             # penalizzo le transazioni con score più alto faccio l'inverso
-            if math.isnan(txt.score) or txt.score < 1:
-                logging.info("txt score for " + str(txt) + " has been changed to 1")
+            if math.isnan(txt.score) or txt.score < 1 or txt.score > 30:
+                logging.info("txt score for " + str(txt) + " has been changed from " + txt.score + " to 1")
                 txt.score = 1
             verbSort = 3 + int(100 / txt.score)
         else:

@@ -159,7 +159,7 @@ if __name__ == "__main__":
     for dd in pd.date_range(start=start_date, end=end_date, freq='B'):
         for t in my_strategy_signals[dd]:
             if t.when > end_date - BDay(5) and (t.verb == "BUY" or t.verb == "SELL"):
-            # if not math.isnan(t.score) and t.score > 10.0 and (t.verb == "BUY" or t.verb == "SELL"):
+            # if not math.isnan(t.score) and t.score > 20.0 and (t.verb == "BUY" or t.verb == "SELL"):
                 Signalled_tx = Signalled_tx + " Tx: " + str(t) + "\n"
     print(Signalled_tx)
 

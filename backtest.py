@@ -20,6 +20,7 @@ import sim_trade
 import matplotlib.pyplot as plt
 import pickle
 from pandas.tseries.offsets import BDay
+import math
 
 
 def sendMail(Signalled_tx : str, Regressions : pd.DataFrame, image_path : str):
@@ -158,6 +159,7 @@ if __name__ == "__main__":
     for dd in pd.date_range(start=start_date, end=end_date, freq='B'):
         for t in my_strategy_signals[dd]:
             if t.when > end_date - BDay(5) and (t.verb == "BUY" or t.verb == "SELL"):
+            # if not math.isnan(t.score) and t.score > 10.0 and (t.verb == "BUY" or t.verb == "SELL"):
                 Signalled_tx = Signalled_tx + " Tx: " + str(t) + "\n"
     print(Signalled_tx)
 
@@ -218,6 +220,7 @@ if __name__ == "__main__":
 
     # Calculating regressions for currently owned shares
     Regressions = my_port.get_assets_stats(end_date, 20, True).sort_values(by='XSQ_pct')
+    # Regressions = top_port.get_assets_stats(end_date, 20, True).sort_values(by='XSQ_pct')
     print()
     print(Regressions)
 

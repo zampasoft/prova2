@@ -7,6 +7,7 @@ richieste HTTP diverse (come si vede dal log)
 - alla fine, per il mio portafoglio voglio calcolare slope e curvatura.
 - faccio un metodo a livello di portafolgio con due parametri: numero di giorni e parziale o totale.
 - il meotodo ritorna un Dataframe che può essere facilmente trasformato in tabella o in HTML
+- se lo score di un titolo è troppo alto, qualcosa non va
 
 
 Come usare il programma:

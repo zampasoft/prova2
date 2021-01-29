@@ -25,7 +25,6 @@ DLG.MI,De'Longhi S.p.A.,equity,MTA,EUR
 ENEL.MI,ENEL,equity,MTA,EUR
 ENI.MI,ENI,equity,MTA,EUR
 FBK.MI,FinecoBank Banca Fineco S.p.A.,equity,MTA,EUR
-FCA.MI,FCA,equity,MTA,EUR
 G.MI,Assicurazioni Generali,equity,MTA,EUR
 GEO.MI,GEO,equity,MTA,EUR
 ILTY.MI,Illimity Bank S.p.A.,equity,MTA,EUR
@@ -41,8 +40,8 @@ PIRC.MI,Pirelli & C. S.p.A.,equity,MTA,EUR
 PRT.MI,Esprinet S.p.A.,equity,MTA,EUR
 PST.MI,Poste Italiane SpA,equity,MTA,EUR
 SFL.MI,Safilo Group S.p.A.,equity,MTA,EUR
-STM.MI,STMicroelectronics N.V.,equity,MTA,EUR
 STLA.MI,Stellantis,equity,MTA,EUR
+STM.MI,STMicroelectronics N.V.,equity,MTA,EUR
 UCG.MI,UNICREDIT,equity,MTA,EUR
 ADS.DE,Adidas AG,equity,XETRA,EUR
 BAS.DE,BASF SE,equity,XETRA,EUR
@@ -122,6 +121,8 @@ ZM,Zoom,equity,NASDAQ,USD
 PLUG,Plug Power Inc.,equity,NASDAQ-CM,USD
 FCEL,"FuelCell Energy, Inc.",equity,NASDAQ-GM,USD
 ABT,Abbott Laboratories,equity,NYSE,USD
+AI,"C3.ai, Inc.",equity,NYSE,USD
+AMC,"AMC Entertainment Holdings, Inc.",equity,NYSE,USD
 BA,The Boeing Company,equity,NYSE,USD
 BLK,"BlackRock, Inc.",equity,NYSE,USD
 CLX,The Clorox Company ,equity,NYSE,USD
@@ -174,5 +175,6 @@ WDAY,"Workday, Inc.",equity,NYSE,USD
 WORK,"Slack Technologies, Inc.",equity,NYSE,USD
 XLNX,"Xilinx, Inc.",equity,NYSE,USD
 XOM,Exxon Mobil Corporation,equity,NYSE,USD
+GME,GameStop Corp.,equity,NYSE,USD
+XM,Qualtrics International Inc. Class A Common Stock,equity,NasdaqGS,USD
 KARS,KraneShares Electric Vehicles and Future Mobility Index ETF,ETF,NYSEArca,USD
-AI,"C3.ai, Inc.",equity,NYSE,USD

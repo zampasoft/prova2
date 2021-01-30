@@ -113,6 +113,7 @@ PLTR,Palantir Technologies Inc.,equity,NASDAQ,USD
 PTON,Peloton Interactive Inc.,equity,NASDAQ,USD
 SBUX,Starbucks Corporation,equity,NASDAQ,USD
 SIRI,Sirius XM Holdings Inc.,equity,NASDAQ,USD
+SPLK,Splunk Inc.,equity,NASDAQ,USD
 SVMK,SVMK Inc.,equity,NASDAQ,USD
 SWBI,Smith & Wesson Brands Inc.,equity,NASDAQ,USD
 T,AT&T Inc.,equity,NASDAQ,USD
@@ -120,11 +121,13 @@ TSLA,Tesla Inc.,equity,NASDAQ,USD
 ZM,Zoom,equity,NASDAQ,USD
 PLUG,Plug Power Inc.,equity,NASDAQ-CM,USD
 FCEL,"FuelCell Energy, Inc.",equity,NASDAQ-GM,USD
+XM,Qualtrics International Inc. Class A Common Stock,equity,NasdaqGS,USD
 ABT,Abbott Laboratories,equity,NYSE,USD
 AI,"C3.ai, Inc.",equity,NYSE,USD
 AMC,"AMC Entertainment Holdings, Inc.",equity,NYSE,USD
 BA,The Boeing Company,equity,NYSE,USD
 BLK,"BlackRock, Inc.",equity,NYSE,USD
+BOX,"Box, Inc.",equity,NYSE,USD
 CLX,The Clorox Company ,equity,NYSE,USD
 COTY,Coty Inc.,equity,NYSE,USD
 CRM,SALESFORCE.COM,equity,NYSE,USD
@@ -139,6 +142,7 @@ F,Ford Motor Company,equity,NYSE,USD
 GE,General Electric Company,equity,NYSE,USD
 GES,"Guess', Inc.",equity,NYSE,USD
 GM,General Motors Company,equity,NYSE,USD
+GME,GameStop Corp.,equity,NYSE,USD
 GPS,"The Gap, Inc.",equity,NYSE,USD
 GRUB,GrubHub,equity,NYSE,USD
 IBM,IBM,equity,NYSE,USD
@@ -175,6 +179,4 @@ WDAY,"Workday, Inc.",equity,NYSE,USD
 WORK,"Slack Technologies, Inc.",equity,NYSE,USD
 XLNX,"Xilinx, Inc.",equity,NYSE,USD
 XOM,Exxon Mobil Corporation,equity,NYSE,USD
-GME,GameStop Corp.,equity,NYSE,USD
-XM,Qualtrics International Inc. Class A Common Stock,equity,NasdaqGS,USD
 KARS,KraneShares Electric Vehicles and Future Mobility Index ETF,ETF,NYSEArca,USD
